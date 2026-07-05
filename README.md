@@ -1,7 +1,28 @@
 # OBS Control Room
 
-One-button screen shares and streaming: Stream Deck MK.2 → OBS, with a scripted
-scene collection and a cold-start launcher.
+One-button screen shares and streaming: Stream Deck → OBS, with a scripted
+scene collection, a cold-start launcher, and a custom Stream Deck plugin.
+
+## Custom plugin (`plugin/`)
+
+`com.blessdog.obs-control-room` — bespoke actions (Elgato SDK v2, Node 24),
+in the Stream Deck app under category **"OBS Control Room"**:
+
+| Action | Behavior |
+|---|---|
+| **Show Flow** | Press: cold-start OBS → *Starting Soon* → 10s countdown (press again cancels) → *Screen + Cam* → live. **Hold 1.5s while live**: *Ending* for 3s → stream stops. |
+| **Screen Picker** | Toggles the shared Display capture between built-in and external. Key shows which is live. |
+| **Status** | OFFLINE / READY / ⏺ REC / 🔴 LIVE with elapsed time + dropped-frame %. Press while offline = cold start. |
+| **Meeting Mode** | *Screen + Cam* + OBS Virtual Camera on/off — then pick "OBS Virtual Camera" in Zoom/Meet. |
+
+Build: `cd plugin && PATH="/opt/homebrew/opt/node@24/bin:$PATH" npm run build`,
+then `npx streamdeck restart com.blessdog.obs-control-room` (or `npm run watch`).
+The `.sdPlugin` dir is symlinked into the Stream Deck app by `npx streamdeck link`.
+Plugin logs: `<plugins dir>/com.blessdog.obs-control-room.sdPlugin/logs/`.
+
+Gotcha (Stream Deck app 7.4.2): first Node-plugin install fails silently because
+the app never creates `~/Library/Application Support/com.elgato.StreamDeck/NodeJS/`
+— `mkdir` it and restart the app.
 
 ## What's here
 
