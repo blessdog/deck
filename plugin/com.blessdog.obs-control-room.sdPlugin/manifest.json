@@ -1,0 +1,80 @@
+{
+	"$schema": "https://schemas.elgato.com/streamdeck/plugins/manifest.json",
+	"UUID": "com.blessdog.obs-control-room",
+	"Name": "OBS Control Room",
+	"Version": "0.1.0.0",
+	"Author": "blessdog",
+	"Description": "Bespoke OBS keys: one-press show flow, screen picker, live status, meeting mode. Companion to the Control Room scene collection.",
+	"Category": "OBS Control Room",
+	"CategoryIcon": "imgs/plugin/category-icon",
+	"CodePath": "bin/plugin.js",
+	"Icon": "imgs/plugin/icon",
+	"SDKVersion": 3,
+	"Software": {
+		"MinimumVersion": "7.1"
+	},
+	"OS": [
+		{
+			"Platform": "mac",
+			"MinimumVersion": "12"
+		}
+	],
+	"Nodejs": {
+		"Version": "24",
+		"Debug": "enabled"
+	},
+	"Actions": [
+		{
+			"Name": "Show Flow",
+			"UUID": "com.blessdog.obs-control-room.show-flow",
+			"Icon": "imgs/actions/show-flow/icon",
+			"Tooltip": "One press runs the show open: cold-start OBS, Starting Soon, countdown, go live. Hold 1.5s while live to end the show.",
+			"Controllers": ["Keypad"],
+			"States": [
+				{
+					"Image": "imgs/actions/show-flow/key",
+					"ShowTitle": false
+				}
+			]
+		},
+		{
+			"Name": "Screen Picker",
+			"UUID": "com.blessdog.obs-control-room.screen-picker",
+			"Icon": "imgs/actions/screen-picker/icon",
+			"Tooltip": "Toggle which display the Screen scenes capture: built-in or external.",
+			"Controllers": ["Keypad"],
+			"States": [
+				{
+					"Image": "imgs/actions/screen-picker/key",
+					"ShowTitle": false
+				}
+			]
+		},
+		{
+			"Name": "Status",
+			"UUID": "com.blessdog.obs-control-room.status",
+			"Icon": "imgs/actions/status/icon",
+			"Tooltip": "OBS health at a glance: OFFLINE / READY / REC / LIVE with elapsed time and dropped frames. Press while offline to cold-start OBS.",
+			"Controllers": ["Keypad"],
+			"States": [
+				{
+					"Image": "imgs/actions/status/key",
+					"ShowTitle": false
+				}
+			]
+		},
+		{
+			"Name": "Meeting Mode",
+			"UUID": "com.blessdog.obs-control-room.meeting-mode",
+			"Icon": "imgs/actions/meeting-mode/icon",
+			"Tooltip": "Prep a meeting share: Screen + Cam scene with the OBS Virtual Camera on. Press again to turn it off.",
+			"Controllers": ["Keypad"],
+			"States": [
+				{
+					"Image": "imgs/actions/meeting-mode/key",
+					"ShowTitle": false
+				}
+			]
+		}
+	]
+}

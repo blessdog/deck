@@ -1,0 +1,24 @@
+{
+  "name": "obs-control-room-plugin",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "rollup -c",
+    "watch": "rollup -c -w --watch.onEnd=\"streamdeck restart com.blessdog.obs-control-room\""
+  },
+  "dependencies": {
+    "@elgato/streamdeck": "^2.1.0",
+    "obs-websocket-js": "^5.0.6"
+  },
+  "devDependencies": {
+    "@elgato/cli": "^1.6.0",
+    "@rollup/plugin-commonjs": "^28.0.0",
+    "@rollup/plugin-node-resolve": "^16.0.0",
+    "@rollup/plugin-typescript": "^12.1.0",
+    "@tsconfig/node20": "^20.1.4",
+    "rollup": "^4.24.0",
+    "tslib": "^2.7.0",
+    "typescript": "^5.6.0"
+  }
+}
