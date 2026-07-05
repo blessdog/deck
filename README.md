@@ -11,7 +11,9 @@ scene collection and a cold-start launcher.
 | `scripts/cold-start.mjs` | Launches OBS if needed, lands on *Starting Soon*. Flags: `--virtual-cam`, `--and-stream`. |
 | `scripts/set-stream-key.mjs` | One-time: `node scripts/set-stream-key.mjs <KEY>` points OBS at YouTube RTMPS. Key lives in OBS config, never in this repo. |
 | `OBS Cold Start.app` | Wrapper the Stream Deck 🚀 key opens (runs `cold-start.command`, logs to `logs/cold-start.log`). |
-| `scripts/lib/obs.mjs` | Shared connect helper. Reads port/password from OBS's own websocket config (SSOT) and waits until OBS is actually ready (error-207 poll). |
+| `scripts/set-display.mjs` | Point the Screen capture at the built-in display (default) or `--external`. |
+| `scripts/snapshot.mjs` | Save a PNG of a scene's program output. **Broken on OBS 32.1.x** — GetSourceScreenshot returns transparent frames; verify via a short recording instead. |
+| `scripts/lib/obs.mjs` | Shared connect helper. Reads port/password from OBS's own websocket config (SSOT) and waits until OBS is actually ready (error-207 poll). Also `displayUUIDs()` via CoreGraphics, since OBS 32.1.x hangs on display enumeration. |
 
 ## Scenes
 

@@ -12,7 +12,7 @@
  * Idempotent: refuses to touch an existing "Control Room" collection
  * unless --force is passed (--force wipes and rebuilds its scenes).
  */
-import { connect } from './lib/obs.mjs';
+import { connect, displayUUIDs } from './lib/obs.mjs';
 
 const COLLECTION = 'Control Room';
 const FORCE = process.argv.includes('--force');
@@ -51,13 +51,18 @@ try {
 
   // ---- Inputs (each created once, then shared across scenes — SSOT) ----
 
+  // screen_capture ships with an empty display_uuid (renders nothing), so the
+  // target display must be set explicitly. Sourced from CoreGraphics — asking
+  // OBS to enumerate displays hangs on 32.1.x.
+  const displays = displayUUIDs();
+  const display = displays.find((d) => d.builtin) ?? displays[0];
   await obs.call('CreateInput', {
     sceneName: 'Screen',
     inputName: 'Display',
-    inputKind: 'screen_capture', // macOS ScreenCaptureKit; defaults to the main display
-    inputSettings: {},
+    inputKind: 'screen_capture',
+    inputSettings: { display_uuid: display.uuid },
   });
-  await logChoices('Display', ['display_uuid', 'display'], 'displays');
+  console.log(`Display: ${display.builtin ? 'built-in' : 'external'} (${display.uuid})`);
 
   await obs.call('CreateInput', {
     sceneName: 'Cam',
@@ -158,21 +163,6 @@ async function pickFirstDevice(inputName, propertyName, preferRe) {
     return enabled.find((i) => preferRe.test(i.itemName)) ?? enabled[0] ?? null;
   } catch {
     return null;
-  }
-}
-
-async function logChoices(inputName, propertyNames, label) {
-  for (const propertyName of propertyNames) {
-    try {
-      const { propertyItems } = await obs.call('GetInputPropertiesListPropertyItems', {
-        inputName,
-        propertyName,
-      });
-      console.log(`Available ${label}: ${propertyItems.map((i) => i.itemName).join(', ')}`);
-      return;
-    } catch {
-      /* property name differs across OBS versions; try the next */
-    }
   }
 }
 

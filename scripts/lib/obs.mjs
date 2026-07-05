@@ -31,6 +31,19 @@ export function launchOBS(args = []) {
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /**
+ * Active displays from CoreGraphics: [{id, uuid, builtin}].
+ * obs-websocket's own display enumeration for screen_capture hangs on
+ * OBS 32.1.x, so displays are sourced from the OS instead.
+ */
+export function displayUUIDs() {
+  const out = execSync(
+    `python3 "${new URL('./display-uuids.py', import.meta.url).pathname}"`,
+    { encoding: 'utf8' }
+  );
+  return JSON.parse(out);
+}
+
+/**
  * Connect to OBS, optionally launching it first and waiting for the
  * websocket server to come up.
  */
