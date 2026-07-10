@@ -14683,8 +14683,11 @@ let Status = (() => {
             void this.render();
         }
         async onKeyDown(ev) {
-            if (obs.connected)
-                return; // display-only while OBS is up
+            // Press always means "get me OBS": launch it when dead, focus it when up.
+            if (obs.connected) {
+                execFile("/usr/bin/open", ["-a", "OBS"]);
+                return;
+            }
             await ev.action.setImage(face({ tag: "OBS", label: "STARTING", sub: "…", color: COLORS.ready }));
             try {
                 await obs.ensureOBS();

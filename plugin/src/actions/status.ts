@@ -1,4 +1,5 @@
 import { action, KeyDownEvent, SingletonAction, WillAppearEvent } from "@elgato/streamdeck";
+import { execFile } from "node:child_process";
 import { obs } from "../obs-connection";
 import { COLORS, face, fmtDuration } from "../key-face";
 
@@ -27,7 +28,11 @@ export class Status extends SingletonAction {
 	}
 
 	override async onKeyDown(ev: KeyDownEvent): Promise<void> {
-		if (obs.connected) return; // display-only while OBS is up
+		// Press always means "get me OBS": launch it when dead, focus it when up.
+		if (obs.connected) {
+			execFile("/usr/bin/open", ["-a", "OBS"]);
+			return;
+		}
 		await ev.action.setImage(face({ tag: "OBS", label: "STARTING", sub: "…", color: COLORS.ready }));
 		try {
 			await obs.ensureOBS();
