@@ -70,7 +70,8 @@ try {
     inputKind: 'av_capture_input_v2',
     inputSettings: {},
   });
-  const cam = await pickFirstDevice('Camera', 'device', /facetime/i);
+  // Prefer Continuity Camera (not Desk View); fall back to the built-in webcam.
+  const cam = await pickFirstDevice('Camera', 'device', /^iphone camera$/i);
   if (cam) {
     await obs.call('SetInputSettings', {
       inputName: 'Camera',
