@@ -17,7 +17,10 @@ import { connect, displayUUIDs } from './lib/obs.mjs';
 const COLLECTION = 'Control Room';
 const FORCE = process.argv.includes('--force');
 
-const SCENES = ['Starting Soon', 'Screen', 'Cam', 'Screen + Cam', 'Ending'];
+const SCENES = ['Starting Soon', 'Screen', 'Cam', 'Screen + Cam', 'Ending', 'Cam Cutout', 'Lava Lounge'];
+
+// bongpot.com's lava lamp, looped as a virtual backdrop in "Lava Lounge"
+const LAMP_VIDEO = '/Users/SSDrive/projects/bongpot/public/lamp-bg.mp4';
 
 const obs = await connect({ launch: true });
 
@@ -115,6 +118,33 @@ try {
     },
   });
   console.log(`Camera bubble: ${bw}x${bh} bottom-right`);
+
+  // ---- Lava Lounge: bongpot lamp loop + background-removed camera ----
+  // The cutout needs its OWN camera input: background_removal outputs black
+  // with empty settings, and applied to a scene it renders a black silhouette.
+  await obs.call('CreateInput', {
+    sceneName: 'Cam Cutout',
+    inputName: 'Camera FX',
+    inputKind: 'av_capture_input_v2',
+    inputSettings: cam ? { device: cam.itemValue, use_preset: true } : {},
+  });
+  const { defaultFilterSettings } = await obs.call('GetSourceFilterDefaultSettings', {
+    filterKind: 'background_removal',
+  });
+  await obs.call('CreateSourceFilter', {
+    sourceName: 'Camera FX',
+    filterName: 'Background Removal',
+    filterKind: 'background_removal',
+    filterSettings: { ...defaultFilterSettings, threshold: 0.4 },
+  });
+  await obs.call('CreateInput', {
+    sceneName: 'Lava Lounge',
+    inputName: 'Lava Lamp',
+    inputKind: 'ffmpeg_source',
+    inputSettings: { local_file: LAMP_VIDEO, looping: true, hw_decode: true },
+  });
+  await obs.call('CreateSceneItem', { sceneName: 'Lava Lounge', sourceName: 'Cam Cutout' });
+  await obs.call('CreateSceneItem', { sceneName: 'Lava Lounge', sourceName: 'Mic' });
 
   // ---- Holding scenes: background + centered text ----
 
