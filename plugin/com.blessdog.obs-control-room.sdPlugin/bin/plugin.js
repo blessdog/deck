@@ -14291,6 +14291,186 @@ let ScreenPicker = (() => {
     return _classThis;
 })();
 
+/**
+ * One key per Control Room scene, zero config: press = cut to that scene
+ * (cold-starting OBS first if needed). The key for the scene that's on air
+ * lights up red with a dot.
+ */
+class SceneKey extends SingletonAction {
+    current = "";
+    constructor() {
+        super();
+        obs.on("connected", () => void this.refresh());
+        obs.on("disconnected", () => {
+            this.current = "";
+            void this.render();
+        });
+        obs.on("CurrentProgramSceneChanged", ({ sceneName }) => {
+            this.current = sceneName;
+            void this.render();
+        });
+    }
+    onWillAppear(_ev) {
+        void this.refresh();
+    }
+    async onKeyDown(ev) {
+        try {
+            if (!obs.connected) {
+                await ev.action.setImage(face({ tag: "SCENE", label: "STARTING", sub: "…", color: COLORS.ready }));
+                await obs.ensureOBS();
+            }
+            await obs.call("SetCurrentProgramScene", { sceneName: this.scene });
+        }
+        catch {
+            await ev.action.showAlert();
+            void this.render();
+        }
+    }
+    async refresh() {
+        if (obs.connected) {
+            try {
+                this.current = (await obs.call("GetCurrentProgramScene")).currentProgramSceneName;
+            }
+            catch {
+                /* keep last known */
+            }
+        }
+        void this.render();
+    }
+    render() {
+        const active = obs.connected && this.current === this.scene;
+        const uri = face({
+            tag: "SCENE",
+            label: this.label,
+            sub: active ? "on air" : undefined,
+            color: !obs.connected ? COLORS.offline : active ? COLORS.live : COLORS.ready,
+            dot: active,
+        });
+        for (const a of this.actions)
+            void a.setImage(uri);
+    }
+}
+let SceneStartingSoon = (() => {
+    let _classDecorators = [action({ UUID: "com.blessdog.obs-control-room.scene-starting-soon" })];
+    let _classDescriptor;
+    let _classExtraInitializers = [];
+    let _classThis;
+    let _classSuper = SceneKey;
+    (class extends _classSuper {
+        static { _classThis = this; }
+        static {
+            const _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create(_classSuper[Symbol.metadata] ?? null) : void 0;
+            __esDecorate(null, _classDescriptor = { value: _classThis }, _classDecorators, { kind: "class", name: _classThis.name, metadata: _metadata }, null, _classExtraInitializers);
+            _classThis = _classDescriptor.value;
+            if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
+            __runInitializers(_classThis, _classExtraInitializers);
+        }
+        scene = SCENES.startingSoon;
+        label = "STARTING";
+    });
+    return _classThis;
+})();
+let SceneScreen = (() => {
+    let _classDecorators = [action({ UUID: "com.blessdog.obs-control-room.scene-screen" })];
+    let _classDescriptor;
+    let _classExtraInitializers = [];
+    let _classThis;
+    let _classSuper = SceneKey;
+    (class extends _classSuper {
+        static { _classThis = this; }
+        static {
+            const _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create(_classSuper[Symbol.metadata] ?? null) : void 0;
+            __esDecorate(null, _classDescriptor = { value: _classThis }, _classDecorators, { kind: "class", name: _classThis.name, metadata: _metadata }, null, _classExtraInitializers);
+            _classThis = _classDescriptor.value;
+            if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
+            __runInitializers(_classThis, _classExtraInitializers);
+        }
+        scene = SCENES.screen;
+        label = "SCREEN";
+    });
+    return _classThis;
+})();
+let SceneCam = (() => {
+    let _classDecorators = [action({ UUID: "com.blessdog.obs-control-room.scene-cam" })];
+    let _classDescriptor;
+    let _classExtraInitializers = [];
+    let _classThis;
+    let _classSuper = SceneKey;
+    (class extends _classSuper {
+        static { _classThis = this; }
+        static {
+            const _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create(_classSuper[Symbol.metadata] ?? null) : void 0;
+            __esDecorate(null, _classDescriptor = { value: _classThis }, _classDecorators, { kind: "class", name: _classThis.name, metadata: _metadata }, null, _classExtraInitializers);
+            _classThis = _classDescriptor.value;
+            if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
+            __runInitializers(_classThis, _classExtraInitializers);
+        }
+        scene = SCENES.cam;
+        label = "CAM";
+    });
+    return _classThis;
+})();
+let SceneScreenCam = (() => {
+    let _classDecorators = [action({ UUID: "com.blessdog.obs-control-room.scene-screen-cam" })];
+    let _classDescriptor;
+    let _classExtraInitializers = [];
+    let _classThis;
+    let _classSuper = SceneKey;
+    (class extends _classSuper {
+        static { _classThis = this; }
+        static {
+            const _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create(_classSuper[Symbol.metadata] ?? null) : void 0;
+            __esDecorate(null, _classDescriptor = { value: _classThis }, _classDecorators, { kind: "class", name: _classThis.name, metadata: _metadata }, null, _classExtraInitializers);
+            _classThis = _classDescriptor.value;
+            if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
+            __runInitializers(_classThis, _classExtraInitializers);
+        }
+        scene = SCENES.screenCam;
+        label = "SCRN+CAM";
+    });
+    return _classThis;
+})();
+let SceneLavaLounge = (() => {
+    let _classDecorators = [action({ UUID: "com.blessdog.obs-control-room.scene-lava-lounge" })];
+    let _classDescriptor;
+    let _classExtraInitializers = [];
+    let _classThis;
+    let _classSuper = SceneKey;
+    (class extends _classSuper {
+        static { _classThis = this; }
+        static {
+            const _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create(_classSuper[Symbol.metadata] ?? null) : void 0;
+            __esDecorate(null, _classDescriptor = { value: _classThis }, _classDecorators, { kind: "class", name: _classThis.name, metadata: _metadata }, null, _classExtraInitializers);
+            _classThis = _classDescriptor.value;
+            if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
+            __runInitializers(_classThis, _classExtraInitializers);
+        }
+        scene = "Lava Lounge";
+        label = "LAVA+ME";
+    });
+    return _classThis;
+})();
+let SceneEnding = (() => {
+    let _classDecorators = [action({ UUID: "com.blessdog.obs-control-room.scene-ending" })];
+    let _classDescriptor;
+    let _classExtraInitializers = [];
+    let _classThis;
+    let _classSuper = SceneKey;
+    (class extends _classSuper {
+        static { _classThis = this; }
+        static {
+            const _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create(_classSuper[Symbol.metadata] ?? null) : void 0;
+            __esDecorate(null, _classDescriptor = { value: _classThis }, _classDecorators, { kind: "class", name: _classThis.name, metadata: _metadata }, null, _classExtraInitializers);
+            _classThis = _classDescriptor.value;
+            if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
+            __runInitializers(_classThis, _classExtraInitializers);
+        }
+        scene = SCENES.ending;
+        label = "ENDING";
+    });
+    return _classThis;
+})();
+
 const COUNTDOWN_S = 10;
 const LONG_PRESS_MS = 1_500;
 const ENDING_HOLD_MS = 3_000;
@@ -14549,8 +14729,8 @@ let Status = (() => {
                         dot: true,
                     };
                 }
-                const { currentProgramSceneName } = await obs.call("GetCurrentProgramScene");
-                return { tag: "OBS", label: "READY", sub: currentProgramSceneName, color: COLORS.ready };
+                // scene name lives on the highlighted scene key, not here
+                return { tag: "OBS", label: "READY", color: COLORS.ready };
             }
             catch {
                 return { tag: "OBS", label: "OFFLINE", sub: "press to launch", color: COLORS.offline };
@@ -14564,6 +14744,12 @@ streamDeck.actions.registerAction(new Status());
 streamDeck.actions.registerAction(new ScreenPicker());
 streamDeck.actions.registerAction(new MeetingMode());
 streamDeck.actions.registerAction(new ShowFlow());
+streamDeck.actions.registerAction(new SceneStartingSoon());
+streamDeck.actions.registerAction(new SceneScreen());
+streamDeck.actions.registerAction(new SceneCam());
+streamDeck.actions.registerAction(new SceneScreenCam());
+streamDeck.actions.registerAction(new SceneLavaLounge());
+streamDeck.actions.registerAction(new SceneEnding());
 // Websocket connections die over sleep; retry immediately on wake.
 streamDeck.system.onSystemDidWakeUp(() => obs.poke());
 obs.start();

@@ -73,8 +73,8 @@ export class Status extends SingletonAction {
 					dot: true,
 				};
 			}
-			const { currentProgramSceneName } = await obs.call("GetCurrentProgramScene");
-			return { tag: "OBS", label: "READY", sub: currentProgramSceneName, color: COLORS.ready };
+			// scene name lives on the highlighted scene key, not here
+			return { tag: "OBS", label: "READY", color: COLORS.ready };
 		} catch {
 			return { tag: "OBS", label: "OFFLINE", sub: "press to launch", color: COLORS.offline };
 		}

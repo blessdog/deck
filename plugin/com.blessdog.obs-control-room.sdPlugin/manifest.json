@@ -29,7 +29,9 @@
 			"UUID": "com.blessdog.obs-control-room.show-flow",
 			"Icon": "imgs/actions/show-flow/icon",
 			"Tooltip": "One press runs the show open: cold-start OBS, Starting Soon, countdown, go live. Hold 1.5s while live to end the show.",
-			"Controllers": ["Keypad"],
+			"Controllers": [
+				"Keypad"
+			],
 			"States": [
 				{
 					"Image": "imgs/actions/show-flow/key",
@@ -42,7 +44,9 @@
 			"UUID": "com.blessdog.obs-control-room.screen-picker",
 			"Icon": "imgs/actions/screen-picker/icon",
 			"Tooltip": "Toggle which display the Screen scenes capture: built-in or external.",
-			"Controllers": ["Keypad"],
+			"Controllers": [
+				"Keypad"
+			],
 			"States": [
 				{
 					"Image": "imgs/actions/screen-picker/key",
@@ -55,7 +59,9 @@
 			"UUID": "com.blessdog.obs-control-room.status",
 			"Icon": "imgs/actions/status/icon",
 			"Tooltip": "OBS health at a glance: OFFLINE / READY / REC / LIVE with elapsed time and dropped frames. Press while offline to cold-start OBS.",
-			"Controllers": ["Keypad"],
+			"Controllers": [
+				"Keypad"
+			],
 			"States": [
 				{
 					"Image": "imgs/actions/status/key",
@@ -68,10 +74,102 @@
 			"UUID": "com.blessdog.obs-control-room.meeting-mode",
 			"Icon": "imgs/actions/meeting-mode/icon",
 			"Tooltip": "Prep a meeting share: Screen + Cam scene with the OBS Virtual Camera on. Press again to turn it off.",
-			"Controllers": ["Keypad"],
+			"Controllers": [
+				"Keypad"
+			],
 			"States": [
 				{
 					"Image": "imgs/actions/meeting-mode/key",
+					"ShowTitle": false
+				}
+			]
+		},
+		{
+			"Name": "Scene: Starting Soon",
+			"UUID": "com.blessdog.obs-control-room.scene-starting-soon",
+			"Icon": "imgs/actions/scene/icon",
+			"Tooltip": "Cut to the Starting Soon lava-lamp holding scene. The on-air scene's key lights up.",
+			"Controllers": [
+				"Keypad"
+			],
+			"States": [
+				{
+					"Image": "imgs/actions/scene/key",
+					"ShowTitle": false
+				}
+			]
+		},
+		{
+			"Name": "Scene: Screen",
+			"UUID": "com.blessdog.obs-control-room.scene-screen",
+			"Icon": "imgs/actions/scene/icon",
+			"Tooltip": "Cut to the full screen-share scene. The on-air scene's key lights up.",
+			"Controllers": [
+				"Keypad"
+			],
+			"States": [
+				{
+					"Image": "imgs/actions/scene/key",
+					"ShowTitle": false
+				}
+			]
+		},
+		{
+			"Name": "Scene: Cam",
+			"UUID": "com.blessdog.obs-control-room.scene-cam",
+			"Icon": "imgs/actions/scene/icon",
+			"Tooltip": "Cut to the full camera scene. The on-air scene's key lights up.",
+			"Controllers": [
+				"Keypad"
+			],
+			"States": [
+				{
+					"Image": "imgs/actions/scene/key",
+					"ShowTitle": false
+				}
+			]
+		},
+		{
+			"Name": "Scene: Screen + Cam",
+			"UUID": "com.blessdog.obs-control-room.scene-screen-cam",
+			"Icon": "imgs/actions/scene/icon",
+			"Tooltip": "Cut to screen share with camera bubble. The on-air scene's key lights up.",
+			"Controllers": [
+				"Keypad"
+			],
+			"States": [
+				{
+					"Image": "imgs/actions/scene/key",
+					"ShowTitle": false
+				}
+			]
+		},
+		{
+			"Name": "Scene: Lava Lounge",
+			"UUID": "com.blessdog.obs-control-room.scene-lava-lounge",
+			"Icon": "imgs/actions/scene/icon",
+			"Tooltip": "Cut to the lava lamp with your background-removed camera. The on-air scene's key lights up.",
+			"Controllers": [
+				"Keypad"
+			],
+			"States": [
+				{
+					"Image": "imgs/actions/scene/key",
+					"ShowTitle": false
+				}
+			]
+		},
+		{
+			"Name": "Scene: Ending",
+			"UUID": "com.blessdog.obs-control-room.scene-ending",
+			"Icon": "imgs/actions/scene/icon",
+			"Tooltip": "Cut to the Ending scene. The on-air scene's key lights up.",
+			"Controllers": [
+				"Keypad"
+			],
+			"States": [
+				{
+					"Image": "imgs/actions/scene/key",
 					"ShowTitle": false
 				}
 			]

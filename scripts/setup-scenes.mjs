@@ -151,6 +151,19 @@ try {
   await makeHoldingScene('Starting Soon', 'Starting Soon…', 0xff2e1a1a, W, H);
   await makeHoldingScene('Ending', 'Thanks for watching', 0xff3e2116, W, H);
 
+  // Starting Soon uses the lava lamp as its backdrop instead of the flat color.
+  const ssItems = await obs.call('GetSceneItemList', { sceneName: 'Starting Soon' });
+  for (const s of ssItems.sceneItems) {
+    if (s.sourceName === 'Starting Soon BG') {
+      await obs.call('RemoveSceneItem', { sceneName: 'Starting Soon', sceneItemId: s.sceneItemId });
+    }
+  }
+  const { sceneItemId: lampItem } = await obs.call('CreateSceneItem', {
+    sceneName: 'Starting Soon',
+    sourceName: 'Lava Lamp',
+  });
+  await obs.call('SetSceneItemIndex', { sceneName: 'Starting Soon', sceneItemId: lampItem, sceneItemIndex: 0 });
+
   // Drop the auto-created default scene, land on Starting Soon.
   const { scenes } = await obs.call('GetSceneList');
   for (const s of scenes) {
