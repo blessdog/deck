@@ -14,6 +14,9 @@ in the Stream Deck app under category **"OBS Control Room"**:
 | **Screen Picker** | Toggles the shared Display capture between built-in and external. Key shows which is live. |
 | **Status** | OFFLINE / READY / ⏺ REC / 🔴 LIVE with elapsed time + dropped-frame %. Press while offline = cold start. |
 | **Meeting Mode** | *Screen + Cam* + OBS Virtual Camera on/off — then pick "OBS Virtual Camera" in Zoom/Meet. |
+| **Record** | Toggle the OBS recording (cold-starts OBS if dead). Amber ⏺ + elapsed while rolling. Corpus doctrine: recordings pile up in `~/Movies`; processing is a separate, later act. |
+| **Mark** | While recording: drops an OBS **chapter marker** into the file itself, named with the record timecode. No daemon, no DB — ffprobe reads chapters back at ingest (verified: media-studio `scripts/verify_record_chapters.py`; OBS auto-adds a `Start` chapter at 0, ingest skips it). Dim + alert when not recording. |
+| **Scene keys** | One key per scene (all seven, incl. **Cam Cutout**), zero config; the on-air key lights up. |
 
 Build: `cd plugin && PATH="/opt/homebrew/opt/node@24/bin:$PATH" npm run build`,
 then `npx streamdeck restart com.blessdog.obs-control-room` (or `npm run watch`).
@@ -38,12 +41,42 @@ the app never creates `~/Library/Application Support/com.elgato.StreamDeck/NodeJ
 
 ## Scenes
 
-`Starting Soon` · `Screen` · `Cam` · `Screen + Cam` (camera bubble bottom-right) · `Ending`
+`Starting Soon` · `Screen` · `Cam` · `Cam Cutout` · `Lava Lounge` · `Screen + Cam` (camera bubble bottom-right) · `Ending`
 
 One shared `Display` / `Camera` / `Mic` input reused across scenes — edit a device
 once, every scene follows.
 
-## Stream Deck layout (MK.2, top two rows)
+## State — 2026-07-21 (deck framework locked in)
+
+This project is now THE Stream Deck surface, full stop (Ryan's reel-in: the
+deck does one thing well — OBS; Resolve profiles and daemon-verb keys are
+dropped; the pipeline side lives in `~/projects/media-studio`, see its
+STATUS.md). Landed this session: **Record**, **Mark** (chapter markers),
+**Scene: Cam Cutout**, a **glyph layer** in `key-face.ts` (`GLYPHS`:
+house/record/stop/mark/play — icon-first faces per Ryan's grammar: the
+picture says what the key does, text only for state detail), and the
+end-show bug fix (StopStream on an already-dead stream threw). Built,
+loaded, OBS-connected clean; **finger-verification on the physical deck
+still pending**.
+
+**Next (fresh session, in order):**
+1. **HOME nav shell** — deck as launcher: a HOME profile with app tiles
+   (OBS now; Ableton/soundboard later); a house-glyph key on the SAME
+   corner of every profile (proposed bottom-right) via the built-in
+   *Switch Profile* action. Profiles are created in the Stream Deck app
+   GUI with Ryan (his hands/eyes); `GLYPHS.house` is the art source.
+2. **Icon-first art pass** over all faces + Marketplace-grade action
+   icons (Elgato Key Creator / authored SVG; emoji-render acceptable v1).
+3. **Retire the Companion "MEDIA STUDIO" page** once Ryan's fingers
+   confirm the plugin keys cover it (Companion config-by-sqlite doctrine:
+   media-studio `docs/DECK.md`).
+4. Corpus auto-index of `~/Movies` — lands in media-studio's daemon, not
+   here.
+
+## Stream Deck layout (MK.2, top two rows) — HISTORIC
+
+*(First-generation layout from before the custom plugin; superseded by
+the actions above + the HOME shell plan. Kept for reference.)*
 
 | 🚀 Cold Start | 🚦 Starting Soon | 🖥 Screen | 🎥 Cam | 🖥🎥 Screen+Cam |
 |---|---|---|---|---|
