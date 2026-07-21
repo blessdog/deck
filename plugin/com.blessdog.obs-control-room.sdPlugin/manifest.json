@@ -250,6 +250,21 @@
 			]
 		},
 		{
+			"Name": "Camera Picker",
+			"UUID": "com.blessdog.obs-control-room.camera-picker",
+			"Icon": "imgs/actions/camera-picker/icon",
+			"Tooltip": "Cycle the shared Camera source between physical cameras (iPhone Continuity ↔ built-in). Face shows which one is live.",
+			"Controllers": [
+				"Keypad"
+			],
+			"States": [
+				{
+					"Image": "imgs/actions/camera-picker/key",
+					"ShowTitle": false
+				}
+			]
+		},
+		{
 			"Name": "Stream",
 			"UUID": "com.blessdog.obs-control-room.stream",
 			"Icon": "imgs/actions/stream/icon",

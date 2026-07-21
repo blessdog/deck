@@ -14152,6 +14152,110 @@ function fmtDuration(ms) {
     return h > 0 ? `${h}:${mm}:${ss}` : `${m}:${ss}`;
 }
 
+const INPUT$1 = "Camera";
+// Never offer OBS's own virtual camera (feedback loop) or the Desk View
+// top-down camera; an empty id is the "no device" placeholder row.
+const usable = (name, id) => id !== "" && name !== "OBS Virtual Camera" && !/desk view/i.test(name);
+const shortName = (name) => /facetime/i.test(name) ? "BUILT-IN" : /iphone/i.test(name) ? "iPHONE" : name.toUpperCase();
+/**
+ * Cycle which physical camera the shared "Camera" source captures
+ * (iPhone Continuity <-> built-in FaceTime HD <-> whatever else is
+ * plugged in). Born from the day Continuity Camera froze a session:
+ * a moody camera should cost one key press, not a debugging detour.
+ * Reads truth from OBS, never assumes; face shows the live pick.
+ */
+let CameraPicker = (() => {
+    let _classDecorators = [action({ UUID: "com.blessdog.obs-control-room.camera-picker" })];
+    let _classDescriptor;
+    let _classExtraInitializers = [];
+    let _classThis;
+    let _classSuper = SingletonAction;
+    (class extends _classSuper {
+        static { _classThis = this; }
+        static {
+            const _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create(_classSuper[Symbol.metadata] ?? null) : void 0;
+            __esDecorate(null, _classDescriptor = { value: _classThis }, _classDecorators, { kind: "class", name: _classThis.name, metadata: _metadata }, null, _classExtraInitializers);
+            _classThis = _classDescriptor.value;
+            if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
+            __runInitializers(_classThis, _classExtraInitializers);
+        }
+        log = streamDeck.logger.createScope("camera-picker");
+        constructor() {
+            super();
+            obs.on("connected", () => void this.render());
+            obs.on("disconnected", () => void this.render());
+            obs.on("InputSettingsChanged", ({ inputName }) => {
+                if (inputName === INPUT$1)
+                    void this.render();
+            });
+        }
+        onWillAppear(_ev) {
+            void this.render();
+        }
+        async onKeyDown(ev) {
+            try {
+                if (!obs.connected) {
+                    await ev.action.setImage(face({ tag: "CAMERA", label: "STARTING", sub: "…", color: COLORS.ready }));
+                    await obs.ensureOBS();
+                }
+                const cams = await this.cameras();
+                if (cams.length === 0)
+                    throw new Error("no usable cameras");
+                const { inputSettings } = await obs.call("GetInputSettings", { inputName: INPUT$1 });
+                const i = cams.findIndex((c) => c.id === inputSettings.device);
+                const next = cams[(i + 1) % cams.length];
+                await obs.call("SetInputSettings", {
+                    inputName: INPUT$1,
+                    inputSettings: { device: next.id, device_name: next.name },
+                });
+                await ev.action.showOk();
+            }
+            catch (err) {
+                this.log.error(`switch failed: ${err}`);
+                await ev.action.showAlert();
+            }
+            void this.render();
+        }
+        async cameras() {
+            const { propertyItems } = await obs.call("GetInputPropertiesListPropertyItems", {
+                inputName: INPUT$1,
+                propertyName: "device",
+            });
+            return propertyItems
+                .map((p) => ({ name: String(p.itemName), id: String(p.itemValue) }))
+                .filter((c) => usable(c.name, c.id));
+        }
+        async render() {
+            const uri = face(await this.currentFace());
+            for (const a of this.actions)
+                void a.setImage(uri);
+        }
+        async currentFace() {
+            if (!obs.connected) {
+                return { tag: "CAMERA", label: "CAMERA", sub: "OBS offline", color: COLORS.offline };
+            }
+            try {
+                const cams = await this.cameras();
+                const { inputSettings } = await obs.call("GetInputSettings", { inputName: INPUT$1 });
+                const current = cams.find((c) => c.id === inputSettings.device);
+                if (!current) {
+                    return { tag: "CAMERA", label: "CAM GONE", sub: "press to fix", color: COLORS.rec };
+                }
+                return {
+                    tag: "CAMERA",
+                    label: shortName(current.name),
+                    sub: "press to switch",
+                    color: /facetime/i.test(current.name) ? COLORS.ready : COLORS.meeting,
+                };
+            }
+            catch {
+                return { tag: "CAMERA", label: "CAMERA", sub: "?", color: COLORS.offline };
+            }
+        }
+    });
+    return _classThis;
+})();
+
 /**
  * Flag this moment: while recording, press drops an OBS chapter marker
  * into the file itself (named with the recording timecode). No daemon, no
@@ -15287,6 +15391,7 @@ streamDeck.actions.registerAction(new Mark());
 streamDeck.actions.registerAction(new MuteMic());
 streamDeck.actions.registerAction(new Stream());
 streamDeck.actions.registerAction(new ScreenPicker());
+streamDeck.actions.registerAction(new CameraPicker());
 streamDeck.actions.registerAction(new MeetingMode());
 streamDeck.actions.registerAction(new ShowFlow());
 streamDeck.actions.registerAction(new SceneStartingSoon());
