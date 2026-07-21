@@ -38,6 +38,7 @@ export type ObsEvents = {
 	VirtualcamStateChanged: [{ outputActive: boolean; outputState: string }];
 	CurrentProgramSceneChanged: [{ sceneName: string }];
 	InputSettingsChanged: [{ inputName: string; inputSettings: Record<string, unknown> }];
+	InputMuteStateChanged: [{ inputName: string; inputMuted: boolean }];
 };
 
 const FORWARDED = [
@@ -46,6 +47,7 @@ const FORWARDED = [
 	"VirtualcamStateChanged",
 	"CurrentProgramSceneChanged",
 	"InputSettingsChanged",
+	"InputMuteStateChanged",
 ] as const;
 
 const RETRY_MS = 3_000;

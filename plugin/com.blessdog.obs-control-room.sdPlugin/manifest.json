@@ -218,6 +218,51 @@
 					"ShowTitle": false
 				}
 			]
+		},
+		{
+			"Name": "Pause Record",
+			"UUID": "com.blessdog.obs-control-room.pause-record",
+			"Icon": "imgs/actions/pause-record/icon",
+			"Tooltip": "Pause/resume the rolling recording — OBS keeps writing the same file on resume. Dim when nothing is recording.",
+			"Controllers": [
+				"Keypad"
+			],
+			"States": [
+				{
+					"Image": "imgs/actions/pause-record/key",
+					"ShowTitle": false
+				}
+			]
+		},
+		{
+			"Name": "Mute Mic",
+			"UUID": "com.blessdog.obs-control-room.mute-mic",
+			"Icon": "imgs/actions/mute-mic/icon",
+			"Tooltip": "Toggle the shared Mic input. The face follows OBS's own mute state — red slashed mic means muted.",
+			"Controllers": [
+				"Keypad"
+			],
+			"States": [
+				{
+					"Image": "imgs/actions/mute-mic/key",
+					"ShowTitle": false
+				}
+			]
+		},
+		{
+			"Name": "Stream",
+			"UUID": "com.blessdog.obs-control-room.stream",
+			"Icon": "imgs/actions/stream/icon",
+			"Tooltip": "Plain stream toggle — go live without Show Flow's countdown. Cold-starts OBS if it's dead; press while live stops the stream.",
+			"Controllers": [
+				"Keypad"
+			],
+			"States": [
+				{
+					"Image": "imgs/actions/stream/key",
+					"ShowTitle": false
+				}
+			]
 		}
 	]
 }

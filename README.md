@@ -15,6 +15,9 @@ in the Stream Deck app under category **"OBS Control Room"**:
 | **Status** | OFFLINE / READY / ⏺ REC / 🔴 LIVE with elapsed time + dropped-frame %. Press while offline = cold start. |
 | **Meeting Mode** | *Screen + Cam* + OBS Virtual Camera on/off — then pick "OBS Virtual Camera" in Zoom/Meet. |
 | **Record** | Toggle the OBS recording (cold-starts OBS if dead). Amber ⏺ + elapsed while rolling. Corpus doctrine: recordings pile up in `~/Movies`; processing is a separate, later act. |
+| **Pause Record** | Pause/resume the rolling recording — OBS keeps writing the SAME file on resume. Face shows the NEXT action (pause bars ↔ play). Dim + alert when nothing records. |
+| **Mute Mic** | Toggle the shared `Mic` input. Face follows OBS's own mute event (never lies): white open mic = hot, red slashed mic = muted. |
+| **Stream** | Plain go-live/stop toggle, no Show Flow ceremony. Cold-starts OBS if dead; red LIVE + elapsed while streaming. |
 | **Mark** | While recording: drops an OBS **chapter marker** into the file itself, named with the record timecode. No daemon, no DB — ffprobe reads chapters back at ingest (verified: media-studio `scripts/verify_record_chapters.py`; OBS auto-adds a `Start` chapter at 0, ingest skips it). Dim + alert when not recording. |
 | **Scene keys** | One key per scene (all seven, incl. **Cam Cutout**), zero config; the on-air key lights up. |
 
@@ -58,6 +61,13 @@ picture says what the key does, text only for state detail), and the
 end-show bug fix (StopStream on an already-dead stream threw). Built,
 loaded, OBS-connected clean; **finger-verification on the physical deck
 still pending**.
+
+2026-07-21 later: **official-plugin parity keys** landed — **Mute Mic**,
+**Pause Record**, **Stream** toggle (the honest gap list vs Elgato's
+official OBS plugin, media-studio `docs/DECK-ECOSYSTEM.md`; the rest of
+that list is deliberately skipped as not-our-workflow). Live build/test
+session running: Ryan records himself building while cutaway scenes with
+generated backgrounds (Blender / bongpot) land behind the Cam Cutout.
 
 **Next (fresh session, in order):**
 1. **HOME nav shell** — deck as launcher: a HOME profile with app tiles

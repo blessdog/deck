@@ -2,8 +2,11 @@ import streamDeck from "@elgato/streamdeck";
 import { obs } from "./obs-connection";
 import { Mark } from "./actions/mark";
 import { MeetingMode } from "./actions/meeting-mode";
+import { MuteMic } from "./actions/mute-mic";
+import { PauseRecord } from "./actions/pause-record";
 import { Record } from "./actions/record";
 import { ScreenPicker } from "./actions/screen-picker";
+import { Stream } from "./actions/stream";
 import {
 	SceneCam,
 	SceneCamCutout,
@@ -18,7 +21,10 @@ import { Status } from "./actions/status";
 
 streamDeck.actions.registerAction(new Status());
 streamDeck.actions.registerAction(new Record());
+streamDeck.actions.registerAction(new PauseRecord());
 streamDeck.actions.registerAction(new Mark());
+streamDeck.actions.registerAction(new MuteMic());
+streamDeck.actions.registerAction(new Stream());
 streamDeck.actions.registerAction(new ScreenPicker());
 streamDeck.actions.registerAction(new MeetingMode());
 streamDeck.actions.registerAction(new ShowFlow());

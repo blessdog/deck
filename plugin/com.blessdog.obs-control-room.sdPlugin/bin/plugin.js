@@ -13901,6 +13901,7 @@ const FORWARDED = [
     "VirtualcamStateChanged",
     "CurrentProgramSceneChanged",
     "InputSettingsChanged",
+    "InputMuteStateChanged",
 ];
 const RETRY_MS = 3_000;
 const NOT_READY = 207; // obs-websocket: socket is up before OBS finishes init
@@ -14105,6 +14106,9 @@ const GLYPHS = {
     stop: "M46 40 h52 a8 8 0 0 1 8 8 v36 a8 8 0 0 1 -8 8 H46 a8 8 0 0 1 -8 -8 V48 a8 8 0 0 1 8 -8 Z",
     mark: "M50 26 h10 v86 h-10 Z M60 30 h44 l-12 18 12 18 H60 Z",
     play: "M54 38 L106 66 L54 94 Z",
+    pause: "M48 36 h16 v60 H48 Z M80 36 h16 v60 H80 Z",
+    mic: "M58 40 a14 14 0 0 1 28 0 v24 a14 14 0 0 1 -28 0 Z M46 64 A26 26 0 0 0 98 64 L92 64 A20 20 0 0 1 52 64 Z M68 90 h8 v14 h-8 Z M56 104 h32 v8 H56 Z",
+    micMuted: "M58 40 a14 14 0 0 1 28 0 v24 a14 14 0 0 1 -28 0 Z M46 64 A26 26 0 0 0 98 64 L92 64 A20 20 0 0 1 52 64 Z M68 90 h8 v14 h-8 Z M56 104 h32 v8 H56 Z M38 26 L116 100 L108 108 L30 34 Z",
 };
 const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 function face({ label = "", sub, tag, color, dot, glyph }) {
@@ -14312,6 +14316,184 @@ let MeetingMode = (() => {
     return _classThis;
 })();
 
+const MIC = "Mic"; // the one shared mic input across every Control Room scene
+/**
+ * Honest mic mute on one key: press toggles the shared Mic input; the face
+ * follows OBS's own mute event, so it can never lie. Red slashed mic =
+ * muted, white open mic = hot. With OBS down there is nothing to mute —
+ * dim + alert.
+ */
+let MuteMic = (() => {
+    let _classDecorators = [action({ UUID: "com.blessdog.obs-control-room.mute-mic" })];
+    let _classDescriptor;
+    let _classExtraInitializers = [];
+    let _classThis;
+    let _classSuper = SingletonAction;
+    (class extends _classSuper {
+        static { _classThis = this; }
+        static {
+            const _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create(_classSuper[Symbol.metadata] ?? null) : void 0;
+            __esDecorate(null, _classDescriptor = { value: _classThis }, _classDecorators, { kind: "class", name: _classThis.name, metadata: _metadata }, null, _classExtraInitializers);
+            _classThis = _classDescriptor.value;
+            if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
+            __runInitializers(_classThis, _classExtraInitializers);
+        }
+        muted = false;
+        constructor() {
+            super();
+            obs.on("connected", () => void this.refresh());
+            obs.on("disconnected", () => void this.render());
+            obs.on("InputMuteStateChanged", ({ inputName, inputMuted }) => {
+                if (inputName !== MIC)
+                    return;
+                this.muted = inputMuted;
+                void this.render();
+            });
+        }
+        onWillAppear(_ev) {
+            void this.refresh();
+        }
+        async onKeyDown(ev) {
+            if (!obs.connected) {
+                await ev.action.showAlert();
+                return;
+            }
+            try {
+                this.muted = (await obs.call("ToggleInputMute", { inputName: MIC })).inputMuted;
+                void this.render();
+            }
+            catch {
+                await ev.action.showAlert();
+            }
+        }
+        async refresh() {
+            if (obs.connected) {
+                try {
+                    this.muted = (await obs.call("GetInputMute", { inputName: MIC })).inputMuted;
+                }
+                catch {
+                    /* keep last known */
+                }
+            }
+            void this.render();
+        }
+        async render() {
+            const uri = face({
+                tag: "MIC",
+                glyph: this.muted ? GLYPHS.micMuted : GLYPHS.mic,
+                sub: !obs.connected ? "OBS off" : this.muted ? "muted" : "open",
+                color: !obs.connected ? COLORS.offline : this.muted ? COLORS.live : COLORS.ready,
+            });
+            for (const a of this.actions)
+                void a.setImage(uri);
+        }
+    });
+    return _classThis;
+})();
+
+/**
+ * Pause/resume the rolling recording — OBS holds its breath and keeps
+ * writing the SAME file on resume, so the corpus stays one recording. The
+ * face always shows the NEXT action: pause bars while rolling, a play
+ * triangle while paused. Meaningless when not recording: dim + alert,
+ * same grammar as Mark.
+ */
+let PauseRecord = (() => {
+    let _classDecorators = [action({ UUID: "com.blessdog.obs-control-room.pause-record" })];
+    let _classDescriptor;
+    let _classExtraInitializers = [];
+    let _classThis;
+    let _classSuper = SingletonAction;
+    (class extends _classSuper {
+        static { _classThis = this; }
+        static {
+            const _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create(_classSuper[Symbol.metadata] ?? null) : void 0;
+            __esDecorate(null, _classDescriptor = { value: _classThis }, _classDecorators, { kind: "class", name: _classThis.name, metadata: _metadata }, null, _classExtraInitializers);
+            _classThis = _classDescriptor.value;
+            if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
+            __runInitializers(_classThis, _classExtraInitializers);
+        }
+        recording = false;
+        paused = false;
+        timer;
+        constructor() {
+            super();
+            obs.on("connected", () => void this.refresh());
+            obs.on("disconnected", () => {
+                this.recording = false;
+                this.paused = false;
+                this.stopTimer();
+                void this.render();
+            });
+            // Fires on start/stop AND pause/resume; refresh reads the full truth.
+            obs.on("RecordStateChanged", () => void this.refresh());
+        }
+        onWillAppear(_ev) {
+            void this.refresh();
+        }
+        async onKeyDown(ev) {
+            if (!this.recording) {
+                await ev.action.showAlert(); // nothing rolling, nothing to pause
+                return;
+            }
+            try {
+                await obs.call("ToggleRecordPause");
+                await this.refresh();
+            }
+            catch {
+                await ev.action.showAlert();
+                void this.render();
+            }
+        }
+        async refresh() {
+            if (obs.connected) {
+                try {
+                    const s = await obs.call("GetRecordStatus");
+                    this.recording = s.outputActive;
+                    this.paused = s.outputPaused;
+                }
+                catch {
+                    /* keep last known */
+                }
+            }
+            if (this.recording && !this.paused)
+                this.startTimer();
+            else
+                this.stopTimer();
+            void this.render();
+        }
+        async render() {
+            let elapsed;
+            if (this.recording) {
+                try {
+                    elapsed = fmtDuration((await obs.call("GetRecordStatus")).outputDuration);
+                }
+                catch {
+                    /* face still shows state */
+                }
+            }
+            const uri = face({
+                tag: "PAUSE",
+                glyph: this.paused ? GLYPHS.play : GLYPHS.pause,
+                sub: !this.recording ? "needs recording" : this.paused ? `paused ${elapsed ?? ""}` : elapsed,
+                color: !this.recording ? COLORS.offline : COLORS.rec,
+            });
+            for (const a of this.actions)
+                void a.setImage(uri);
+        }
+        startTimer() {
+            this.timer ??= setInterval(() => void this.render(), 1_000);
+        }
+        stopTimer() {
+            if (this.timer) {
+                clearInterval(this.timer);
+                this.timer = undefined;
+            }
+        }
+    });
+    return _classThis;
+})();
+
 /**
  * Corpus recording on one key: press toggles the OBS recording
  * (cold-starting OBS first if it's dead). The face is honest — dim circle
@@ -14502,6 +14684,116 @@ let ScreenPicker = (() => {
             }
             catch {
                 return { tag: "SHARING", label: "SCREEN", sub: "?", color: COLORS.offline };
+            }
+        }
+    });
+    return _classThis;
+})();
+
+/**
+ * Plain stream toggle — go live NOW, no countdown ceremony (Show Flow owns
+ * the produced version). Press while OBS is dead cold-starts it first;
+ * press while live stops the stream. Text face on purpose: LIVE is the
+ * word that IS the picture.
+ */
+let Stream = (() => {
+    let _classDecorators = [action({ UUID: "com.blessdog.obs-control-room.stream" })];
+    let _classDescriptor;
+    let _classExtraInitializers = [];
+    let _classThis;
+    let _classSuper = SingletonAction;
+    (class extends _classSuper {
+        static { _classThis = this; }
+        static {
+            const _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create(_classSuper[Symbol.metadata] ?? null) : void 0;
+            __esDecorate(null, _classDescriptor = { value: _classThis }, _classDecorators, { kind: "class", name: _classThis.name, metadata: _metadata }, null, _classExtraInitializers);
+            _classThis = _classDescriptor.value;
+            if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
+            __runInitializers(_classThis, _classExtraInitializers);
+        }
+        streaming = false;
+        timer;
+        constructor() {
+            super();
+            obs.on("connected", () => void this.refresh());
+            obs.on("disconnected", () => {
+                this.streaming = false;
+                this.stopTimer();
+                void this.render();
+            });
+            obs.on("StreamStateChanged", ({ outputActive }) => {
+                this.streaming = outputActive;
+                if (outputActive)
+                    this.startTimer();
+                else
+                    this.stopTimer();
+                void this.render();
+            });
+        }
+        onWillAppear(_ev) {
+            void this.refresh();
+        }
+        async onKeyDown(ev) {
+            try {
+                if (!obs.connected) {
+                    await ev.action.setImage(face({ tag: "STREAM", label: "GO LIVE", sub: "starting OBS…", color: COLORS.ready }));
+                    await obs.ensureOBS();
+                }
+                if (this.streaming) {
+                    await obs.call("StopStream");
+                    await ev.action.showOk();
+                }
+                else {
+                    await obs.call("StartStream");
+                }
+            }
+            catch {
+                await ev.action.showAlert();
+                void this.render();
+            }
+        }
+        async refresh() {
+            if (obs.connected) {
+                try {
+                    this.streaming = (await obs.call("GetStreamStatus")).outputActive;
+                }
+                catch {
+                    /* keep last known */
+                }
+            }
+            if (this.streaming)
+                this.startTimer();
+            else
+                this.stopTimer();
+            void this.render();
+        }
+        async render() {
+            let elapsed;
+            if (this.streaming) {
+                try {
+                    elapsed = fmtDuration((await obs.call("GetStreamStatus")).outputDuration);
+                }
+                catch {
+                    /* face still shows live state */
+                }
+            }
+            const uri = face({
+                tag: "STREAM",
+                label: this.streaming ? "LIVE" : "GO LIVE",
+                dot: this.streaming,
+                sub: !obs.connected ? "OBS off · press" : this.streaming ? elapsed : "press to stream",
+                color: !obs.connected ? COLORS.offline : this.streaming ? COLORS.live : COLORS.ready,
+            });
+            for (const a of this.actions)
+                void a.setImage(uri);
+        }
+        startTimer() {
+            this.timer ??= setInterval(() => void this.render(), 1_000);
+        }
+        stopTimer() {
+            if (this.timer) {
+                clearInterval(this.timer);
+                this.timer = undefined;
             }
         }
     });
@@ -14990,7 +15282,10 @@ let Status = (() => {
 
 streamDeck.actions.registerAction(new Status());
 streamDeck.actions.registerAction(new Record());
+streamDeck.actions.registerAction(new PauseRecord());
 streamDeck.actions.registerAction(new Mark());
+streamDeck.actions.registerAction(new MuteMic());
+streamDeck.actions.registerAction(new Stream());
 streamDeck.actions.registerAction(new ScreenPicker());
 streamDeck.actions.registerAction(new MeetingMode());
 streamDeck.actions.registerAction(new ShowFlow());
