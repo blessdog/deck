@@ -77,9 +77,13 @@ generated backgrounds (Blender / bongpot) land behind the Cam Cutout.
    GUI with Ryan (his hands/eyes); `GLYPHS.house` is the art source.
 2. **Icon-first art pass** over all faces + Marketplace-grade action
    icons (Elgato Key Creator / authored SVG; emoji-render acceptable v1).
-3. **Retire the Companion "MEDIA STUDIO" page** once Ryan's fingers
-   confirm the plugin keys cover it (Companion config-by-sqlite doctrine:
-   media-studio `docs/DECK.md`).
+3. ~~Retire the Companion "MEDIA STUDIO" page~~ **DONE 2026-07-21**: the
+   deck sat stuck on the half-blank "Companion XL" profile for a week —
+   THE disconnect that blocked Ryan while the real keys lived unseen on
+   the Default Profile. Profile removed (backup:
+   `~/Library/Application Support/com.elgato.StreamDeck/ProfilesV3-retired-2026-07-21/`),
+   Companion app quit (not a login item; its db + DECK.md doctrine kept
+   as history). The XL now has ONE profile: the plugin surface.
 4. Corpus auto-index of `~/Movies` — lands in media-studio's daemon, not
    here.
 
