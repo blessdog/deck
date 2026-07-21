@@ -7,6 +7,10 @@ const COUNTDOWN_S = 10;
 const LONG_PRESS_MS = 1_500;
 const ENDING_HOLD_MS = 3_000;
 
+// obs-websocket-js rejections stringify to a bare "Error" — log the parts.
+const describe = (err: unknown): string =>
+	err instanceof Error ? `${err.name}(${(err as any).code ?? "?"}): ${err.message}` : String(err);
+
 type Phase = "idle" | "launching" | "preroll" | "golive" | "live" | "ending";
 
 /**
@@ -99,7 +103,7 @@ export class ShowFlow extends SingletonAction {
 			await obs.call("StartStream");
 			// "live" phase is set by StreamStateChanged when OBS confirms
 		} catch (err) {
-			this.log.error(`go-live failed: ${err}`);
+			this.log.error(`go-live failed: ${describe(err)}`);
 			this.reset();
 			await ev.action.showAlert();
 			const uri = face({ tag: "SHOW", label: "NO KEY?", sub: "check stream setup", color: COLORS.rec });
@@ -119,11 +123,16 @@ export class ShowFlow extends SingletonAction {
 			void this.render();
 			await obs.call("SetCurrentProgramScene", { sceneName: SCENES.ending });
 			await sleep(ENDING_HOLD_MS);
-			await obs.call("StopStream");
+			// The stream can die on its own during the 3s Ending hold (drop,
+			// OBS UI stop) — StopStream on an inactive output throws, which
+			// was the 2026-07-13 "end-show failed" incident. Stop only if
+			// still active; either way the show ended.
+			const { outputActive } = await obs.call("GetStreamStatus");
+			if (outputActive) await obs.call("StopStream");
 			this.reset();
 			await ev.action.showOk();
 		} catch (err) {
-			this.log.error(`end-show failed: ${err}`);
+			this.log.error(`end-show failed: ${describe(err)}`);
 			this.reset();
 			await ev.action.showAlert();
 		}
