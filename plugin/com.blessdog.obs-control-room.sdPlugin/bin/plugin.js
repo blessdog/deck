@@ -13891,6 +13891,7 @@ const SCENES = {
     startingSoon: "Starting Soon",
     screen: "Screen",
     cam: "Cam",
+    camCutout: "Cam Cutout",
     screenCam: "Screen + Cam",
     ending: "Ending",
 };
@@ -14082,6 +14083,12 @@ typeof SuppressedError === "function" ? SuppressedError : function (error, suppr
 /**
  * One SVG generator for every key face, so the deck reads as one system.
  * 144x144 (the @2x key size); returned as an SVG data URI for setImage.
+ *
+ * Icon-first grammar (2026-07-21): a face can carry a GLYPH — a filled
+ * pictorial symbol drawn large and centered — instead of a text label.
+ * The picture says what the key does; text is for state detail (sub) and
+ * the tiny identifying tag. Text-only faces remain for state words
+ * (LIVE, countdowns) where the word IS the picture.
  */
 const COLORS = {
     bg: "#101527",
@@ -14091,23 +14098,41 @@ const COLORS = {
     rec: "#e9a145",
     meeting: "#45b3e9",
 };
+/** Filled SVG paths, drawn in a 144x144 viewBox, visually centered ~(72,66). */
+const GLYPHS = {
+    house: "M72 26 L120 68 H104 V112 H82 V86 H62 V112 H40 V68 H24 Z",
+    record: "M72 66 m-26 0 a26 26 0 1 0 52 0 a26 26 0 1 0 -52 0",
+    stop: "M46 40 h52 a8 8 0 0 1 8 8 v36 a8 8 0 0 1 -8 8 H46 a8 8 0 0 1 -8 -8 V48 a8 8 0 0 1 8 -8 Z",
+    mark: "M50 26 h10 v86 h-10 Z M60 30 h44 l-12 18 12 18 H60 Z",
+    play: "M54 38 L106 66 L54 94 Z",
+};
 const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-function face({ label, sub, tag, color, dot }) {
-    const labelSize = label.length <= 5 ? 34 : label.length <= 8 ? 26 : 20;
-    const labelY = sub ? 82 : 88;
-    const dotMark = dot
-        ? `<circle cx="${72 - measure(label, labelSize) / 2 - 14}" cy="${labelY - labelSize * 0.32}" r="7" fill="${color}"/>`
+function face({ label = "", sub, tag, color, dot, glyph }) {
+    const tagText = tag
+        ? `<text x="72" y="30" font-family="Helvetica, Arial, sans-serif" font-size="15" fill="#5c6785" text-anchor="middle">${esc(tag)}</text>`
         : "";
+    const subText = sub
+        ? `<text x="72" y="${glyph ? 132 : 116}" font-family="Helvetica, Arial, sans-serif" font-size="${glyph ? 16 : 18}" fill="#8fa0c5" text-anchor="middle">${esc(sub)}</text>`
+        : "";
+    let center;
+    if (glyph) {
+        center = `<path d="${glyph}" fill="${color}"/>`;
+    }
+    else {
+        const labelSize = label.length <= 5 ? 34 : label.length <= 8 ? 26 : 20;
+        const labelY = sub ? 82 : 88;
+        const dotMark = dot
+            ? `<circle cx="${72 - measure(label, labelSize) / 2 - 14}" cy="${labelY - labelSize * 0.32}" r="7" fill="${color}"/>`
+            : "";
+        center =
+            dotMark +
+                `<text x="${dot ? 72 + 9 : 72}" y="${labelY}" font-family="Helvetica, Arial, sans-serif" font-size="${labelSize}" font-weight="700" fill="${color}" text-anchor="middle">${esc(label)}</text>`;
+    }
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="144" height="144" viewBox="0 0 144 144">` +
         `<rect width="144" height="144" rx="18" fill="${COLORS.bg}"/>` +
-        (tag
-            ? `<text x="72" y="34" font-family="Helvetica, Arial, sans-serif" font-size="15" fill="#5c6785" text-anchor="middle">${esc(tag)}</text>`
-            : "") +
-        dotMark +
-        `<text x="${dot ? 72 + 9 : 72}" y="${labelY}" font-family="Helvetica, Arial, sans-serif" font-size="${labelSize}" font-weight="700" fill="${color}" text-anchor="middle">${esc(label)}</text>` +
-        (sub
-            ? `<text x="72" y="116" font-family="Helvetica, Arial, sans-serif" font-size="18" fill="#8fa0c5" text-anchor="middle">${esc(sub)}</text>`
-            : "") +
+        tagText +
+        center +
+        subText +
         `</svg>`;
     return `data:image/svg+xml,${encodeURIComponent(svg)}`;
 }
@@ -14122,6 +14147,88 @@ function fmtDuration(ms) {
     const ss = String(s).padStart(2, "0");
     return h > 0 ? `${h}:${mm}:${ss}` : `${m}:${ss}`;
 }
+
+/**
+ * Flag this moment: while recording, press drops an OBS chapter marker
+ * into the file itself (named with the recording timecode). No daemon, no
+ * database — the mark travels inside the MP4, and ingest reads chapters
+ * back out with ffprobe (verified 2026-07-21, media-studio
+ * scripts/verify_record_chapters.py; OBS auto-adds a 'Start' chapter at 0
+ * which ingest skips). Meaningless when not recording: the key dims and a
+ * press just alerts.
+ */
+let Mark = (() => {
+    let _classDecorators = [action({ UUID: "com.blessdog.obs-control-room.mark" })];
+    let _classDescriptor;
+    let _classExtraInitializers = [];
+    let _classThis;
+    let _classSuper = SingletonAction;
+    (class extends _classSuper {
+        static { _classThis = this; }
+        static {
+            const _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create(_classSuper[Symbol.metadata] ?? null) : void 0;
+            __esDecorate(null, _classDescriptor = { value: _classThis }, _classDecorators, { kind: "class", name: _classThis.name, metadata: _metadata }, null, _classExtraInitializers);
+            _classThis = _classDescriptor.value;
+            if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
+            __runInitializers(_classThis, _classExtraInitializers);
+        }
+        recording = false;
+        constructor() {
+            super();
+            obs.on("connected", () => void this.refresh());
+            obs.on("disconnected", () => {
+                this.recording = false;
+                void this.render();
+            });
+            obs.on("RecordStateChanged", ({ outputActive }) => {
+                this.recording = outputActive;
+                void this.render();
+            });
+        }
+        onWillAppear(_ev) {
+            void this.refresh();
+        }
+        async onKeyDown(ev) {
+            if (!this.recording) {
+                await ev.action.showAlert(); // a mark outside a recording has nowhere to live
+                return;
+            }
+            try {
+                const t = fmtDuration((await obs.call("GetRecordStatus")).outputDuration);
+                await obs.call("CreateRecordChapter", { chapterName: `mark ${t}` });
+                await ev.action.setImage(face({ tag: "MARK", glyph: GLYPHS.mark, sub: `✱ ${t}`, color: COLORS.live }));
+                await ev.action.showOk();
+                setTimeout(() => void this.render(), 900);
+            }
+            catch {
+                await ev.action.showAlert();
+                void this.render();
+            }
+        }
+        async refresh() {
+            if (obs.connected) {
+                try {
+                    this.recording = (await obs.call("GetRecordStatus")).outputActive;
+                }
+                catch {
+                    /* keep last known */
+                }
+            }
+            void this.render();
+        }
+        async render() {
+            const uri = face({
+                tag: "MARK",
+                glyph: GLYPHS.mark,
+                sub: this.recording ? "flag this moment" : "needs recording",
+                color: this.recording ? COLORS.rec : COLORS.offline,
+            });
+            for (const a of this.actions)
+                void a.setImage(uri);
+        }
+    });
+    return _classThis;
+})();
 
 /**
  * One press preps a meeting share: Screen + Cam scene, virtual camera ON —
@@ -14200,6 +14307,116 @@ let MeetingMode = (() => {
                     : { tag: "MEETING", label: "MEETING", sub: "press to start", color: COLORS.ready });
             for (const a of this.actions)
                 void a.setImage(uri);
+        }
+    });
+    return _classThis;
+})();
+
+/**
+ * Corpus recording on one key: press toggles the OBS recording
+ * (cold-starting OBS first if it's dead). The face is honest — dim circle
+ * when idle, amber circle + elapsed time while recording, offline look
+ * when OBS is down. Recordings land in ~/Movies untouched; processing is
+ * a separate, later act (media-studio corpus doctrine).
+ */
+let Record = (() => {
+    let _classDecorators = [action({ UUID: "com.blessdog.obs-control-room.record" })];
+    let _classDescriptor;
+    let _classExtraInitializers = [];
+    let _classThis;
+    let _classSuper = SingletonAction;
+    (class extends _classSuper {
+        static { _classThis = this; }
+        static {
+            const _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create(_classSuper[Symbol.metadata] ?? null) : void 0;
+            __esDecorate(null, _classDescriptor = { value: _classThis }, _classDecorators, { kind: "class", name: _classThis.name, metadata: _metadata }, null, _classExtraInitializers);
+            _classThis = _classDescriptor.value;
+            if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
+            __runInitializers(_classThis, _classExtraInitializers);
+        }
+        recording = false;
+        timer;
+        constructor() {
+            super();
+            obs.on("connected", () => void this.refresh());
+            obs.on("disconnected", () => {
+                this.recording = false;
+                this.stopTimer();
+                void this.render();
+            });
+            obs.on("RecordStateChanged", ({ outputActive }) => {
+                this.recording = outputActive;
+                if (outputActive)
+                    this.startTimer();
+                else
+                    this.stopTimer();
+                void this.render();
+            });
+        }
+        onWillAppear(_ev) {
+            void this.refresh();
+        }
+        async onKeyDown(ev) {
+            try {
+                if (!obs.connected) {
+                    await ev.action.setImage(face({ tag: "REC", glyph: GLYPHS.record, sub: "starting OBS…", color: COLORS.ready }));
+                    await obs.ensureOBS();
+                }
+                if (this.recording) {
+                    await obs.call("StopRecord");
+                    await ev.action.showOk();
+                }
+                else {
+                    await obs.call("StartRecord");
+                }
+            }
+            catch {
+                await ev.action.showAlert();
+                void this.render();
+            }
+        }
+        async refresh() {
+            if (obs.connected) {
+                try {
+                    this.recording = (await obs.call("GetRecordStatus")).outputActive;
+                }
+                catch {
+                    /* keep last known */
+                }
+            }
+            if (this.recording)
+                this.startTimer();
+            else
+                this.stopTimer();
+            void this.render();
+        }
+        async render() {
+            let elapsed;
+            if (this.recording) {
+                try {
+                    elapsed = fmtDuration((await obs.call("GetRecordStatus")).outputDuration);
+                }
+                catch {
+                    /* face still shows recording state */
+                }
+            }
+            const uri = face({
+                tag: "REC",
+                glyph: GLYPHS.record,
+                sub: !obs.connected ? "OBS off · press" : this.recording ? elapsed : "press to record",
+                color: !obs.connected ? COLORS.offline : this.recording ? COLORS.rec : COLORS.ready,
+            });
+            for (const a of this.actions)
+                void a.setImage(uri);
+        }
+        startTimer() {
+            this.timer ??= setInterval(() => void this.render(), 1_000);
+        }
+        stopTimer() {
+            if (this.timer) {
+                clearInterval(this.timer);
+                this.timer = undefined;
+            }
         }
     });
     return _classThis;
@@ -14430,6 +14647,26 @@ let SceneScreenCam = (() => {
     });
     return _classThis;
 })();
+let SceneCamCutout = (() => {
+    let _classDecorators = [action({ UUID: "com.blessdog.obs-control-room.scene-cam-cutout" })];
+    let _classDescriptor;
+    let _classExtraInitializers = [];
+    let _classThis;
+    let _classSuper = SceneKey;
+    (class extends _classSuper {
+        static { _classThis = this; }
+        static {
+            const _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create(_classSuper[Symbol.metadata] ?? null) : void 0;
+            __esDecorate(null, _classDescriptor = { value: _classThis }, _classDecorators, { kind: "class", name: _classThis.name, metadata: _metadata }, null, _classExtraInitializers);
+            _classThis = _classDescriptor.value;
+            if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
+            __runInitializers(_classThis, _classExtraInitializers);
+        }
+        scene = SCENES.camCutout;
+        label = "CUTOUT";
+    });
+    return _classThis;
+})();
 let SceneLavaLounge = (() => {
     let _classDecorators = [action({ UUID: "com.blessdog.obs-control-room.scene-lava-lounge" })];
     let _classDescriptor;
@@ -14474,6 +14711,8 @@ let SceneEnding = (() => {
 const COUNTDOWN_S = 10;
 const LONG_PRESS_MS = 1_500;
 const ENDING_HOLD_MS = 3_000;
+// obs-websocket-js rejections stringify to a bare "Error" — log the parts.
+const describe = (err) => err instanceof Error ? `${err.name}(${err.code ?? "?"}): ${err.message}` : String(err);
 /**
  * The whole show open on one key:
  *   press (idle) -> cold-start OBS if dead -> Starting Soon -> 10s countdown
@@ -14570,7 +14809,7 @@ let ShowFlow = (() => {
                 // "live" phase is set by StreamStateChanged when OBS confirms
             }
             catch (err) {
-                this.log.error(`go-live failed: ${err}`);
+                this.log.error(`go-live failed: ${describe(err)}`);
                 this.reset();
                 await ev.action.showAlert();
                 const uri = face({ tag: "SHOW", label: "NO KEY?", sub: "check stream setup", color: COLORS.rec });
@@ -14591,12 +14830,18 @@ let ShowFlow = (() => {
                 void this.render();
                 await obs.call("SetCurrentProgramScene", { sceneName: SCENES.ending });
                 await sleep(ENDING_HOLD_MS);
-                await obs.call("StopStream");
+                // The stream can die on its own during the 3s Ending hold (drop,
+                // OBS UI stop) — StopStream on an inactive output throws, which
+                // was the 2026-07-13 "end-show failed" incident. Stop only if
+                // still active; either way the show ended.
+                const { outputActive } = await obs.call("GetStreamStatus");
+                if (outputActive)
+                    await obs.call("StopStream");
                 this.reset();
                 await ev.action.showOk();
             }
             catch (err) {
-                this.log.error(`end-show failed: ${err}`);
+                this.log.error(`end-show failed: ${describe(err)}`);
                 this.reset();
                 await ev.action.showAlert();
             }
@@ -14744,12 +14989,15 @@ let Status = (() => {
 })();
 
 streamDeck.actions.registerAction(new Status());
+streamDeck.actions.registerAction(new Record());
+streamDeck.actions.registerAction(new Mark());
 streamDeck.actions.registerAction(new ScreenPicker());
 streamDeck.actions.registerAction(new MeetingMode());
 streamDeck.actions.registerAction(new ShowFlow());
 streamDeck.actions.registerAction(new SceneStartingSoon());
 streamDeck.actions.registerAction(new SceneScreen());
 streamDeck.actions.registerAction(new SceneCam());
+streamDeck.actions.registerAction(new SceneCamCutout());
 streamDeck.actions.registerAction(new SceneScreenCam());
 streamDeck.actions.registerAction(new SceneLavaLounge());
 streamDeck.actions.registerAction(new SceneEnding());
