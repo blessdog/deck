@@ -173,6 +173,51 @@
 					"ShowTitle": false
 				}
 			]
+		},
+		{
+			"Name": "Scene: Cam Cutout",
+			"UUID": "com.blessdog.obs-control-room.scene-cam-cutout",
+			"Icon": "imgs/actions/scene/icon",
+			"Tooltip": "Cut to the background-removed camera cutout scene. The on-air scene's key lights up.",
+			"Controllers": [
+				"Keypad"
+			],
+			"States": [
+				{
+					"Image": "imgs/actions/scene/key",
+					"ShowTitle": false
+				}
+			]
+		},
+		{
+			"Name": "Record",
+			"UUID": "com.blessdog.obs-control-room.record",
+			"Icon": "imgs/actions/record/icon",
+			"Tooltip": "Toggle the OBS recording (cold-starts OBS if needed). Shows elapsed time while recording; recordings land in ~/Movies as corpus material.",
+			"Controllers": [
+				"Keypad"
+			],
+			"States": [
+				{
+					"Image": "imgs/actions/record/key",
+					"ShowTitle": false
+				}
+			]
+		},
+		{
+			"Name": "Mark",
+			"UUID": "com.blessdog.obs-control-room.mark",
+			"Icon": "imgs/actions/mark/icon",
+			"Tooltip": "While recording: drop a chapter marker into the file itself — flag the moment without stopping. Ingest reads the chapters back out later.",
+			"Controllers": [
+				"Keypad"
+			],
+			"States": [
+				{
+					"Image": "imgs/actions/mark/key",
+					"ShowTitle": false
+				}
+			]
 		}
 	]
 }

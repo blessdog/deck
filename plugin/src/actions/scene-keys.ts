@@ -90,6 +90,12 @@ export class SceneScreenCam extends SceneKey {
 	protected readonly label = "SCRN+CAM";
 }
 
+@action({ UUID: "com.blessdog.obs-control-room.scene-cam-cutout" })
+export class SceneCamCutout extends SceneKey {
+	protected readonly scene = SCENES.camCutout;
+	protected readonly label = "CUTOUT";
+}
+
 @action({ UUID: "com.blessdog.obs-control-room.scene-lava-lounge" })
 export class SceneLavaLounge extends SceneKey {
 	protected readonly scene = "Lava Lounge";

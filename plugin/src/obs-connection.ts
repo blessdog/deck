@@ -23,6 +23,7 @@ export const SCENES = {
 	startingSoon: "Starting Soon",
 	screen: "Screen",
 	cam: "Cam",
+	camCutout: "Cam Cutout",
 	screenCam: "Screen + Cam",
 	ending: "Ending",
 } as const;
