@@ -40,7 +40,7 @@ export class CameraPicker extends SingletonAction {
 	override async onKeyDown(ev: KeyDownEvent): Promise<void> {
 		try {
 			if (!obs.connected) {
-				await ev.action.setImage(face({ tag: "CAMERA", label: "STARTING", sub: "…", color: COLORS.ready }));
+				await ev.action.setImage(face({ label: "STARTING", sub: "OBS", color: COLORS.ready }));
 				await obs.ensureOBS();
 			}
 			const cams = await this.cameras();
@@ -85,23 +85,21 @@ export class CameraPicker extends SingletonAction {
 
 	private async currentFace() {
 		if (!obs.connected) {
-			return { tag: "CAMERA", label: "CAMERA", sub: "OBS offline", color: COLORS.offline };
+			return { label: "CAMERA", color: COLORS.offline };
 		}
 		try {
 			const cams = await this.cameras();
 			const { inputSettings } = await obs.call("GetInputSettings", { inputName: INPUT });
 			const current = cams.find((c) => c.id === inputSettings.device);
 			if (!current) {
-				return { tag: "CAMERA", label: "CAM GONE", sub: "press to fix", color: COLORS.rec };
+				return { label: "CAM GONE", color: COLORS.rec };
 			}
 			return {
-				tag: "CAMERA",
 				label: shortName(current.name),
-				sub: "press to switch",
 				color: /facetime/i.test(current.name) ? COLORS.ready : COLORS.meeting,
 			};
 		} catch {
-			return { tag: "CAMERA", label: "CAMERA", sub: "?", color: COLORS.offline };
+			return { label: "CAMERA", color: COLORS.offline };
 		}
 	}
 }

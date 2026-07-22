@@ -32,7 +32,7 @@ abstract class SceneKey extends SingletonAction {
 	override async onKeyDown(ev: KeyDownEvent): Promise<void> {
 		try {
 			if (!obs.connected) {
-				await ev.action.setImage(face({ tag: "SCENE", label: "STARTING", sub: "…", color: COLORS.ready }));
+				await ev.action.setImage(face({ label: this.label, sub: "starting OBS", color: COLORS.ready }));
 				await obs.ensureOBS();
 			}
 			await obs.call("SetCurrentProgramScene", { sceneName: this.scene });
@@ -56,9 +56,7 @@ abstract class SceneKey extends SingletonAction {
 	private render(): void {
 		const active = obs.connected && this.current === this.scene;
 		const uri = face({
-			tag: "SCENE",
 			label: this.label,
-			sub: active ? "on air" : undefined,
 			color: !obs.connected ? COLORS.offline : active ? COLORS.live : COLORS.ready,
 			dot: active,
 		});

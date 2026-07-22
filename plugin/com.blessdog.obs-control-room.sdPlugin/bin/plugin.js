@@ -14086,11 +14086,13 @@ typeof SuppressedError === "function" ? SuppressedError : function (error, suppr
  * One SVG generator for every key face, so the deck reads as one system.
  * 144x144 (the @2x key size); returned as an SVG data URI for setImage.
  *
- * Icon-first grammar (2026-07-21): a face can carry a GLYPH — a filled
- * pictorial symbol drawn large and centered — instead of a text label.
- * The picture says what the key does; text is for state detail (sub) and
- * the tiny identifying tag. Text-only faces remain for state words
- * (LIVE, countdowns) where the word IS the picture.
+ * Face grammar (Ryan, 2026-07-21 — set by the official Elgato OBS keys):
+ * the picture IS the key. One glyph, drawn large and centered, colored by
+ * state; an unavailable action is the same glyph dimmed. Text earns its
+ * place only as live data — elapsed time, a countdown, a device name,
+ * dropped frames — never instructions. Buttons are for pressing.
+ * Text faces remain for keys whose content is a word or number
+ * (status readout, scene names, countdown digits).
  */
 const COLORS = {
     bg: "#101527",
@@ -14110,22 +14112,25 @@ const GLYPHS = {
     pause: "M48 36 h16 v60 H48 Z M80 36 h16 v60 H80 Z",
     mic: "M58 40 a14 14 0 0 1 28 0 v24 a14 14 0 0 1 -28 0 Z M46 64 A26 26 0 0 0 98 64 L92 64 A20 20 0 0 1 52 64 Z M68 90 h8 v14 h-8 Z M56 104 h32 v8 H56 Z",
     micMuted: "M58 40 a14 14 0 0 1 28 0 v24 a14 14 0 0 1 -28 0 Z M46 64 A26 26 0 0 0 98 64 L92 64 A20 20 0 0 1 52 64 Z M68 90 h8 v14 h-8 Z M56 104 h32 v8 H56 Z M38 26 L116 100 L108 108 L30 34 Z",
+    stream: "M72 56 m-9 0 a9 9 0 1 0 18 0 a9 9 0 1 0 -18 0 M68 66 L60 108 H84 L76 66 Z M87.4 37.6 A24 24 0 0 1 87.4 74.4 L82.3 68.3 A16 16 0 0 0 82.3 43.7 Z M96.4 26.9 A38 38 0 0 1 96.4 85.1 L91.3 79 A30 30 0 0 0 91.3 33 Z M56.6 37.6 A24 24 0 0 0 56.6 74.4 L61.7 68.3 A16 16 0 0 1 61.7 43.7 Z M47.6 26.9 A38 38 0 0 0 47.6 85.1 L52.7 79 A30 30 0 0 1 52.7 33 Z",
+    camera: "M28 44 h50 a10 10 0 0 1 10 10 v24 a10 10 0 0 1 -10 10 H28 a10 10 0 0 1 -10 -10 V54 a10 10 0 0 1 10 -10 Z M94 58 L124 40 v56 L94 78 Z",
 };
 const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-function face({ label = "", sub, tag, color, dot, glyph }) {
-    const tagText = tag
-        ? `<text x="72" y="30" font-family="Helvetica, Arial, sans-serif" font-size="15" fill="#5c6785" text-anchor="middle">${esc(tag)}</text>`
-        : "";
+function face({ label = "", sub, color, dot, glyph }) {
     const subText = sub
-        ? `<text x="72" y="${glyph ? 132 : 116}" font-family="Helvetica, Arial, sans-serif" font-size="${glyph ? 16 : 18}" fill="#8fa0c5" text-anchor="middle">${esc(sub)}</text>`
+        ? `<text x="72" y="${glyph ? 130 : 118}" font-family="Helvetica, Arial, sans-serif" font-size="20" fill="#8fa0c5" text-anchor="middle">${esc(sub)}</text>`
         : "";
     let center;
     if (glyph) {
-        center = `<path d="${glyph}" fill="${color}"/>`;
+        // Glyph paths are authored around (72,66); fill the key when it's
+        // the whole face, sit up a little when a data line shares it.
+        const s = sub ? 1.0 : 1.25;
+        const cy = sub ? 60 : 72;
+        center = `<g transform="translate(72 ${cy}) scale(${s}) translate(-72 -66)"><path d="${glyph}" fill="${color}"/></g>`;
     }
     else {
-        const labelSize = label.length <= 5 ? 34 : label.length <= 8 ? 26 : 20;
-        const labelY = sub ? 82 : 88;
+        const labelSize = label.length <= 2 ? 54 : label.length <= 5 ? 34 : label.length <= 8 ? 26 : 20;
+        const labelY = sub ? 78 : 82;
         const dotMark = dot
             ? `<circle cx="${72 - measure(label, labelSize) / 2 - 14}" cy="${labelY - labelSize * 0.32}" r="7" fill="${color}"/>`
             : "";
@@ -14135,7 +14140,6 @@ function face({ label = "", sub, tag, color, dot, glyph }) {
     }
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="144" height="144" viewBox="0 0 144 144">` +
         `<rect width="144" height="144" rx="18" fill="${COLORS.bg}"/>` +
-        tagText +
         center +
         subText +
         `</svg>`;
@@ -14196,7 +14200,7 @@ let CameraPicker = (() => {
         async onKeyDown(ev) {
             try {
                 if (!obs.connected) {
-                    await ev.action.setImage(face({ tag: "CAMERA", label: "STARTING", sub: "…", color: COLORS.ready }));
+                    await ev.action.setImage(face({ label: "STARTING", sub: "OBS", color: COLORS.ready }));
                     await obs.ensureOBS();
                 }
                 const cams = await this.cameras();
@@ -14241,24 +14245,22 @@ let CameraPicker = (() => {
         }
         async currentFace() {
             if (!obs.connected) {
-                return { tag: "CAMERA", label: "CAMERA", sub: "OBS offline", color: COLORS.offline };
+                return { label: "CAMERA", color: COLORS.offline };
             }
             try {
                 const cams = await this.cameras();
                 const { inputSettings } = await obs.call("GetInputSettings", { inputName: INPUT });
                 const current = cams.find((c) => c.id === inputSettings.device);
                 if (!current) {
-                    return { tag: "CAMERA", label: "CAM GONE", sub: "press to fix", color: COLORS.rec };
+                    return { label: "CAM GONE", color: COLORS.rec };
                 }
                 return {
-                    tag: "CAMERA",
                     label: shortName(current.name),
-                    sub: "press to switch",
                     color: /facetime/i.test(current.name) ? COLORS.ready : COLORS.meeting,
                 };
             }
             catch {
-                return { tag: "CAMERA", label: "CAMERA", sub: "?", color: COLORS.offline };
+                return { label: "CAMERA", color: COLORS.offline };
             }
         }
     });
@@ -14313,7 +14315,7 @@ let Mark = (() => {
             try {
                 const t = fmtDuration((await obs.call("GetRecordStatus")).outputDuration);
                 await obs.call("CreateRecordChapter", { chapterName: `mark ${t}` });
-                await ev.action.setImage(face({ tag: "MARK", glyph: GLYPHS.mark, sub: `✱ ${t}`, color: COLORS.live }));
+                await ev.action.setImage(face({ glyph: GLYPHS.mark, sub: t, color: COLORS.live }));
                 await ev.action.showOk();
                 setTimeout(() => void this.render(), 900);
             }
@@ -14335,10 +14337,8 @@ let Mark = (() => {
         }
         async render() {
             const uri = face({
-                tag: "MARK",
                 glyph: GLYPHS.mark,
-                sub: this.recording ? "flag this moment" : "record first",
-                color: this.recording ? COLORS.rec : COLORS.offline,
+                color: this.recording ? COLORS.ready : COLORS.offline,
             });
             for (const a of this.actions)
                 void a.setImage(uri);
@@ -14386,7 +14386,7 @@ let MeetingMode = (() => {
         async onKeyDown(ev) {
             try {
                 if (!obs.connected) {
-                    await ev.action.setImage(face({ tag: "MEETING", label: "STARTING", sub: "…", color: COLORS.ready }));
+                    await ev.action.setImage(face({ glyph: GLYPHS.camera, sub: "starting OBS", color: COLORS.ready }));
                     await obs.ensureOBS();
                 }
                 if (this.vcamActive) {
@@ -14418,10 +14418,10 @@ let MeetingMode = (() => {
         }
         render() {
             const uri = face(!obs.connected
-                ? { tag: "MEETING", label: "MEETING", sub: "OBS offline", color: COLORS.offline }
+                ? { glyph: GLYPHS.camera, color: COLORS.offline }
                 : this.vcamActive
-                    ? { tag: "MEETING", label: "ON AIR", sub: "vcam · press to stop", color: COLORS.meeting, dot: true }
-                    : { tag: "MEETING", label: "MEETING", sub: "press to start", color: COLORS.ready });
+                    ? { glyph: GLYPHS.camera, sub: "on air", color: COLORS.meeting }
+                    : { glyph: GLYPHS.camera, color: COLORS.ready });
             for (const a of this.actions)
                 void a.setImage(uri);
         }
@@ -14492,9 +14492,7 @@ let MuteMic = (() => {
         }
         async render() {
             const uri = face({
-                tag: "MIC",
                 glyph: this.muted ? GLYPHS.micMuted : GLYPHS.mic,
-                sub: !obs.connected ? "OBS off" : this.muted ? "muted" : "open",
                 color: !obs.connected ? COLORS.offline : this.muted ? COLORS.live : COLORS.ready,
             });
             for (const a of this.actions)
@@ -14507,9 +14505,9 @@ let MuteMic = (() => {
 /**
  * Pause/resume the rolling recording — OBS holds its breath and keeps
  * writing the SAME file on resume, so the corpus stays one recording. The
- * face always shows the NEXT action: pause bars while rolling, a play
- * triangle while paused. Meaningless when not recording: dim + alert,
- * same grammar as Mark.
+ * face always shows the NEXT action: pause bars while rolling, an amber
+ * play triangle while paused (the elapsed timer lives on the Record key).
+ * Meaningless when not recording: dim + alert, same grammar as Mark.
  */
 let PauseRecord = (() => {
     let _classDecorators = [action({ UUID: "com.blessdog.obs-control-room.pause-record" })];
@@ -14528,14 +14526,12 @@ let PauseRecord = (() => {
         }
         recording = false;
         paused = false;
-        timer;
         constructor() {
             super();
             obs.on("connected", () => void this.refresh());
             obs.on("disconnected", () => {
                 this.recording = false;
                 this.paused = false;
-                this.stopTimer();
                 void this.render();
             });
             // Fires on start/stop AND pause/resume; refresh reads the full truth.
@@ -14569,39 +14565,15 @@ let PauseRecord = (() => {
                     /* keep last known */
                 }
             }
-            if (this.recording && !this.paused)
-                this.startTimer();
-            else
-                this.stopTimer();
             void this.render();
         }
         async render() {
-            let elapsed;
-            if (this.recording) {
-                try {
-                    elapsed = fmtDuration((await obs.call("GetRecordStatus")).outputDuration);
-                }
-                catch {
-                    /* face still shows state */
-                }
-            }
             const uri = face({
-                tag: "PAUSE",
                 glyph: this.paused ? GLYPHS.play : GLYPHS.pause,
-                sub: !this.recording ? "record first" : this.paused ? `paused ${elapsed ?? ""}` : elapsed,
-                color: !this.recording ? COLORS.offline : COLORS.rec,
+                color: !this.recording ? COLORS.offline : this.paused ? COLORS.rec : COLORS.ready,
             });
             for (const a of this.actions)
                 void a.setImage(uri);
-        }
-        startTimer() {
-            this.timer ??= setInterval(() => void this.render(), 1_000);
-        }
-        stopTimer() {
-            if (this.timer) {
-                clearInterval(this.timer);
-                this.timer = undefined;
-            }
         }
     });
     return _classThis;
@@ -14609,10 +14581,10 @@ let PauseRecord = (() => {
 
 /**
  * Corpus recording on one key: press toggles the OBS recording
- * (cold-starting OBS first if it's dead). The face is honest — dim circle
- * when idle, amber circle + elapsed time while recording, offline look
- * when OBS is down. Recordings land in ~/Movies untouched; processing is
- * a separate, later act (media-studio corpus doctrine).
+ * (cold-starting OBS first if it's dead). The face is the record circle,
+ * nothing else — white when ready, red + elapsed while rolling, dim when
+ * OBS is down. Recordings land in ~/Movies untouched; processing is a
+ * separate, later act (media-studio corpus doctrine).
  */
 let Record = (() => {
     let _classDecorators = [action({ UUID: "com.blessdog.obs-control-room.record" })];
@@ -14654,7 +14626,7 @@ let Record = (() => {
         async onKeyDown(ev) {
             try {
                 if (!obs.connected) {
-                    await ev.action.setImage(face({ tag: "REC", glyph: GLYPHS.record, sub: "starting OBS…", color: COLORS.ready }));
+                    await ev.action.setImage(face({ glyph: GLYPHS.record, sub: "starting OBS", color: COLORS.ready }));
                     await obs.ensureOBS();
                 }
                 if (this.recording) {
@@ -14696,10 +14668,9 @@ let Record = (() => {
                 }
             }
             const uri = face({
-                tag: "REC",
                 glyph: GLYPHS.record,
-                sub: !obs.connected ? "OBS off · press" : this.recording ? elapsed : "press to record",
-                color: !obs.connected ? COLORS.offline : this.recording ? COLORS.rec : COLORS.ready,
+                sub: this.recording ? elapsed : undefined,
+                color: !obs.connected ? COLORS.offline : this.recording ? COLORS.live : COLORS.ready,
             });
             for (const a of this.actions)
                 void a.setImage(uri);
@@ -14720,8 +14691,8 @@ let Record = (() => {
 /**
  * Plain stream toggle — go live NOW, no countdown ceremony (Show Flow owns
  * the produced version). Press while OBS is dead cold-starts it first;
- * press while live stops the stream. Text face on purpose: LIVE is the
- * word that IS the picture.
+ * press while live stops the stream. Face is the broadcast antenna: white
+ * ready, red + elapsed while live, dim when OBS is down.
  */
 let Stream = (() => {
     let _classDecorators = [action({ UUID: "com.blessdog.obs-control-room.stream" })];
@@ -14763,7 +14734,7 @@ let Stream = (() => {
         async onKeyDown(ev) {
             try {
                 if (!obs.connected) {
-                    await ev.action.setImage(face({ tag: "STREAM", label: "GO LIVE", sub: "starting OBS…", color: COLORS.ready }));
+                    await ev.action.setImage(face({ glyph: GLYPHS.stream, sub: "starting OBS", color: COLORS.ready }));
                     await obs.ensureOBS();
                 }
                 if (this.streaming) {
@@ -14805,10 +14776,8 @@ let Stream = (() => {
                 }
             }
             const uri = face({
-                tag: "STREAM",
-                label: this.streaming ? "LIVE" : "GO LIVE",
-                dot: this.streaming,
-                sub: !obs.connected ? "OBS off · press" : this.streaming ? elapsed : "press to stream",
+                glyph: GLYPHS.stream,
+                sub: this.streaming ? elapsed : undefined,
                 color: !obs.connected ? COLORS.offline : this.streaming ? COLORS.live : COLORS.ready,
             });
             for (const a of this.actions)
@@ -14852,7 +14821,7 @@ class SceneKey extends SingletonAction {
     async onKeyDown(ev) {
         try {
             if (!obs.connected) {
-                await ev.action.setImage(face({ tag: "SCENE", label: "STARTING", sub: "…", color: COLORS.ready }));
+                await ev.action.setImage(face({ label: this.label, sub: "starting OBS", color: COLORS.ready }));
                 await obs.ensureOBS();
             }
             await obs.call("SetCurrentProgramScene", { sceneName: this.scene });
@@ -14876,9 +14845,7 @@ class SceneKey extends SingletonAction {
     render() {
         const active = obs.connected && this.current === this.scene;
         const uri = face({
-            tag: "SCENE",
             label: this.label,
-            sub: active ? "on air" : undefined,
             color: !obs.connected ? COLORS.offline : active ? COLORS.live : COLORS.ready,
             dot: active,
         });
@@ -15116,7 +15083,7 @@ let ShowFlow = (() => {
                         await this.endShow(ev);
                     }
                     else {
-                        const uri = face({ tag: "SHOW", label: "HOLD", sub: "1.5s to end", color: COLORS.rec });
+                        const uri = face({ label: "HOLD", sub: "1.5s ends show", color: COLORS.rec });
                         await ev.action.setImage(uri);
                         setTimeout(() => void this.render(), 1_200);
                     }
@@ -15151,7 +15118,7 @@ let ShowFlow = (() => {
                 this.log.error(`go-live failed: ${describe(err)}`);
                 this.reset();
                 await ev.action.showAlert();
-                const uri = face({ tag: "SHOW", label: "NO KEY?", sub: "check stream setup", color: COLORS.rec });
+                const uri = face({ label: "NO KEY?", sub: "stream setup", color: COLORS.rec });
                 for (const a of this.actions)
                     void a.setImage(uri);
                 try {
@@ -15205,28 +15172,27 @@ let ShowFlow = (() => {
         async currentFace() {
             switch (this.phase) {
                 case "launching":
-                    return { tag: "SHOW", label: "STARTING", sub: "OBS…", color: COLORS.ready };
+                    return { glyph: GLYPHS.play, sub: "starting OBS", color: COLORS.ready };
                 case "preroll":
-                    return { tag: "SHOW", label: String(this.countdown), sub: "press to cancel", color: COLORS.live };
+                    // press during the countdown cancels; the digits are the face
+                    return { label: String(this.countdown), color: COLORS.live };
                 case "golive":
-                    return { tag: "SHOW", label: "GOING LIVE", sub: "…", color: COLORS.live };
+                    return { label: "GOING LIVE", color: COLORS.live };
                 case "live": {
-                    let sub = "hold to end";
+                    let sub;
                     try {
                         const s = await obs.call("GetStreamStatus");
-                        sub = `${fmtDuration(s.outputDuration)} · hold to end`;
+                        sub = fmtDuration(s.outputDuration);
                     }
                     catch {
-                        /* keep default */
+                        /* face still shows live */
                     }
-                    return { tag: "SHOW", label: "LIVE", sub, color: COLORS.live, dot: true };
+                    return { label: "LIVE", sub, color: COLORS.live, dot: true };
                 }
                 case "ending":
-                    return { tag: "SHOW", label: "ENDING", sub: "…", color: COLORS.rec };
+                    return { label: "ENDING", color: COLORS.rec };
                 default:
-                    return obs.connected
-                        ? { tag: "SHOW", label: "GO LIVE", sub: "press to start", color: COLORS.ready }
-                        : { tag: "SHOW", label: "GO LIVE", sub: "OBS off · press", color: COLORS.offline };
+                    return { glyph: GLYPHS.play, color: obs.connected ? COLORS.ready : COLORS.offline };
             }
         }
     });
@@ -15272,7 +15238,7 @@ let Status = (() => {
                 execFile("/usr/bin/open", ["-a", "OBS"]);
                 return;
             }
-            await ev.action.setImage(face({ tag: "OBS", label: "STARTING", sub: "…", color: COLORS.ready }));
+            await ev.action.setImage(face({ label: "STARTING", sub: "OBS", color: COLORS.ready }));
             try {
                 await obs.ensureOBS();
                 await ev.action.showOk();
@@ -15289,7 +15255,7 @@ let Status = (() => {
         }
         async currentFace() {
             if (!obs.connected) {
-                return { tag: "OBS", label: "OFFLINE", sub: "press to launch", color: COLORS.offline };
+                return { label: "OFFLINE", color: COLORS.offline };
             }
             try {
                 const stream = await obs.call("GetStreamStatus");
@@ -15300,7 +15266,6 @@ let Status = (() => {
                         : 0;
                     const rec = record.outputActive ? " · REC" : "";
                     return {
-                        tag: "OBS",
                         label: "LIVE",
                         sub: `${fmtDuration(stream.outputDuration)} · ${dropped}%${rec}`,
                         color: COLORS.live,
@@ -15309,18 +15274,17 @@ let Status = (() => {
                 }
                 if (record.outputActive) {
                     return {
-                        tag: "OBS",
                         label: "REC",
                         sub: fmtDuration(record.outputDuration),
-                        color: COLORS.rec,
+                        color: COLORS.live,
                         dot: true,
                     };
                 }
                 // scene name lives on the highlighted scene key, not here
-                return { tag: "OBS", label: "READY", color: COLORS.ready };
+                return { label: "READY", color: COLORS.ready };
             }
             catch {
-                return { tag: "OBS", label: "OFFLINE", sub: "press to launch", color: COLORS.offline };
+                return { label: "OFFLINE", color: COLORS.offline };
             }
         }
     });

@@ -1,7 +1,7 @@
 import { action, KeyDownEvent, KeyUpEvent, SingletonAction, WillAppearEvent } from "@elgato/streamdeck";
 import streamDeck from "@elgato/streamdeck";
 import { obs, SCENES, sleep } from "../obs-connection";
-import { COLORS, face, fmtDuration } from "../key-face";
+import { COLORS, face, fmtDuration, GLYPHS } from "../key-face";
 
 const COUNTDOWN_S = 10;
 const LONG_PRESS_MS = 1_500;
@@ -66,7 +66,7 @@ export class ShowFlow extends SingletonAction {
 				if (held >= LONG_PRESS_MS) {
 					await this.endShow(ev);
 				} else {
-					const uri = face({ tag: "SHOW", label: "HOLD", sub: "1.5s to end", color: COLORS.rec });
+					const uri = face({ label: "HOLD", sub: "1.5s ends show", color: COLORS.rec });
 					await ev.action.setImage(uri);
 					setTimeout(() => void this.render(), 1_200);
 				}
@@ -106,7 +106,7 @@ export class ShowFlow extends SingletonAction {
 			this.log.error(`go-live failed: ${describe(err)}`);
 			this.reset();
 			await ev.action.showAlert();
-			const uri = face({ tag: "SHOW", label: "NO KEY?", sub: "check stream setup", color: COLORS.rec });
+			const uri = face({ label: "NO KEY?", sub: "stream setup", color: COLORS.rec });
 			for (const a of this.actions) void a.setImage(uri);
 			try {
 				await obs.call("SetCurrentProgramScene", { sceneName: SCENES.startingSoon });
@@ -160,27 +160,26 @@ export class ShowFlow extends SingletonAction {
 	private async currentFace() {
 		switch (this.phase) {
 			case "launching":
-				return { tag: "SHOW", label: "STARTING", sub: "OBS…", color: COLORS.ready };
+				return { glyph: GLYPHS.play, sub: "starting OBS", color: COLORS.ready };
 			case "preroll":
-				return { tag: "SHOW", label: String(this.countdown), sub: "press to cancel", color: COLORS.live };
+				// press during the countdown cancels; the digits are the face
+				return { label: String(this.countdown), color: COLORS.live };
 			case "golive":
-				return { tag: "SHOW", label: "GOING LIVE", sub: "…", color: COLORS.live };
+				return { label: "GOING LIVE", color: COLORS.live };
 			case "live": {
-				let sub = "hold to end";
+				let sub: string | undefined;
 				try {
 					const s = await obs.call("GetStreamStatus");
-					sub = `${fmtDuration(s.outputDuration)} · hold to end`;
+					sub = fmtDuration(s.outputDuration);
 				} catch {
-					/* keep default */
+					/* face still shows live */
 				}
-				return { tag: "SHOW", label: "LIVE", sub, color: COLORS.live, dot: true };
+				return { label: "LIVE", sub, color: COLORS.live, dot: true };
 			}
 			case "ending":
-				return { tag: "SHOW", label: "ENDING", sub: "…", color: COLORS.rec };
+				return { label: "ENDING", color: COLORS.rec };
 			default:
-				return obs.connected
-					? { tag: "SHOW", label: "GO LIVE", sub: "press to start", color: COLORS.ready }
-					: { tag: "SHOW", label: "GO LIVE", sub: "OBS off · press", color: COLORS.offline };
+				return { glyph: GLYPHS.play, color: obs.connected ? COLORS.ready : COLORS.offline };
 		}
 	}
 }

@@ -41,7 +41,7 @@ export class Mark extends SingletonAction {
 			const t = fmtDuration((await obs.call("GetRecordStatus")).outputDuration);
 			await obs.call("CreateRecordChapter", { chapterName: `mark ${t}` });
 			await ev.action.setImage(
-				face({ tag: "MARK", glyph: GLYPHS.mark, sub: `✱ ${t}`, color: COLORS.live }),
+				face({ glyph: GLYPHS.mark, sub: t, color: COLORS.live }),
 			);
 			await ev.action.showOk();
 			setTimeout(() => void this.render(), 900);
@@ -64,10 +64,8 @@ export class Mark extends SingletonAction {
 
 	private async render(): Promise<void> {
 		const uri = face({
-			tag: "MARK",
 			glyph: GLYPHS.mark,
-			sub: this.recording ? "flag this moment" : "record first",
-			color: this.recording ? COLORS.rec : COLORS.offline,
+			color: this.recording ? COLORS.ready : COLORS.offline,
 		});
 		for (const a of this.actions) void a.setImage(uri);
 	}

@@ -69,6 +69,18 @@ that list is deliberately skipped as not-our-workflow). Live build/test
 session running: Ryan records himself building while cutaway scenes with
 generated backgrounds (Blender / bongpot) land behind the Cam Cutout.
 
+2026-07-21 night: **face grammar locked** (Ryan, after installing the
+official Elgato OBS plugin and holding its keys up against ours): the
+picture IS the key — one large centered glyph, state shown by color
+(white ready / red active / dim unavailable), **text only when it is
+live data** (elapsed, countdown, device name, dropped %) — **never
+instructions** ("press to record", "record first", tag headers: all
+deleted). Scene/status keys stay text because their content IS the
+word. `key-face.ts` is the single generator; contact-sheet render
+verified. The official plugin now coexists on the same websocket — if
+one of our keys loses to its official twin on the deck, swap ours out;
+ours must win on cold-start + honest state or it goes.
+
 **Next (fresh session, in order):**
 1. **HOME nav shell** — deck as launcher: a HOME profile with app tiles
    (OBS now; Ableton/soundboard later); a house-glyph key on the SAME

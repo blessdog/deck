@@ -1,12 +1,12 @@
 import { action, KeyDownEvent, SingletonAction, WillAppearEvent } from "@elgato/streamdeck";
 import { obs } from "../obs-connection";
-import { COLORS, face, fmtDuration } from "../key-face";
+import { COLORS, face, fmtDuration, GLYPHS } from "../key-face";
 
 /**
  * Plain stream toggle — go live NOW, no countdown ceremony (Show Flow owns
  * the produced version). Press while OBS is dead cold-starts it first;
- * press while live stops the stream. Text face on purpose: LIVE is the
- * word that IS the picture.
+ * press while live stops the stream. Face is the broadcast antenna: white
+ * ready, red + elapsed while live, dim when OBS is down.
  */
 @action({ UUID: "com.blessdog.obs-control-room.stream" })
 export class Stream extends SingletonAction {
@@ -37,7 +37,7 @@ export class Stream extends SingletonAction {
 		try {
 			if (!obs.connected) {
 				await ev.action.setImage(
-					face({ tag: "STREAM", label: "GO LIVE", sub: "starting OBS…", color: COLORS.ready }),
+					face({ glyph: GLYPHS.stream, sub: "starting OBS", color: COLORS.ready }),
 				);
 				await obs.ensureOBS();
 			}
@@ -76,10 +76,8 @@ export class Stream extends SingletonAction {
 			}
 		}
 		const uri = face({
-			tag: "STREAM",
-			label: this.streaming ? "LIVE" : "GO LIVE",
-			dot: this.streaming,
-			sub: !obs.connected ? "OBS off · press" : this.streaming ? elapsed : "press to stream",
+			glyph: GLYPHS.stream,
+			sub: this.streaming ? elapsed : undefined,
 			color: !obs.connected ? COLORS.offline : this.streaming ? COLORS.live : COLORS.ready,
 		});
 		for (const a of this.actions) void a.setImage(uri);

@@ -33,7 +33,7 @@ export class Status extends SingletonAction {
 			execFile("/usr/bin/open", ["-a", "OBS"]);
 			return;
 		}
-		await ev.action.setImage(face({ tag: "OBS", label: "STARTING", sub: "…", color: COLORS.ready }));
+		await ev.action.setImage(face({ label: "STARTING", sub: "OBS", color: COLORS.ready }));
 		try {
 			await obs.ensureOBS();
 			await ev.action.showOk();
@@ -50,7 +50,7 @@ export class Status extends SingletonAction {
 
 	private async currentFace() {
 		if (!obs.connected) {
-			return { tag: "OBS", label: "OFFLINE", sub: "press to launch", color: COLORS.offline };
+			return { label: "OFFLINE", color: COLORS.offline };
 		}
 		try {
 			const stream = await obs.call("GetStreamStatus");
@@ -62,7 +62,6 @@ export class Status extends SingletonAction {
 						: 0;
 				const rec = record.outputActive ? " · REC" : "";
 				return {
-					tag: "OBS",
 					label: "LIVE",
 					sub: `${fmtDuration(stream.outputDuration)} · ${dropped}%${rec}`,
 					color: COLORS.live,
@@ -71,17 +70,16 @@ export class Status extends SingletonAction {
 			}
 			if (record.outputActive) {
 				return {
-					tag: "OBS",
 					label: "REC",
 					sub: fmtDuration(record.outputDuration),
-					color: COLORS.rec,
+					color: COLORS.live,
 					dot: true,
 				};
 			}
 			// scene name lives on the highlighted scene key, not here
-			return { tag: "OBS", label: "READY", color: COLORS.ready };
+			return { label: "READY", color: COLORS.ready };
 		} catch {
-			return { tag: "OBS", label: "OFFLINE", sub: "press to launch", color: COLORS.offline };
+			return { label: "OFFLINE", color: COLORS.offline };
 		}
 	}
 }

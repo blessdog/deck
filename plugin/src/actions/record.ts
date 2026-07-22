@@ -4,10 +4,10 @@ import { COLORS, face, fmtDuration, GLYPHS } from "../key-face";
 
 /**
  * Corpus recording on one key: press toggles the OBS recording
- * (cold-starting OBS first if it's dead). The face is honest — dim circle
- * when idle, amber circle + elapsed time while recording, offline look
- * when OBS is down. Recordings land in ~/Movies untouched; processing is
- * a separate, later act (media-studio corpus doctrine).
+ * (cold-starting OBS first if it's dead). The face is the record circle,
+ * nothing else — white when ready, red + elapsed while rolling, dim when
+ * OBS is down. Recordings land in ~/Movies untouched; processing is a
+ * separate, later act (media-studio corpus doctrine).
  */
 @action({ UUID: "com.blessdog.obs-control-room.record" })
 export class Record extends SingletonAction {
@@ -38,7 +38,7 @@ export class Record extends SingletonAction {
 		try {
 			if (!obs.connected) {
 				await ev.action.setImage(
-					face({ tag: "REC", glyph: GLYPHS.record, sub: "starting OBS…", color: COLORS.ready }),
+					face({ glyph: GLYPHS.record, sub: "starting OBS", color: COLORS.ready }),
 				);
 				await obs.ensureOBS();
 			}
@@ -77,10 +77,9 @@ export class Record extends SingletonAction {
 			}
 		}
 		const uri = face({
-			tag: "REC",
 			glyph: GLYPHS.record,
-			sub: !obs.connected ? "OBS off · press" : this.recording ? elapsed : "press to record",
-			color: !obs.connected ? COLORS.offline : this.recording ? COLORS.rec : COLORS.ready,
+			sub: this.recording ? elapsed : undefined,
+			color: !obs.connected ? COLORS.offline : this.recording ? COLORS.live : COLORS.ready,
 		});
 		for (const a of this.actions) void a.setImage(uri);
 	}

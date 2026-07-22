@@ -55,9 +55,7 @@ export class MuteMic extends SingletonAction {
 
 	private async render(): Promise<void> {
 		const uri = face({
-			tag: "MIC",
 			glyph: this.muted ? GLYPHS.micMuted : GLYPHS.mic,
-			sub: !obs.connected ? "OBS off" : this.muted ? "muted" : "open",
 			color: !obs.connected ? COLORS.offline : this.muted ? COLORS.live : COLORS.ready,
 		});
 		for (const a of this.actions) void a.setImage(uri);

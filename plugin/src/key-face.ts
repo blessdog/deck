@@ -2,11 +2,13 @@
  * One SVG generator for every key face, so the deck reads as one system.
  * 144x144 (the @2x key size); returned as an SVG data URI for setImage.
  *
- * Icon-first grammar (2026-07-21): a face can carry a GLYPH — a filled
- * pictorial symbol drawn large and centered — instead of a text label.
- * The picture says what the key does; text is for state detail (sub) and
- * the tiny identifying tag. Text-only faces remain for state words
- * (LIVE, countdowns) where the word IS the picture.
+ * Face grammar (Ryan, 2026-07-21 — set by the official Elgato OBS keys):
+ * the picture IS the key. One glyph, drawn large and centered, colored by
+ * state; an unavailable action is the same glyph dimmed. Text earns its
+ * place only as live data — elapsed time, a countdown, a device name,
+ * dropped frames — never instructions. Buttons are for pressing.
+ * Text faces remain for keys whose content is a word or number
+ * (status readout, scene names, countdown digits).
  */
 
 export const COLORS = {
@@ -29,15 +31,17 @@ export const GLYPHS = {
 	mic: "M58 40 a14 14 0 0 1 28 0 v24 a14 14 0 0 1 -28 0 Z M46 64 A26 26 0 0 0 98 64 L92 64 A20 20 0 0 1 52 64 Z M68 90 h8 v14 h-8 Z M56 104 h32 v8 H56 Z",
 	micMuted:
 		"M58 40 a14 14 0 0 1 28 0 v24 a14 14 0 0 1 -28 0 Z M46 64 A26 26 0 0 0 98 64 L92 64 A20 20 0 0 1 52 64 Z M68 90 h8 v14 h-8 Z M56 104 h32 v8 H56 Z M38 26 L116 100 L108 108 L30 34 Z",
+	stream:
+		"M72 56 m-9 0 a9 9 0 1 0 18 0 a9 9 0 1 0 -18 0 M68 66 L60 108 H84 L76 66 Z M87.4 37.6 A24 24 0 0 1 87.4 74.4 L82.3 68.3 A16 16 0 0 0 82.3 43.7 Z M96.4 26.9 A38 38 0 0 1 96.4 85.1 L91.3 79 A30 30 0 0 0 91.3 33 Z M56.6 37.6 A24 24 0 0 0 56.6 74.4 L61.7 68.3 A16 16 0 0 1 61.7 43.7 Z M47.6 26.9 A38 38 0 0 0 47.6 85.1 L52.7 79 A30 30 0 0 1 52.7 33 Z",
+	camera:
+		"M28 44 h50 a10 10 0 0 1 10 10 v24 a10 10 0 0 1 -10 10 H28 a10 10 0 0 1 -10 -10 V54 a10 10 0 0 1 10 -10 Z M94 58 L124 40 v56 L94 78 Z",
 } as const;
 
 export type Face = {
-	/** Big text, the state word. Auto-shrinks to fit. Omit when glyph is set. */
+	/** Big text, for keys whose content IS a word or number. Auto-shrinks. */
 	label?: string;
-	/** Small line at the bottom (timer, hint, device name). */
+	/** Bottom line — live data only (timer, countdown, device, %). */
 	sub?: string;
-	/** Tiny line at the top (action name so keys stay identifiable). */
-	tag?: string;
 	color: string;
 	/** Filled dot before the label (recording/live indicator). Text faces only. */
 	dot?: boolean;
@@ -48,20 +52,21 @@ export type Face = {
 const esc = (s: string) =>
 	s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-export function face({ label = "", sub, tag, color, dot, glyph }: Face): string {
-	const tagText = tag
-		? `<text x="72" y="30" font-family="Helvetica, Arial, sans-serif" font-size="15" fill="#5c6785" text-anchor="middle">${esc(tag)}</text>`
-		: "";
+export function face({ label = "", sub, color, dot, glyph }: Face): string {
 	const subText = sub
-		? `<text x="72" y="${glyph ? 132 : 116}" font-family="Helvetica, Arial, sans-serif" font-size="${glyph ? 16 : 18}" fill="#8fa0c5" text-anchor="middle">${esc(sub)}</text>`
+		? `<text x="72" y="${glyph ? 130 : 118}" font-family="Helvetica, Arial, sans-serif" font-size="20" fill="#8fa0c5" text-anchor="middle">${esc(sub)}</text>`
 		: "";
 
 	let center: string;
 	if (glyph) {
-		center = `<path d="${glyph}" fill="${color}"/>`;
+		// Glyph paths are authored around (72,66); fill the key when it's
+		// the whole face, sit up a little when a data line shares it.
+		const s = sub ? 1.0 : 1.25;
+		const cy = sub ? 60 : 72;
+		center = `<g transform="translate(72 ${cy}) scale(${s}) translate(-72 -66)"><path d="${glyph}" fill="${color}"/></g>`;
 	} else {
-		const labelSize = label.length <= 5 ? 34 : label.length <= 8 ? 26 : 20;
-		const labelY = sub ? 82 : 88;
+		const labelSize = label.length <= 2 ? 54 : label.length <= 5 ? 34 : label.length <= 8 ? 26 : 20;
+		const labelY = sub ? 78 : 82;
 		const dotMark = dot
 			? `<circle cx="${72 - measure(label, labelSize) / 2 - 14}" cy="${labelY - labelSize * 0.32}" r="7" fill="${color}"/>`
 			: "";
@@ -73,7 +78,6 @@ export function face({ label = "", sub, tag, color, dot, glyph }: Face): string 
 	const svg =
 		`<svg xmlns="http://www.w3.org/2000/svg" width="144" height="144" viewBox="0 0 144 144">` +
 		`<rect width="144" height="144" rx="18" fill="${COLORS.bg}"/>` +
-		tagText +
 		center +
 		subText +
 		`</svg>`;
