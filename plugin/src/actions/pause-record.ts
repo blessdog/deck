@@ -73,7 +73,7 @@ export class PauseRecord extends SingletonAction {
 		const uri = face({
 			tag: "PAUSE",
 			glyph: this.paused ? GLYPHS.play : GLYPHS.pause,
-			sub: !this.recording ? "needs recording" : this.paused ? `paused ${elapsed ?? ""}` : elapsed,
+			sub: !this.recording ? "record first" : this.paused ? `paused ${elapsed ?? ""}` : elapsed,
 			color: !this.recording ? COLORS.offline : COLORS.rec,
 		});
 		for (const a of this.actions) void a.setImage(uri);

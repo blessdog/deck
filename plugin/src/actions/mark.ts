@@ -66,7 +66,7 @@ export class Mark extends SingletonAction {
 		const uri = face({
 			tag: "MARK",
 			glyph: GLYPHS.mark,
-			sub: this.recording ? "flag this moment" : "needs recording",
+			sub: this.recording ? "flag this moment" : "record first",
 			color: this.recording ? COLORS.rec : COLORS.offline,
 		});
 		for (const a of this.actions) void a.setImage(uri);

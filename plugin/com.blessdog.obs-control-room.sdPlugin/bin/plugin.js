@@ -14208,6 +14208,14 @@ let CameraPicker = (() => {
                     inputName: INPUT$1,
                     inputSettings: { device: next.id, device_name: next.name },
                 });
+                // Cutout scenes capture through their own "Camera FX" input —
+                // keep it on the same physical camera or they silently diverge.
+                await obs
+                    .call("SetInputSettings", {
+                    inputName: "Camera FX",
+                    inputSettings: { device: next.id, device_name: next.name },
+                })
+                    .catch(() => { });
                 await ev.action.showOk();
             }
             catch (err) {
@@ -14328,7 +14336,7 @@ let Mark = (() => {
             const uri = face({
                 tag: "MARK",
                 glyph: GLYPHS.mark,
-                sub: this.recording ? "flag this moment" : "needs recording",
+                sub: this.recording ? "flag this moment" : "record first",
                 color: this.recording ? COLORS.rec : COLORS.offline,
             });
             for (const a of this.actions)
@@ -14579,7 +14587,7 @@ let PauseRecord = (() => {
             const uri = face({
                 tag: "PAUSE",
                 glyph: this.paused ? GLYPHS.play : GLYPHS.pause,
-                sub: !this.recording ? "needs recording" : this.paused ? `paused ${elapsed ?? ""}` : elapsed,
+                sub: !this.recording ? "record first" : this.paused ? `paused ${elapsed ?? ""}` : elapsed,
                 color: !this.recording ? COLORS.offline : COLORS.rec,
             });
             for (const a of this.actions)

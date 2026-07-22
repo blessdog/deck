@@ -52,6 +52,14 @@ export class CameraPicker extends SingletonAction {
 				inputName: INPUT,
 				inputSettings: { device: next.id, device_name: next.name },
 			});
+			// Cutout scenes capture through their own "Camera FX" input —
+			// keep it on the same physical camera or they silently diverge.
+			await obs
+				.call("SetInputSettings", {
+					inputName: "Camera FX",
+					inputSettings: { device: next.id, device_name: next.name },
+				})
+				.catch(() => {});
 			await ev.action.showOk();
 		} catch (err) {
 			this.log.error(`switch failed: ${err}`);
