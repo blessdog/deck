@@ -94,6 +94,21 @@ try {
 
   await obs.call('CreateSceneItem', { sceneName: 'Cam', sourceName: 'Mic' });
   await obs.call('CreateSceneItem', { sceneName: 'Screen + Cam', sourceName: 'Display' });
+
+  // A Retina display is bigger than the canvas — unbounded 1:1 placement
+  // records a zoomed top-left crop. Fit-inner shows the whole screen.
+  for (const sceneName of ['Screen', 'Screen + Cam']) {
+    const { sceneItemId } = await obs.call('GetSceneItemId', { sceneName, sourceName: 'Display' });
+    await obs.call('SetSceneItemTransform', {
+      sceneName,
+      sceneItemId,
+      sceneItemTransform: {
+        positionX: 0, positionY: 0, alignment: 5,
+        boundsType: 'OBS_BOUNDS_SCALE_INNER', boundsAlignment: 0,
+        boundsWidth: 1920, boundsHeight: 1080,
+      },
+    });
+  }
   const { sceneItemId: bubbleId } = await obs.call('CreateSceneItem', {
     sceneName: 'Screen + Cam',
     sourceName: 'Camera',
