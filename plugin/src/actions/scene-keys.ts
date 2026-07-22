@@ -72,10 +72,16 @@ export class SceneStartingSoon extends SceneKey {
 	protected readonly label = "STARTING";
 }
 
-@action({ UUID: "com.blessdog.obs-control-room.scene-screen" })
-export class SceneScreen extends SceneKey {
-	protected readonly scene = SCENES.screen;
-	protected readonly label = "SCREEN";
+@action({ UUID: "com.blessdog.obs-control-room.scene-screen-left" })
+export class SceneScreenLeft extends SceneKey {
+	protected readonly scene = SCENES.screenLeft;
+	protected readonly label = "SCREEN L";
+}
+
+@action({ UUID: "com.blessdog.obs-control-room.scene-screen-right" })
+export class SceneScreenRight extends SceneKey {
+	protected readonly scene = SCENES.screenRight;
+	protected readonly label = "SCREEN R";
 }
 
 @action({ UUID: "com.blessdog.obs-control-room.scene-cam" })

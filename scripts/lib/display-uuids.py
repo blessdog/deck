@@ -1,11 +1,20 @@
 #!/usr/bin/env python3
-"""Print active display UUIDs as JSON: [{"id", "uuid", "builtin"}].
+"""Print active display UUIDs as JSON: [{"id", "uuid", "builtin", "x"}].
 
 Used instead of obs-websocket's GetInputPropertiesListPropertyItems for
-screen_capture, which hangs on OBS 32.1.x.
+screen_capture, which hangs on OBS 32.1.x. "x" is the display's left edge
+in the global desktop coordinate space — smallest x is the physical
+LEFT screen, largest the RIGHT (so left/right keys are computed, never
+hard-coded to a fixed monitor).
 """
 import ctypes
 import json
+
+
+class CGRect(ctypes.Structure):
+    _fields_ = [('x', ctypes.c_double), ('y', ctypes.c_double),
+                ('w', ctypes.c_double), ('h', ctypes.c_double)]
+
 
 cs = ctypes.CDLL('/System/Library/Frameworks/ColorSync.framework/ColorSync')
 cg = ctypes.CDLL('/System/Library/Frameworks/CoreGraphics.framework/CoreGraphics')
@@ -22,6 +31,8 @@ cf.CFUUIDCreateString.restype = ctypes.c_void_p
 cf.CFUUIDCreateString.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
 cf.CFStringGetCStringPtr.restype = ctypes.c_char_p
 cf.CFStringGetCStringPtr.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
+cg.CGDisplayBounds.restype = CGRect
+cg.CGDisplayBounds.argtypes = [ctypes.c_uint32]
 
 out = []
 for i in range(n.value):
@@ -32,5 +43,6 @@ for i in range(n.value):
         'id': d,
         'uuid': (p or b'').decode(),
         'builtin': bool(cg.CGDisplayIsBuiltin(d)),
+        'x': int(cg.CGDisplayBounds(d).x),
     })
 print(json.dumps(out))

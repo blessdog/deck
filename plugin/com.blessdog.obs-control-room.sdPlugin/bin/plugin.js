@@ -13889,7 +13889,8 @@ const OBS_WS_CONFIG = join(HOME, "Library/Application Support/obs-studio/plugin_
 const COLLECTION = "Control Room";
 const SCENES = {
     startingSoon: "Starting Soon",
-    screen: "Screen",
+    screenLeft: "Screen L",
+    screenRight: "Screen R",
     cam: "Cam",
     camCutout: "Cam Cutout",
     screenCam: "Screen + Cam",
@@ -14152,7 +14153,7 @@ function fmtDuration(ms) {
     return h > 0 ? `${h}:${mm}:${ss}` : `${m}:${ss}`;
 }
 
-const INPUT$1 = "Camera";
+const INPUT = "Camera";
 // Never offer OBS's own virtual camera (feedback loop) or the Desk View
 // top-down camera; an empty id is the "no device" placeholder row.
 const usable = (name, id) => id !== "" && name !== "OBS Virtual Camera" && !/desk view/i.test(name);
@@ -14185,7 +14186,7 @@ let CameraPicker = (() => {
             obs.on("connected", () => void this.render());
             obs.on("disconnected", () => void this.render());
             obs.on("InputSettingsChanged", ({ inputName }) => {
-                if (inputName === INPUT$1)
+                if (inputName === INPUT)
                     void this.render();
             });
         }
@@ -14201,11 +14202,11 @@ let CameraPicker = (() => {
                 const cams = await this.cameras();
                 if (cams.length === 0)
                     throw new Error("no usable cameras");
-                const { inputSettings } = await obs.call("GetInputSettings", { inputName: INPUT$1 });
+                const { inputSettings } = await obs.call("GetInputSettings", { inputName: INPUT });
                 const i = cams.findIndex((c) => c.id === inputSettings.device);
                 const next = cams[(i + 1) % cams.length];
                 await obs.call("SetInputSettings", {
-                    inputName: INPUT$1,
+                    inputName: INPUT,
                     inputSettings: { device: next.id, device_name: next.name },
                 });
                 // Cutout scenes capture through their own "Camera FX" input —
@@ -14226,7 +14227,7 @@ let CameraPicker = (() => {
         }
         async cameras() {
             const { propertyItems } = await obs.call("GetInputPropertiesListPropertyItems", {
-                inputName: INPUT$1,
+                inputName: INPUT,
                 propertyName: "device",
             });
             return propertyItems
@@ -14244,7 +14245,7 @@ let CameraPicker = (() => {
             }
             try {
                 const cams = await this.cameras();
-                const { inputSettings } = await obs.call("GetInputSettings", { inputName: INPUT$1 });
+                const { inputSettings } = await obs.call("GetInputSettings", { inputName: INPUT });
                 const current = cams.find((c) => c.id === inputSettings.device);
                 if (!current) {
                     return { tag: "CAMERA", label: "CAM GONE", sub: "press to fix", color: COLORS.rec };
@@ -14716,92 +14717,6 @@ let Record = (() => {
     return _classThis;
 })();
 
-const INPUT = "Display";
-/**
- * Toggle which display the shared "Display" source captures:
- * built-in <-> external. Reads truth from OBS, never assumes.
- */
-let ScreenPicker = (() => {
-    let _classDecorators = [action({ UUID: "com.blessdog.obs-control-room.screen-picker" })];
-    let _classDescriptor;
-    let _classExtraInitializers = [];
-    let _classThis;
-    let _classSuper = SingletonAction;
-    (class extends _classSuper {
-        static { _classThis = this; }
-        static {
-            const _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create(_classSuper[Symbol.metadata] ?? null) : void 0;
-            __esDecorate(null, _classDescriptor = { value: _classThis }, _classDecorators, { kind: "class", name: _classThis.name, metadata: _metadata }, null, _classExtraInitializers);
-            _classThis = _classDescriptor.value;
-            if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
-            __runInitializers(_classThis, _classExtraInitializers);
-        }
-        log = streamDeck.logger.createScope("screen-picker");
-        constructor() {
-            super();
-            obs.on("connected", () => void this.render());
-            obs.on("disconnected", () => void this.render());
-            obs.on("InputSettingsChanged", ({ inputName }) => {
-                if (inputName === INPUT)
-                    void this.render();
-            });
-        }
-        onWillAppear(_ev) {
-            void this.render();
-        }
-        async onKeyDown(ev) {
-            try {
-                if (!obs.connected) {
-                    await ev.action.setImage(face({ tag: "SHARING", label: "STARTING", sub: "…", color: COLORS.ready }));
-                    await obs.ensureOBS();
-                }
-                const displays = obs.displayUUIDs();
-                const { inputSettings } = await obs.call("GetInputSettings", { inputName: INPUT });
-                const current = displays.find((d) => d.uuid === inputSettings.display_uuid);
-                const next = displays.find((d) => d.uuid !== current?.uuid) ?? displays[0];
-                await obs.call("SetInputSettings", {
-                    inputName: INPUT,
-                    inputSettings: { display_uuid: next.uuid },
-                });
-                await ev.action.showOk();
-            }
-            catch (err) {
-                this.log.error(`toggle failed: ${err}`);
-                await ev.action.showAlert();
-            }
-            void this.render();
-        }
-        async render() {
-            const uri = face(await this.currentFace());
-            for (const a of this.actions)
-                void a.setImage(uri);
-        }
-        async currentFace() {
-            if (!obs.connected) {
-                return { tag: "SHARING", label: "SCREEN", sub: "OBS offline", color: COLORS.offline };
-            }
-            try {
-                const displays = obs.displayUUIDs();
-                const { inputSettings } = await obs.call("GetInputSettings", { inputName: INPUT });
-                const current = displays.find((d) => d.uuid === inputSettings.display_uuid);
-                if (!current) {
-                    return { tag: "SHARING", label: "NO DISPLAY", sub: "press to fix", color: COLORS.rec };
-                }
-                return {
-                    tag: "SHARING",
-                    label: current.builtin ? "BUILT-IN" : "EXTERNAL",
-                    sub: "press to switch",
-                    color: current.builtin ? COLORS.ready : COLORS.meeting,
-                };
-            }
-            catch {
-                return { tag: "SHARING", label: "SCREEN", sub: "?", color: COLORS.offline };
-            }
-        }
-    });
-    return _classThis;
-})();
-
 /**
  * Plain stream toggle — go live NOW, no countdown ceremony (Show Flow owns
  * the produced version). Press while OBS is dead cold-starts it first;
@@ -14991,8 +14906,8 @@ let SceneStartingSoon = (() => {
     });
     return _classThis;
 })();
-let SceneScreen = (() => {
-    let _classDecorators = [action({ UUID: "com.blessdog.obs-control-room.scene-screen" })];
+let SceneScreenLeft = (() => {
+    let _classDecorators = [action({ UUID: "com.blessdog.obs-control-room.scene-screen-left" })];
     let _classDescriptor;
     let _classExtraInitializers = [];
     let _classThis;
@@ -15006,8 +14921,28 @@ let SceneScreen = (() => {
             if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
             __runInitializers(_classThis, _classExtraInitializers);
         }
-        scene = SCENES.screen;
-        label = "SCREEN";
+        scene = SCENES.screenLeft;
+        label = "SCREEN L";
+    });
+    return _classThis;
+})();
+let SceneScreenRight = (() => {
+    let _classDecorators = [action({ UUID: "com.blessdog.obs-control-room.scene-screen-right" })];
+    let _classDescriptor;
+    let _classExtraInitializers = [];
+    let _classThis;
+    let _classSuper = SceneKey;
+    (class extends _classSuper {
+        static { _classThis = this; }
+        static {
+            const _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create(_classSuper[Symbol.metadata] ?? null) : void 0;
+            __esDecorate(null, _classDescriptor = { value: _classThis }, _classDecorators, { kind: "class", name: _classThis.name, metadata: _metadata }, null, _classExtraInitializers);
+            _classThis = _classDescriptor.value;
+            if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
+            __runInitializers(_classThis, _classExtraInitializers);
+        }
+        scene = SCENES.screenRight;
+        label = "SCREEN R";
     });
     return _classThis;
 })();
@@ -15398,12 +15333,12 @@ streamDeck.actions.registerAction(new PauseRecord());
 streamDeck.actions.registerAction(new Mark());
 streamDeck.actions.registerAction(new MuteMic());
 streamDeck.actions.registerAction(new Stream());
-streamDeck.actions.registerAction(new ScreenPicker());
 streamDeck.actions.registerAction(new CameraPicker());
 streamDeck.actions.registerAction(new MeetingMode());
 streamDeck.actions.registerAction(new ShowFlow());
 streamDeck.actions.registerAction(new SceneStartingSoon());
-streamDeck.actions.registerAction(new SceneScreen());
+streamDeck.actions.registerAction(new SceneScreenLeft());
+streamDeck.actions.registerAction(new SceneScreenRight());
 streamDeck.actions.registerAction(new SceneCam());
 streamDeck.actions.registerAction(new SceneCamCutout());
 streamDeck.actions.registerAction(new SceneScreenCam());

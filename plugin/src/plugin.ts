@@ -6,15 +6,15 @@ import { MeetingMode } from "./actions/meeting-mode";
 import { MuteMic } from "./actions/mute-mic";
 import { PauseRecord } from "./actions/pause-record";
 import { Record } from "./actions/record";
-import { ScreenPicker } from "./actions/screen-picker";
 import { Stream } from "./actions/stream";
 import {
 	SceneCam,
 	SceneCamCutout,
 	SceneEnding,
 	SceneLavaLounge,
-	SceneScreen,
 	SceneScreenCam,
+	SceneScreenLeft,
+	SceneScreenRight,
 	SceneStartingSoon,
 } from "./actions/scene-keys";
 import { ShowFlow } from "./actions/show-flow";
@@ -26,12 +26,12 @@ streamDeck.actions.registerAction(new PauseRecord());
 streamDeck.actions.registerAction(new Mark());
 streamDeck.actions.registerAction(new MuteMic());
 streamDeck.actions.registerAction(new Stream());
-streamDeck.actions.registerAction(new ScreenPicker());
 streamDeck.actions.registerAction(new CameraPicker());
 streamDeck.actions.registerAction(new MeetingMode());
 streamDeck.actions.registerAction(new ShowFlow());
 streamDeck.actions.registerAction(new SceneStartingSoon());
-streamDeck.actions.registerAction(new SceneScreen());
+streamDeck.actions.registerAction(new SceneScreenLeft());
+streamDeck.actions.registerAction(new SceneScreenRight());
 streamDeck.actions.registerAction(new SceneCam());
 streamDeck.actions.registerAction(new SceneCamCutout());
 streamDeck.actions.registerAction(new SceneScreenCam());

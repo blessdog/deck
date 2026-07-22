@@ -21,7 +21,8 @@ const OBS_WS_CONFIG = join(
 export const COLLECTION = "Control Room";
 export const SCENES = {
 	startingSoon: "Starting Soon",
-	screen: "Screen",
+	screenLeft: "Screen L",
+	screenRight: "Screen R",
 	cam: "Cam",
 	camCutout: "Cam Cutout",
 	screenCam: "Screen + Cam",

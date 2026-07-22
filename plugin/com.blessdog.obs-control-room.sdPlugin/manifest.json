@@ -4,7 +4,7 @@
 	"Name": "OBS Control Room",
 	"Version": "0.1.0.0",
 	"Author": "blessdog",
-	"Description": "Bespoke OBS keys: one-press show flow, screen picker, live status, meeting mode. Companion to the Control Room scene collection.",
+	"Description": "Bespoke OBS keys: per-monitor screen share, scene cuts with on-air state, record/mark/pause, mic mute, camera picker, show flow. Companion to the Control Room scene collection.",
 	"Category": "OBS Control Room",
 	"CategoryIcon": "imgs/plugin/category-icon",
 	"CodePath": "bin/plugin.js",
@@ -35,21 +35,6 @@
 			"States": [
 				{
 					"Image": "imgs/actions/show-flow/key",
-					"ShowTitle": false
-				}
-			]
-		},
-		{
-			"Name": "Screen Picker",
-			"UUID": "com.blessdog.obs-control-room.screen-picker",
-			"Icon": "imgs/actions/screen-picker/icon",
-			"Tooltip": "Toggle which display the Screen scenes capture: built-in or external.",
-			"Controllers": [
-				"Keypad"
-			],
-			"States": [
-				{
-					"Image": "imgs/actions/screen-picker/key",
 					"ShowTitle": false
 				}
 			]
@@ -100,10 +85,25 @@
 			]
 		},
 		{
-			"Name": "Scene: Screen",
-			"UUID": "com.blessdog.obs-control-room.scene-screen",
+			"Name": "Scene: Screen L",
+			"UUID": "com.blessdog.obs-control-room.scene-screen-left",
 			"Icon": "imgs/actions/scene/icon",
-			"Tooltip": "Cut to the full screen-share scene. The on-air scene's key lights up.",
+			"Tooltip": "Cut to the LEFT monitor (full-frame share). The on-air scene's key lights up.",
+			"Controllers": [
+				"Keypad"
+			],
+			"States": [
+				{
+					"Image": "imgs/actions/scene/key",
+					"ShowTitle": false
+				}
+			]
+		},
+		{
+			"Name": "Scene: Screen R",
+			"UUID": "com.blessdog.obs-control-room.scene-screen-right",
+			"Icon": "imgs/actions/scene/icon",
+			"Tooltip": "Cut to the RIGHT monitor (full-frame share). The on-air scene's key lights up.",
 			"Controllers": [
 				"Keypad"
 			],
@@ -208,7 +208,7 @@
 			"Name": "Mark",
 			"UUID": "com.blessdog.obs-control-room.mark",
 			"Icon": "imgs/actions/mark/icon",
-			"Tooltip": "While recording: drop a chapter marker into the file itself — flag the moment without stopping. Ingest reads the chapters back out later.",
+			"Tooltip": "While recording: drop a chapter marker into the file itself \u2014 flag the moment without stopping. Ingest reads the chapters back out later.",
 			"Controllers": [
 				"Keypad"
 			],
@@ -223,7 +223,7 @@
 			"Name": "Pause Record",
 			"UUID": "com.blessdog.obs-control-room.pause-record",
 			"Icon": "imgs/actions/pause-record/icon",
-			"Tooltip": "Pause/resume the rolling recording — OBS keeps writing the same file on resume. Dim when nothing is recording.",
+			"Tooltip": "Pause/resume the rolling recording \u2014 OBS keeps writing the same file on resume. Dim when nothing is recording.",
 			"Controllers": [
 				"Keypad"
 			],
@@ -238,7 +238,7 @@
 			"Name": "Mute Mic",
 			"UUID": "com.blessdog.obs-control-room.mute-mic",
 			"Icon": "imgs/actions/mute-mic/icon",
-			"Tooltip": "Toggle the shared Mic input. The face follows OBS's own mute state — red slashed mic means muted.",
+			"Tooltip": "Toggle the shared Mic input. The face follows OBS's own mute state \u2014 red slashed mic means muted.",
 			"Controllers": [
 				"Keypad"
 			],
@@ -253,7 +253,7 @@
 			"Name": "Camera Picker",
 			"UUID": "com.blessdog.obs-control-room.camera-picker",
 			"Icon": "imgs/actions/camera-picker/icon",
-			"Tooltip": "Cycle the shared Camera source between physical cameras (iPhone Continuity ↔ built-in). Face shows which one is live.",
+			"Tooltip": "Cycle the shared Camera source between physical cameras (iPhone Continuity \u2194 built-in). Face shows which one is live.",
 			"Controllers": [
 				"Keypad"
 			],
@@ -268,7 +268,7 @@
 			"Name": "Stream",
 			"UUID": "com.blessdog.obs-control-room.stream",
 			"Icon": "imgs/actions/stream/icon",
-			"Tooltip": "Plain stream toggle — go live without Show Flow's countdown. Cold-starts OBS if it's dead; press while live stops the stream.",
+			"Tooltip": "Plain stream toggle \u2014 go live without Show Flow's countdown. Cold-starts OBS if it's dead; press while live stops the stream.",
 			"Controllers": [
 				"Keypad"
 			],

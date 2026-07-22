@@ -4,10 +4,14 @@
  *
  * Scenes:
  *   Starting Soon  — dark background + title text
- *   Screen         — full display capture + mic
+ *   Screen L       — full capture of the LEFT monitor + mic
+ *   Screen R       — full capture of the RIGHT monitor + mic
  *   Cam            — full camera + mic
- *   Screen + Cam   — display capture with camera bubble bottom-right + mic
+ *   Screen + Cam   — LEFT monitor with camera bubble bottom-right + mic
  *   Ending         — dark background + "Thanks for watching"
+ *
+ * Left/right are computed from CoreGraphics display x-origin (smallest x =
+ * physical left), never hard-coded — re-run after re-arranging monitors.
  *
  * Idempotent: refuses to touch an existing "Control Room" collection
  * unless --force is passed (--force wipes and rebuilds its scenes).
@@ -17,7 +21,7 @@ import { connect, displayUUIDs } from './lib/obs.mjs';
 const COLLECTION = 'Control Room';
 const FORCE = process.argv.includes('--force');
 
-const SCENES = ['Starting Soon', 'Screen', 'Cam', 'Screen + Cam', 'Ending', 'Cam Cutout', 'Lava Lounge'];
+const SCENES = ['Starting Soon', 'Screen L', 'Screen R', 'Cam', 'Screen + Cam', 'Ending', 'Cam Cutout', 'Lava Lounge'];
 
 // bongpot.com's lava lamp, looped as a virtual backdrop in "Lava Lounge"
 const LAMP_VIDEO = '/Users/SSDrive/projects/bongpot/public/lamp-bg.mp4';
@@ -56,16 +60,24 @@ try {
 
   // screen_capture ships with an empty display_uuid (renders nothing), so the
   // target display must be set explicitly. Sourced from CoreGraphics — asking
-  // OBS to enumerate displays hangs on 32.1.x.
+  // OBS to enumerate displays hangs on 32.1.x. Left/right by x-origin.
   const displays = displayUUIDs();
-  const display = displays.find((d) => d.builtin) ?? displays[0];
+  const left = displays.reduce((a, b) => (b.x < a.x ? b : a));
+  const right = displays.reduce((a, b) => (b.x > a.x ? b : a));
   await obs.call('CreateInput', {
-    sceneName: 'Screen',
+    sceneName: 'Screen L',
     inputName: 'Display',
     inputKind: 'screen_capture',
-    inputSettings: { display_uuid: display.uuid },
+    inputSettings: { display_uuid: left.uuid },
   });
-  console.log(`Display: ${display.builtin ? 'built-in' : 'external'} (${display.uuid})`);
+  await obs.call('CreateInput', {
+    sceneName: 'Screen R',
+    inputName: 'Display R',
+    inputKind: 'screen_capture',
+    inputSettings: { display_uuid: right.uuid },
+  });
+  console.log(`Screen L: ${left.builtin ? 'built-in' : 'external'} (${left.uuid})`);
+  console.log(`Screen R: ${right.builtin ? 'built-in' : 'external'} (${right.uuid})`);
 
   await obs.call('CreateInput', {
     sceneName: 'Cam',
@@ -84,7 +96,7 @@ try {
   }
 
   await obs.call('CreateInput', {
-    sceneName: 'Screen',
+    sceneName: 'Screen L',
     inputName: 'Mic',
     inputKind: 'coreaudio_input_capture',
     inputSettings: { device_id: 'default' },
@@ -92,13 +104,19 @@ try {
 
   // ---- Wire shared sources into the other scenes ----
 
+  await obs.call('CreateSceneItem', { sceneName: 'Screen R', sourceName: 'Mic' });
   await obs.call('CreateSceneItem', { sceneName: 'Cam', sourceName: 'Mic' });
   await obs.call('CreateSceneItem', { sceneName: 'Screen + Cam', sourceName: 'Display' });
 
   // A Retina display is bigger than the canvas — unbounded 1:1 placement
   // records a zoomed top-left crop. Fit-inner shows the whole screen.
-  for (const sceneName of ['Screen', 'Screen + Cam']) {
-    const { sceneItemId } = await obs.call('GetSceneItemId', { sceneName, sourceName: 'Display' });
+  const fitTargets = [
+    ['Screen L', 'Display'],
+    ['Screen R', 'Display R'],
+    ['Screen + Cam', 'Display'],
+  ];
+  for (const [sceneName, sourceName] of fitTargets) {
+    const { sceneItemId } = await obs.call('GetSceneItemId', { sceneName, sourceName });
     await obs.call('SetSceneItemTransform', {
       sceneName,
       sceneItemId,
