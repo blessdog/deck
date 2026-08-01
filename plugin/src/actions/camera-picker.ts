@@ -6,9 +6,12 @@ import { face, GLYPHS, KeyState } from "../key-face";
 const INPUT = "Camera";
 
 // Never offer OBS's own virtual camera (feedback loop) or the Desk View
-// top-down camera; an empty id is the "no device" placeholder row.
-const usable = (name: string, id: string) =>
-	id !== "" && name !== "OBS Virtual Camera" && !/desk view/i.test(name);
+// top-down camera; an empty id is the "no device" placeholder row. `enabled`
+// is what OBS reports as actually present — a Continuity Camera from a phone
+// you no longer own still appears in the list, greyed out, and selecting it
+// silently produces nothing.
+const usable = (name: string, id: string, enabled: boolean) =>
+	enabled && id !== "" && name !== "OBS Virtual Camera" && !/desk view/i.test(name);
 
 const shortName = (name: string) =>
 	/facetime/i.test(name) ? "BUILT-IN" : /iphone/i.test(name) ? "iPHONE" : name.toUpperCase();
@@ -26,7 +29,7 @@ export class CameraPicker extends SingletonAction {
 
 	constructor() {
 		super();
-		obs.on("connected", () => void this.render());
+		obs.on("connected", () => void this.healDeadCamera().then(() => this.render()));
 		obs.on("disconnected", () => void this.render());
 		obs.on("InputSettingsChanged", ({ inputName }) => {
 			if (inputName === INPUT) void this.render();
@@ -74,8 +77,52 @@ export class CameraPicker extends SingletonAction {
 			propertyName: "device",
 		});
 		return propertyItems
-			.map((p: any) => ({ name: String(p.itemName), id: String(p.itemValue) }))
-			.filter((c: { name: string; id: string }) => usable(c.name, c.id));
+			.map((p: any) => ({
+				name: String(p.itemName),
+				id: String(p.itemValue),
+				enabled: p.itemEnabled !== false,
+			}))
+			.filter((c: { name: string; id: string; enabled: boolean }) =>
+				usable(c.name, c.id, c.enabled),
+			)
+			.map(({ name, id }: { name: string; id: string }) => ({ name, id }));
+	}
+
+	/**
+	 * Repoint the camera if it's aimed at a device that no longer exists.
+	 *
+	 * Continuity Camera device IDs are per-phone, so swapping phones leaves
+	 * every camera scene pointed at a ghost: the source resolves to nothing,
+	 * renders 0x0, and the picture-in-picture bubble just isn't there. OBS
+	 * reports no error and the deck looks fine. That is exactly the class of
+	 * silent lie this whole instrument is supposed to refuse, so on every
+	 * connect we check the configured device is really present and heal it if
+	 * not. Found 2026-08-01: "Screen + Cam is just showing the screenshare".
+	 */
+	private async healDeadCamera(): Promise<void> {
+		try {
+			const cams = await this.cameras();
+			if (cams.length === 0) return;
+			const { inputSettings } = await obs.call("GetInputSettings", { inputName: INPUT });
+			if (cams.some((c) => c.id === inputSettings.device)) return;
+
+			// Prefer a Continuity Camera video feed; it's the good camera and the
+			// only path that keeps Center Stage.
+			const pick = cams.find((c) => /iphone/i.test(c.name) && /camera$/i.test(c.name)) ?? cams[0];
+			this.log.warn(
+				`camera device ${inputSettings.device_name ?? inputSettings.device} is gone — switching to ${pick.name}`,
+			);
+			for (const inputName of [INPUT, "Camera FX"]) {
+				await obs
+					.call("SetInputSettings", {
+						inputName,
+						inputSettings: { device: pick.id, device_name: pick.name },
+					})
+					.catch(() => {});
+			}
+		} catch (err) {
+			this.log.error(`heal failed: ${err}`);
+		}
 	}
 
 	private async render(): Promise<void> {

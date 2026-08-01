@@ -85,8 +85,13 @@ try {
     inputKind: 'av_capture_input_v2',
     inputSettings: {},
   });
-  // Prefer Continuity Camera (not Desk View); fall back to the built-in webcam.
-  const cam = await pickFirstDevice('Camera', 'device', /^iphone camera$/i);
+  // Prefer an iPhone Continuity Camera; fall back to the built-in webcam.
+  // The pattern must not be exact: macOS names the device after the phone, so
+  // it is "iPhone Camera" on one handset and "iPhone 14 pro Camera" on the
+  // next. An exact /^iphone camera$/ match is how the rig ended up pointed at
+  // a phone Ryan no longer owns, rendering 0x0 with no error anywhere —
+  // "Screen + Cam is just showing the screenshare" (2026-08-01).
+  const cam = await pickFirstDevice('Camera', 'device', /^iphone\b.*\bcamera$/i);
   if (cam) {
     await obs.call('SetInputSettings', {
       inputName: 'Camera',
@@ -236,7 +241,16 @@ async function pickFirstDevice(inputName, propertyName, preferRe) {
       inputName,
       propertyName,
     });
-    const enabled = propertyItems.filter((i) => i.itemEnabled !== false && i.itemValue);
+    // Never offer OBS's own virtual camera (feedback loop) or the Desk View
+    // top-down feed — Desk View also ends in "Camera", so it has to be
+    // excluded here rather than dodged by the caller's pattern.
+    const enabled = propertyItems.filter(
+      (i) =>
+        i.itemEnabled !== false &&
+        i.itemValue &&
+        i.itemName !== 'OBS Virtual Camera' &&
+        !/desk view/i.test(i.itemName),
+    );
     return enabled.find((i) => preferRe.test(i.itemName)) ?? enabled[0] ?? null;
   } catch {
     return null;
