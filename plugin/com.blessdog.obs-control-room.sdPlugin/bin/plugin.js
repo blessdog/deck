@@ -14106,53 +14106,134 @@ typeof SuppressedError === "function" ? SuppressedError : function (error, suppr
  * One SVG generator for every key face, so the deck reads as one system.
  * 144x144 (the @2x key size); returned as an SVG data URI for setImage.
  *
- * FACE GRAMMAR — measured off Elgato's own shipped OBS artwork (2026-08-01),
- * and confirmed against Aetheon's paid OBS profile pack and Elgato's icon packs:
+ * FACE GRAMMAR — the structure came from measuring Elgato's own shipped OBS
+ * artwork (2026-08-01), the colour is ours:
  *
- *   state    = the WHOLE KEY's background colour
- *   identity = one line-art glyph, white, centred
- *   text     = only when it is a number that changes (elapsed, %, device name)
+ *   state  = the WHOLE KEY's background          (caught in peripheral vision)
+ *   tint   = which FAMILY the key belongs to     (learned as zones by the hand)
+ *   glyph  = what the key is                     (needs a glance)
+ *   text   = only when it's a number that changes (needs a full second)
  *
- * That ordering is the perception hierarchy, not a taste: colour across a whole
- * key is caught in peripheral vision, a glyph needs a glance, text needs a full
- * second of focus. The previous version inverted it — a permanently dark key
- * with a small recoloured glyph — which is why the deck didn't read at arm's
- * length. Never instructional text; it's a button, you press it.
+ * That ordering is the perception hierarchy, not taste. The version before this
+ * put state on a small glyph floating in a permanently dark key, which is why
+ * the deck didn't read at arm's length.
  *
- * Elgato's tiles are FULL BLEED — no rounded rect in the artwork; the app and
- * the physical key do the rounding. Drawing our own corner radius is what made
- * ours look subtly wrong next to theirs.
+ * WHY TINTS. Elgato's palette is a muted grey-teal because it has to sit under
+ * every plugin on the store. Ours only has to sit under Ryan's hands, so each
+ * family gets a hue — cyan screens, violet camera looks, blue show-bracket,
+ * amber mark, green mic, red record. This is not decoration: it means a glance
+ * finds the right block of keys before you've read a single icon, which is the
+ * same trick the paid profiles use. (Ryan, 2026-08-01: "what's up with the
+ * grayscale? make them way cooler than they are.")
+ *
+ * State always outranks tint: recording is red and alert is amber no matter
+ * which family the key belongs to, because those two must never be missable.
+ *
+ * Tiles are full bleed with no corner radius — the app and the physical key do
+ * the rounding, and drawing our own made ours look subtly wrong next to Elgato's.
  */
-/** Tile = the whole key. Elgato's measured values for idle/active. */
-const TILE = {
-    offline: "#161d1d", // OBS is down — reads as unavailable, not broken
-    idle: "#263838", // measured: Elgato inactive
-    active: "#5e8b8b", // measured: Elgato active teal
-    recording: "#8e2118", // louder than Elgato's — recording is the one to never miss
-    alert: "#8a6a12",
+/** Which family a key belongs to. Read as zones across the deck. */
+const TINTS = {
+    neutral: "#5eead4",
+    screen: "#22d3ee", // cyan — anything that shares a display
+    camera: "#a78bfa", // violet — anything that shows Ryan
+    bracket: "#60a5fa", // blue — top and tail of a session
+    mark: "#fbbf24", // amber — flag this moment
+    mic: "#34d399", // green — audio is live
+    warm: "#fb7185", // rose — the lounge
+    live: "#ff2d55", // red — recording
 };
-/** Ink = the glyph and any headline text, on top of the tile. */
-const INK = {
-    offline: "#404c4c",
-    idle: "#979797", // measured: Elgato inactive icon
-    active: "#efefef", // measured: Elgato active icon
-    recording: "#ffffff",
-    alert: "#ffffff",
+const chan = (c) => [1, 3, 5].map((i) => parseInt(c.slice(i, i + 2), 16));
+const mix = (a, b, t) => {
+    const [x, y] = [chan(a), chan(b)];
+    return ("#" +
+        x
+            .map((v, i) => Math.round(v + (y[i] - v) * t).toString(16).padStart(2, "0"))
+            .join(""));
 };
-/** The data line — deliberately quieter than the glyph it sits under. */
-const DATA = {
-    offline: "#384242",
-    idle: "#7d8f8f",
-    active: "#d4e3e3",
-    recording: "#ffc4bc",
-    alert: "#f0dca8",
+const INKY = "#05070c";
+const WHITE = "#ffffff";
+/** sRGB relative luminance (WCAG). */
+const lum = (c) => {
+    const [r, g, b] = chan(c).map((v) => {
+        const s = v / 255;
+        return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+    });
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 };
-/** Kept for the record key's live core, which is its own thing. */
-const COLORS = {
-    live: "#ff2b00"};
+/**
+ * Push a hue to a target perceived brightness.
+ *
+ * Blending every family by the same ratio does NOT give keys of equal
+ * presence: amber is naturally about twice as luminous as violet, so an idle
+ * MARK key ended up the brightest thing on the deck while an idle MUTE key was
+ * nearly black — same state, wildly different weight. Targeting luminance
+ * instead means "idle" looks equally idle in every family, and state stays the
+ * thing your eye reads rather than an accident of hue.
+ */
+const atLum = (hue, target) => {
+    const anchor = lum(hue) > target ? INKY : WHITE;
+    let lo = 0;
+    let hi = 1;
+    let out = hue;
+    for (let i = 0; i < 14; i++) {
+        const t = (lo + hi) / 2;
+        out = mix(hue, anchor, t);
+        const brighter = lum(out) > target;
+        // toward INKY luminance falls as t grows; toward WHITE it rises.
+        if (anchor === INKY ? brighter : !brighter)
+            lo = t;
+        else
+            hi = t;
+    }
+    return out;
+};
+function palette(state, tint = "neutral") {
+    // recording and alert own their colour outright — a family hue must never
+    // disguise "you are rolling" or "your mic is dead".
+    const hue = state === "recording" ? TINTS.live : state === "alert" ? TINTS.mark : TINTS[tint];
+    // Luminance targets, not blend ratios — so every family reads with the same
+    // weight at the same state. Tuned by eye on a contact sheet.
+    switch (state) {
+        case "offline": {
+            // A hint of the family so the zones stay legible with OBS down,
+            // but clearly asleep.
+            const base = atLum(hue, 0.012);
+            return {
+                top: mix(base, WHITE, 0.05),
+                bottom: base,
+                ink: atLum(hue, 0.075),
+                data: atLum(hue, 0.05),
+                glow: "",
+            };
+        }
+        case "idle": {
+            // Deep and saturated rather than grey — asleep, not dead.
+            const base = atLum(hue, 0.035);
+            return {
+                top: mix(base, WHITE, 0.07),
+                bottom: mix(base, INKY, 0.22),
+                ink: atLum(hue, 0.42),
+                data: atLum(hue, 0.26),
+                glow: "",
+            };
+        }
+        default: {
+            // active / recording / alert — full vibrancy, lit from above.
+            const base = atLum(hue, 0.30);
+            return {
+                top: mix(base, WHITE, 0.18),
+                bottom: mix(base, INKY, 0.28),
+                ink: WHITE,
+                data: mix(WHITE, hue, 0.3),
+                glow: atLum(hue, 0.62),
+            };
+        }
+    }
+}
 /**
  * Filled glyph paths, drawn in a 144x144 viewBox, visually centred on (72,66).
- * Solid rather than thin-stroked on purpose: at 72 physical px, across a desk,
+ * Solid rather than thin-stroked on purpose: at 72 physical px across a desk,
  * mass reads and hairlines disappear. Elgato's own record glyph is solid too.
  */
 const GLYPHS = {
@@ -14164,12 +14245,9 @@ const GLYPHS = {
     pause: "M48 36 h16 v60 H48 Z M80 36 h16 v60 H80 Z",
     mic: "M58 40 a14 14 0 0 1 28 0 v24 a14 14 0 0 1 -28 0 Z M46 64 A26 26 0 0 0 98 64 L92 64 A20 20 0 0 1 52 64 Z M68 90 h8 v14 h-8 Z M56 104 h32 v8 H56 Z",
     micMuted: "M58 40 a14 14 0 0 1 28 0 v24 a14 14 0 0 1 -28 0 Z M46 64 A26 26 0 0 0 98 64 L92 64 A20 20 0 0 1 52 64 Z M68 90 h8 v14 h-8 Z M56 104 h32 v8 H56 Z M38 26 L116 100 L108 108 L30 34 Z",
-    stream: "M72 56 m-9 0 a9 9 0 1 0 18 0 a9 9 0 1 0 -18 0 M68 66 L60 108 H84 L76 66 Z M87.4 37.6 A24 24 0 0 1 87.4 74.4 L82.3 68.3 A16 16 0 0 0 82.3 43.7 Z M96.4 26.9 A38 38 0 0 1 96.4 85.1 L91.3 79 A30 30 0 0 0 91.3 33 Z M56.6 37.6 A24 24 0 0 0 56.6 74.4 L61.7 68.3 A16 16 0 0 1 61.7 43.7 Z M47.6 26.9 A38 38 0 0 0 47.6 85.1 L52.7 79 A30 30 0 0 1 52.7 33 Z",
     camera: "M28 44 h50 a10 10 0 0 1 10 10 v24 a10 10 0 0 1 -10 10 H28 a10 10 0 0 1 -10 -10 V54 a10 10 0 0 1 10 -10 Z M94 58 L124 40 v56 L94 78 Z",
     /** A person, shoulders up — the cutout / talking-head keys. */
     person: "M72 50 m-17 0 a17 17 0 1 0 34 0 a17 17 0 1 0 -34 0 M40 108 a32 30 0 0 1 64 0 Z",
-    /** A single display on a stand — generic screen. */
-    screen: "M24 30 h96 a8 8 0 0 1 8 8 v46 a8 8 0 0 1 -8 8 H24 a8 8 0 0 1 -8 -8 V38 a8 8 0 0 1 8 -8 Z M62 92 h20 v10 h-20 Z M46 102 h52 v8 H46 Z",
     /** Hourglass — the show hasn't started. */
     hourglass: "M44 24 h56 v10 H44 Z M44 98 h56 v10 H44 Z M50 34 h44 L72 66 Z M72 66 L94 98 H50 Z",
     /** Skip-to-end — double chevron into a bar. Reads as "wrap it up". */
@@ -14177,8 +14255,8 @@ const GLYPHS = {
     /** Lava lamp. */
     lamp: "M60 22 h24 v8 H60 Z M64 30 h16 l10 62 H54 Z M50 100 h44 v10 H50 Z M72 46 m-7 0 a7 7 0 1 0 14 0 a7 7 0 1 0 -14 0 M66 70 m-9 0 a9 9 0 1 0 18 0 a9 9 0 1 0 -18 0",
     /** Two people — a meeting. Deliberately NOT a camcorder: Meeting Mode sat
-     *  next to Camera Picker wearing the same glyph, so neither key could be
-     *  told from the other at a glance. */
+     *  next to Camera Picker wearing the same glyph and neither could be told
+     *  from the other at a glance. */
     meeting: "M54 44 m-15 0 a15 15 0 1 0 30 0 a15 15 0 1 0 -30 0 M22 94 a32 28 0 0 1 64 0 Z M99 50 m-12 0 a12 12 0 1 0 24 0 a12 12 0 1 0 -24 0 M78 92 a23 21 0 0 1 46 0 Z",
     /** Magnifier — zoom to cursor. */
     zoom: "M64 22 a34 34 0 1 0 0 68 a34 34 0 1 0 0 -68 Z M64 34 a22 22 0 1 1 0 44 a22 22 0 1 1 0 -44 Z M88 82 l10 -10 l28 28 l-10 10 Z",
@@ -14191,75 +14269,78 @@ const fitSize = (s, max, cap = 128) => {
         size -= 1;
     return size;
 };
-function face({ state, glyph, art, label, sub }) {
-    const ink = INK[state];
-    const body = [`<rect width="144" height="144" fill="${TILE[state]}"/>`];
-    const symbol = art ?? (glyph ? `<path d="${glyph}" fill="${ink}"/>` : undefined);
+function face({ state, tint, glyph, art, label, sub }) {
+    const p = palette(state, tint);
+    const body = [
+        `<defs><linearGradient id="t" x1="0" y1="0" x2="0" y2="1">` +
+            `<stop offset="0" stop-color="${p.top}"/><stop offset="1" stop-color="${p.bottom}"/>` +
+            `</linearGradient>` +
+            (p.glow
+                ? `<radialGradient id="g"><stop offset="0" stop-color="${p.glow}" stop-opacity="0.55"/>` +
+                    `<stop offset="1" stop-color="${p.glow}" stop-opacity="0"/></radialGradient>`
+                : "") +
+            `</defs>`,
+        `<rect width="144" height="144" fill="url(#t)"/>`,
+    ];
+    const symbol = art ? art(p) : glyph ? `<path d="${glyph}" fill="${p.ink}"/>` : undefined;
     const line = sub ?? label;
     if (symbol) {
-        // Glyph fills the key when it's the whole face; sits up when a line
-        // shares the key with it.
         const scale = line ? 0.92 : 1.25;
         const cy = line ? 54 : 72;
+        if (p.glow)
+            body.push(`<circle cx="72" cy="${cy}" r="58" fill="url(#g)"/>`);
         body.push(`<g transform="translate(72 ${cy}) scale(${scale}) translate(-72 -66)">${symbol}</g>`);
         if (line) {
             const size = fitSize(line, sub ? 21 : 22);
-            body.push(`<text x="72" y="126" font-family="Helvetica, Arial, sans-serif" font-size="${size}" font-weight="${sub ? 400 : 600}" fill="${sub ? DATA[state] : ink}" text-anchor="middle">${esc(line)}</text>`);
+            body.push(`<text x="72" y="126" font-family="Helvetica, Arial, sans-serif" font-size="${size}" font-weight="${sub ? 400 : 700}" fill="${sub ? p.data : p.ink}" text-anchor="middle">${esc(line)}</text>`);
         }
     }
     else if (label) {
         // Text-only key: the label IS the content (status readout, device name).
+        if (p.glow)
+            body.push(`<circle cx="72" cy="66" r="60" fill="url(#g)"/>`);
         const size = fitSize(label, label.length <= 3 ? 52 : 34);
-        body.push(`<text x="72" y="${sub ? 74 : 84}" font-family="Helvetica, Arial, sans-serif" font-size="${size}" font-weight="700" fill="${ink}" text-anchor="middle">${esc(label)}</text>`);
+        body.push(`<text x="72" y="${sub ? 74 : 84}" font-family="Helvetica, Arial, sans-serif" font-size="${size}" font-weight="700" fill="${p.ink}" text-anchor="middle">${esc(label)}</text>`);
         if (sub) {
-            body.push(`<text x="72" y="110" font-family="Helvetica, Arial, sans-serif" font-size="${fitSize(sub, 24)}" fill="${DATA[state]}" text-anchor="middle">${esc(sub)}</text>`);
+            body.push(`<text x="72" y="110" font-family="Helvetica, Arial, sans-serif" font-size="${fitSize(sub, 24)}" fill="${p.data}" text-anchor="middle">${esc(sub)}</text>`);
         }
     }
     return svg(body.join(""));
 }
 /**
  * The power symbol — a broken ring with a bar through the top. Stroked rather
- * than filled, which is why it's art and not a GLYPHS entry.
+ * than filled, which is why it's composite art.
  *
  * This is what the OBS key wears when OBS is down. It used to say "OFFLINE" on
- * a dimmed tile, which read as "dead, nothing to see" — when in fact it is the
- * single most actionable key on the deck, because pressing it launches OBS.
- * Dim means pressing does nothing; this key does something, so it stays lit.
+ * a dimmed tile, which read as "dead, nothing here" — when in fact it is the
+ * most actionable key on the deck, because pressing it launches OBS. Dim means
+ * pressing does nothing; this key does something, so it stays lit.
  */
-function powerArt(state) {
-    const ink = INK[state];
-    return (`<path d="M50.8 44.8 A30 30 0 1 0 93.2 44.8" fill="none" stroke="${ink}" stroke-width="11" stroke-linecap="round"/>` +
-        `<rect x="66" y="22" width="12" height="42" rx="6" fill="${ink}"/>`);
-}
+const powerArt = (p) => `<path d="M50.8 44.8 A30 30 0 1 0 93.2 44.8" fill="none" stroke="${p.ink}" stroke-width="11" stroke-linecap="round"/>` +
+    `<rect x="66" y="22" width="12" height="42" rx="6" fill="${p.ink}"/>`;
 /**
  * Screen-plus-camera: a monitor knocked out in the tile colour with a person
- * sitting inside it. Needs to be composite art rather than a single glyph —
- * a same-coloured person drawn on top of a solid monitor is invisible, which
- * is exactly how the first attempt failed.
+ * sitting inside it. Composite because a same-coloured person drawn on top of
+ * a solid monitor is invisible — which is exactly how the first attempt failed.
  */
-function screenCamArt(state) {
-    const ink = INK[state];
-    const tile = TILE[state];
-    return [
-        `<rect x="14" y="26" width="116" height="66" rx="9" fill="${ink}"/>`,
-        `<rect x="23" y="35" width="98" height="48" rx="4" fill="${tile}"/>`,
-        `<rect x="62" y="96" width="20" height="9" fill="${ink}"/>`,
-        `<rect x="42" y="105" width="60" height="9" rx="4" fill="${ink}"/>`,
-        `<circle cx="101" cy="55" r="9" fill="${ink}"/>`,
-        `<path d="M85 83 a16 15 0 0 1 32 0 Z" fill="${ink}"/>`,
-    ].join("");
-}
+const screenCamArt = (p) => [
+    `<rect x="14" y="26" width="116" height="66" rx="9" fill="${p.ink}"/>`,
+    `<rect x="23" y="35" width="98" height="48" rx="4" fill="${p.bottom}"/>`,
+    `<rect x="62" y="96" width="20" height="9" fill="${p.ink}"/>`,
+    `<rect x="42" y="105" width="60" height="9" rx="4" fill="${p.ink}"/>`,
+    `<circle cx="101" cy="55" r="9" fill="${p.ink}"/>`,
+    `<path d="M85 83 a16 15 0 0 1 32 0 Z" fill="${p.ink}"/>`,
+].join("");
 /**
  * The monitor-arrangement glyph: draws Ryan's ACTUAL displays as a row of
- * screens, left-to-right, with the one this key shares filled solid and the
+ * screens, left to right, with the one this key shares filled solid and the
  * others outlined. Sized so 1..4 displays all fit the key.
  *
- * This is the answer to "I want the key to show what monitor I'm on" — the key
- * is a picture of the desk, not the words SCREEN L. It stays honest when a
- * third monitor arrives because the caller derives order from x-origin.
+ * This answers "I want the key to show what monitor I'm on" — the key is a
+ * picture of the desk, not the words SCREEN L. It stays honest when a third
+ * monitor arrives because the caller derives order from x-origin.
  */
-function monitorsArt(count, activeIndex, state) {
-    const ink = INK[state];
+function monitorsArt(count, activeIndex, p) {
     const n = Math.max(1, Math.min(count, 4));
     const gap = n <= 2 ? 12 : 9;
     const w = Math.floor((116 - gap * (n - 1)) / n);
@@ -14270,10 +14351,10 @@ function monitorsArt(count, activeIndex, state) {
     for (let i = 0; i < n; i++) {
         const x = x0 + i * (w + gap);
         if (i === activeIndex) {
-            parts.push(`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="3" fill="${ink}"/>`);
+            parts.push(`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="3" fill="${p.ink}"/>`);
         }
         else {
-            parts.push(`<rect x="${x + 2}" y="${y + 2}" width="${w - 4}" height="${h - 4}" rx="3" fill="none" stroke="${ink}" stroke-width="4" opacity="0.5"/>`);
+            parts.push(`<rect x="${x + 2}" y="${y + 2}" width="${w - 4}" height="${h - 4}" rx="3" fill="none" stroke="${p.ink}" stroke-width="4" opacity="0.45"/>`);
         }
     }
     return parts.join("");
@@ -14292,27 +14373,33 @@ function fmtDuration(ms) {
 }
 /**
  * The record key, its own face because it's the one that breathes. Idle: a
- * plain circle on a normal tile. Recording: the whole key goes red and a bright
- * core pulses on a ~1.3s sine with the elapsed time under it — so a glance from
- * across the room says "yes, this is rolling". `t` is the animation clock (ms
- * since the pulse started); static callers omit it.
+ * plain circle. Recording: the whole key goes hot red and a bright core pulses
+ * on a ~1.3s sine with the elapsed time under it — so a glance from across the
+ * room says "yes, this is rolling". `t` is the animation clock in ms; static
+ * callers omit it.
  */
 function recordFace(opts) {
     const { connected, recording, elapsedMs = 0, t = 0, note } = opts;
     const state = recording ? "recording" : connected ? "idle" : "offline";
-    const body = [`<rect width="144" height="144" fill="${TILE[state]}"/>`];
+    const p = palette(state, "live");
+    const body = [
+        `<defs><linearGradient id="t" x1="0" y1="0" x2="0" y2="1">` +
+            `<stop offset="0" stop-color="${p.top}"/><stop offset="1" stop-color="${p.bottom}"/>` +
+            `</linearGradient></defs>`,
+        `<rect width="144" height="144" fill="url(#t)"/>`,
+    ];
     if (recording) {
         const phase = (Math.sin((t / 1300) * Math.PI * 2) + 1) / 2; // ~1.3s breath
         const coreR = 24 + 4 * phase;
         const glowR = coreR + 10 + 12 * phase;
-        body.push(`<circle cx="72" cy="58" r="${glowR.toFixed(1)}" fill="#ffffff" opacity="${(0.08 + 0.12 * phase).toFixed(2)}"/>`, `<circle cx="72" cy="58" r="${coreR.toFixed(1)}" fill="#ffffff"/>`, `<circle cx="72" cy="58" r="${(coreR - 7).toFixed(1)}" fill="${COLORS.live}" opacity="${(0.75 + 0.25 * phase).toFixed(2)}"/>`);
+        body.push(`<circle cx="72" cy="58" r="${glowR.toFixed(1)}" fill="#ffffff" opacity="${(0.1 + 0.14 * phase).toFixed(2)}"/>`, `<circle cx="72" cy="58" r="${coreR.toFixed(1)}" fill="#ffffff"/>`, `<circle cx="72" cy="58" r="${(coreR - 7).toFixed(1)}" fill="${TINTS.live}" opacity="${(0.8 + 0.2 * phase).toFixed(2)}"/>`);
     }
     else {
-        body.push(`<circle cx="72" cy="${note ? 58 : 66}" r="27" fill="${INK[state]}"/>`);
+        body.push(`<circle cx="72" cy="${note ? 58 : 66}" r="27" fill="${p.ink}"/>`);
     }
     const line = recording ? fmtDuration(elapsedMs) : note;
     if (line) {
-        body.push(`<text x="72" y="126" font-family="Helvetica, Arial, sans-serif" font-size="22" fill="${DATA[state]}" text-anchor="middle">${esc(line)}</text>`);
+        body.push(`<text x="72" y="126" font-family="Helvetica, Arial, sans-serif" font-size="22" fill="${p.data}" text-anchor="middle">${esc(line)}</text>`);
     }
     return svg(body.join(""));
 }
@@ -14449,25 +14536,26 @@ let CameraPicker = (() => {
         }
         async currentFace() {
             if (!obs.connected) {
-                return { state: "offline", glyph: GLYPHS.camera };
+                return { state: "offline", tint: "camera", glyph: GLYPHS.camera };
             }
             try {
                 const cams = await this.cameras();
                 const { inputSettings } = await obs.call("GetInputSettings", { inputName: INPUT });
                 const current = cams.find((c) => c.id === inputSettings.device);
                 if (!current) {
-                    return { state: "alert", glyph: GLYPHS.camera, sub: "gone" };
+                    return { state: "alert", tint: "camera", glyph: GLYPHS.camera, sub: "gone" };
                 }
                 // The device name IS live data, so it earns its text line; the
                 // iPhone (the good camera) lights the key, built-in stays quiet.
                 return {
                     state: /facetime/i.test(current.name) ? "idle" : "active",
+                    tint: "camera",
                     glyph: GLYPHS.camera,
                     sub: shortName(current.name),
                 };
             }
             catch {
-                return { state: "offline", glyph: GLYPHS.camera };
+                return { state: "offline", tint: "camera", glyph: GLYPHS.camera };
             }
         }
     });
@@ -14523,7 +14611,7 @@ let Mark = (() => {
                 const t = fmtDuration((await obs.call("GetRecordStatus")).outputDuration);
                 await obs.call("CreateRecordChapter", { chapterName: `mark ${t}` });
                 // Flash the whole key on the mark — confirmation you feel, not read.
-                await ev.action.setImage(face({ state: "active", glyph: GLYPHS.mark, sub: t }));
+                await ev.action.setImage(face({ state: "active", tint: "mark", glyph: GLYPHS.mark, sub: t }));
                 await ev.action.showOk();
                 setTimeout(() => void this.render(), 900);
             }
@@ -14546,7 +14634,7 @@ let Mark = (() => {
         async render() {
             // A mark outside a recording has nowhere to live, so the key reads
             // unavailable rather than merely idle.
-            const uri = face({ state: this.recording ? "idle" : "offline", glyph: GLYPHS.mark });
+            const uri = face({ state: this.recording ? "idle" : "offline", tint: "mark", glyph: GLYPHS.mark });
             for (const a of this.actions)
                 void a.setImage(uri);
         }
@@ -14593,7 +14681,7 @@ let MeetingMode = (() => {
         async onKeyDown(ev) {
             try {
                 if (!obs.connected) {
-                    await ev.action.setImage(face({ state: "idle", glyph: GLYPHS.meeting, sub: "starting OBS" }));
+                    await ev.action.setImage(face({ state: "idle", tint: "camera", glyph: GLYPHS.meeting, sub: "starting OBS" }));
                     await obs.ensureOBS();
                 }
                 if (this.vcamActive) {
@@ -14627,10 +14715,10 @@ let MeetingMode = (() => {
             // Virtual camera live = the whole key lights, because "am I still
             // broadcasting into that meeting?" must be answerable at a glance.
             const uri = face(!obs.connected
-                ? { state: "offline", glyph: GLYPHS.meeting }
+                ? { state: "offline", tint: "camera", glyph: GLYPHS.meeting }
                 : this.vcamActive
-                    ? { state: "active", glyph: GLYPHS.meeting, sub: "on air" }
-                    : { state: "idle", glyph: GLYPHS.meeting });
+                    ? { state: "active", tint: "camera", glyph: GLYPHS.meeting, sub: "on air" }
+                    : { state: "idle", tint: "camera", glyph: GLYPHS.meeting });
             for (const a of this.actions)
                 void a.setImage(uri);
         }
@@ -14704,6 +14792,7 @@ let MuteMic = (() => {
             // whole key goes amber with a slashed mic. Hot mic is the quiet default.
             const uri = face({
                 state: !obs.connected ? "offline" : this.muted ? "alert" : "idle",
+                tint: "mic",
                 glyph: this.muted ? GLYPHS.micMuted : GLYPHS.mic,
             });
             for (const a of this.actions)
@@ -14771,12 +14860,25 @@ class KeyAnimator {
 
 // Slow breath: ~7 fps is plenty for a pulse and kind to the shared USB pipe.
 const PULSE_MS = 150;
+// Reconcile against OBS this often while the key is on screen. Cheap, and the
+// only thing standing between a missed event and a key that lies all session.
+const RECONCILE_MS = 5_000;
 /**
  * Corpus recording on one key. Idle it's a plain circle (white ready, dim when
- * OBS is down); the instant it's rolling it becomes a living red blob that
- * breathes, elapsed time underneath — so a glance says "yes, this is recording".
- * Press toggles start/stop, cold-starting OBS first if it's dead. Recordings
- * land in ~/Movies untouched; processing is a separate, later act.
+ * OBS is down); rolling, it becomes a red key with a breathing core and the
+ * elapsed time underneath. Press toggles, cold-starting OBS first if it's dead.
+ * Recordings land in ~/Movies untouched; processing is a separate, later act.
+ *
+ * DOCTRINE, learned the hard way 2026-08-01 ("the recording button is stuck on
+ * ... I push the button and it just gives me a caution sign"): this key must
+ * never act on remembered state. It had latched `recording = true`, missed the
+ * stop event — a plugin restart mid-session is enough — and from then on every
+ * press sent StopRecord to an output that wasn't running, which errors, which
+ * draws the caution triangle, which changes nothing. A key that reports a state
+ * OBS does not agree with is worse than a key that does nothing.
+ *
+ * So: the press re-reads OBS before deciding, the event payload is trusted over
+ * a round-trip, and a slow reconcile heals anything that still slips through.
  */
 let Record = (() => {
     let _classDecorators = [action({ UUID: "com.blessdog.obs-control-room.record" })];
@@ -14793,30 +14895,41 @@ let Record = (() => {
             if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
             __runInitializers(_classThis, _classExtraInitializers);
         }
+        log = streamDeck.logger.createScope("record");
         recording = false;
         // Date.now() at record start, so elapsed is computed locally each frame
         // instead of hammering OBS with GetRecordStatus every 150ms.
         startedAtMs = 0;
         visible = 0;
+        reconcileTimer;
         pulse = new KeyAnimator((t) => recordFace({ connected: true, recording: true, t, elapsedMs: Date.now() - this.startedAtMs }), (uri) => this.broadcast(uri), PULSE_MS);
         constructor() {
             super();
             obs.on("connected", () => void this.refresh());
-            obs.on("disconnected", () => {
-                this.recording = false;
-                this.pulse.stop();
-                this.renderStatic();
+            obs.on("disconnected", () => this.apply(false));
+            obs.on("RecordStateChanged", ({ outputActive, outputState }) => {
+                // STARTING/STOPPING are transitional; the authoritative edges are
+                // STARTED and STOPPED, and outputActive already encodes them.
+                this.log.info(`RecordStateChanged active=${outputActive} state=${outputState}`);
+                if (outputActive)
+                    void this.refresh();
+                else
+                    this.apply(false);
             });
-            obs.on("RecordStateChanged", () => void this.refresh());
         }
         onWillAppear(_ev) {
             this.visible++;
+            this.reconcileTimer ??= setInterval(() => void this.refresh(), RECONCILE_MS);
             void this.refresh();
         }
         onWillDisappear(_ev) {
             if (--this.visible <= 0) {
                 this.visible = 0;
                 this.pulse.stop(); // never animate a key nobody can see
+                if (this.reconcileTimer) {
+                    clearInterval(this.reconcileTimer);
+                    this.reconcileTimer = undefined;
+                }
             }
         }
         async onKeyDown(ev) {
@@ -14825,7 +14938,10 @@ let Record = (() => {
                     await ev.action.setImage(recordFace({ connected: false, recording: false, note: "starting OBS" }));
                     await obs.ensureOBS();
                 }
-                if (this.recording) {
+                // Ask OBS what's true RIGHT NOW rather than trusting the cached
+                // flag. This is the line that makes the key impossible to wedge.
+                const { outputActive } = await obs.call("GetRecordStatus");
+                if (outputActive) {
                     await obs.call("StopRecord");
                     await ev.action.showOk();
                 }
@@ -14833,10 +14949,13 @@ let Record = (() => {
                     await obs.call("StartRecord");
                 }
             }
-            catch {
+            catch (err) {
+                this.log.error(`toggle failed: ${err}`);
                 await ev.action.showAlert();
-                this.renderStatic();
             }
+            // Whatever happened, repaint from OBS's truth — including after a
+            // failure, so a bad press can never leave a lying face behind.
+            void this.refresh();
         }
         async refresh() {
             if (obs.connected) {
@@ -14847,10 +14966,10 @@ let Record = (() => {
                     return;
                 }
                 catch {
-                    /* keep last known */
+                    /* fall through to the offline face rather than keep a stale one */
                 }
             }
-            this.renderStatic();
+            this.apply(false);
         }
         apply(active) {
             this.recording = active;
@@ -14887,6 +15006,8 @@ let Record = (() => {
 class SceneKey extends SingletonAction {
     /** Glyph for this scene. Screen keys override art() instead. */
     glyph;
+    /** Family colour, so the deck reads as zones before you read an icon. */
+    tint = "neutral";
     current = "";
     constructor() {
         super();
@@ -14917,11 +15038,18 @@ class SceneKey extends SingletonAction {
         }
     }
     /** Composite art for keys that draw more than one shape (the screens). */
-    art(_state) {
+    art(_p) {
         return undefined;
     }
     paint(state, sub) {
-        return face({ state, glyph: this.glyph, art: this.art(state), label: sub ? undefined : this.label, sub });
+        return face({
+            state,
+            tint: this.tint,
+            glyph: this.glyph,
+            art: this.art.bind(this),
+            label: sub ? undefined : this.label,
+            sub,
+        });
     }
     async refresh() {
         if (obs.connected) {
@@ -14952,10 +15080,10 @@ class SceneKey extends SingletonAction {
  * changes the picture rather than making the key lie.
  */
 class ScreenSceneKey extends SceneKey {
-    art(state) {
+    art(p) {
         const count = Math.max(obs.displays().length, 1);
         const index = this.position < 0 ? count + this.position : this.position;
-        return monitorsArt(count, Math.max(0, Math.min(index, count - 1)), state);
+        return monitorsArt(count, Math.max(0, Math.min(index, count - 1)), p);
     }
 }
 let SceneStartingSoon = (() => {
@@ -14973,6 +15101,7 @@ let SceneStartingSoon = (() => {
             if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
             __runInitializers(_classThis, _classExtraInitializers);
         }
+        tint = "bracket";
         scene = SCENES.startingSoon;
         label = "SOON";
         glyph = GLYPHS.hourglass;
@@ -14994,6 +15123,7 @@ let SceneScreenLeft = (() => {
             if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
             __runInitializers(_classThis, _classExtraInitializers);
         }
+        tint = "screen";
         scene = SCENES.screenLeft;
         label = "LEFT";
         position = 0;
@@ -15015,6 +15145,7 @@ let SceneScreenRight = (() => {
             if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
             __runInitializers(_classThis, _classExtraInitializers);
         }
+        tint = "screen";
         scene = SCENES.screenRight;
         label = "RIGHT";
         position = -1;
@@ -15036,6 +15167,7 @@ let SceneCam = (() => {
             if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
             __runInitializers(_classThis, _classExtraInitializers);
         }
+        tint = "camera";
         scene = SCENES.cam;
         label = "CAM";
         glyph = GLYPHS.camera;
@@ -15057,10 +15189,11 @@ let SceneScreenCam = (() => {
             if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
             __runInitializers(_classThis, _classExtraInitializers);
         }
+        tint = "screen";
         scene = SCENES.screenCam;
         label = "SCREEN+ME";
-        art(state) {
-            return screenCamArt(state);
+        art(p) {
+            return screenCamArt(p);
         }
     });
     return _classThis;
@@ -15080,6 +15213,7 @@ let SceneCamCutout = (() => {
             if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
             __runInitializers(_classThis, _classExtraInitializers);
         }
+        tint = "camera";
         scene = SCENES.camCutout;
         label = "CUTOUT";
         glyph = GLYPHS.person;
@@ -15101,6 +15235,7 @@ let SceneLavaLounge = (() => {
             if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
             __runInitializers(_classThis, _classExtraInitializers);
         }
+        tint = "warm";
         scene = "Lava Lounge";
         label = "LAVA";
         glyph = GLYPHS.lamp;
@@ -15122,6 +15257,7 @@ let SceneEnding = (() => {
             if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
             __runInitializers(_classThis, _classExtraInitializers);
         }
+        tint = "bracket";
         scene = SCENES.ending;
         label = "ENDING";
         glyph = GLYPHS.ending;
@@ -15168,7 +15304,7 @@ let Status = (() => {
                 execFile("/usr/bin/open", ["-a", "OBS"]);
                 return;
             }
-            await ev.action.setImage(face({ state: "alert", art: powerArt("alert"), sub: "starting" }));
+            await ev.action.setImage(face({ state: "alert", art: powerArt, sub: "starting" }));
             try {
                 await obs.ensureOBS();
                 await ev.action.showOk();
@@ -15187,7 +15323,7 @@ let Status = (() => {
             if (!obs.connected) {
                 // The power button: OBS is down and this key is what starts it.
                 // Lit, not dimmed — dim is reserved for keys that can't do anything.
-                return { state: "idle", art: powerArt("idle"), label: "OBS" };
+                return { state: "idle", tint: "mic", art: powerArt, label: "OBS" };
             }
             try {
                 const stream = await obs.call("GetStreamStatus");
@@ -15207,10 +15343,10 @@ let Status = (() => {
                     return { state: "recording", label: "REC", sub: fmtDuration(record.outputDuration) };
                 }
                 // scene name lives on the highlighted scene key, not here
-                return { state: "idle", label: "READY" };
+                return { state: "idle", tint: "mic", label: "READY" };
             }
             catch {
-                return { state: "idle", art: powerArt("idle"), label: "OBS" };
+                return { state: "idle", tint: "mic", art: powerArt, label: "OBS" };
             }
         }
     });

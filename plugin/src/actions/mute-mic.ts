@@ -58,6 +58,7 @@ export class MuteMic extends SingletonAction {
 		// whole key goes amber with a slashed mic. Hot mic is the quiet default.
 		const uri = face({
 			state: !obs.connected ? "offline" : this.muted ? "alert" : "idle",
+			tint: "mic",
 			glyph: this.muted ? GLYPHS.micMuted : GLYPHS.mic,
 		});
 		for (const a of this.actions) void a.setImage(uri);

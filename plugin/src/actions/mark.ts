@@ -41,7 +41,7 @@ export class Mark extends SingletonAction {
 			const t = fmtDuration((await obs.call("GetRecordStatus")).outputDuration);
 			await obs.call("CreateRecordChapter", { chapterName: `mark ${t}` });
 			// Flash the whole key on the mark — confirmation you feel, not read.
-			await ev.action.setImage(face({ state: "active", glyph: GLYPHS.mark, sub: t }));
+			await ev.action.setImage(face({ state: "active", tint: "mark", glyph: GLYPHS.mark, sub: t }));
 			await ev.action.showOk();
 			setTimeout(() => void this.render(), 900);
 		} catch {
@@ -64,7 +64,7 @@ export class Mark extends SingletonAction {
 	private async render(): Promise<void> {
 		// A mark outside a recording has nowhere to live, so the key reads
 		// unavailable rather than merely idle.
-		const uri = face({ state: this.recording ? "idle" : "offline", glyph: GLYPHS.mark });
+		const uri = face({ state: this.recording ? "idle" : "offline", tint: "mark", glyph: GLYPHS.mark });
 		for (const a of this.actions) void a.setImage(uri);
 	}
 }

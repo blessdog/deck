@@ -1,6 +1,6 @@
 import { action, KeyDownEvent, SingletonAction, WillAppearEvent } from "@elgato/streamdeck";
 import { obs, SCENES } from "../obs-connection";
-import { face, GLYPHS, KeyState, monitorsArt, screenCamArt } from "../key-face";
+import { face, GLYPHS, KeyState, monitorsArt, Palette, screenCamArt, Tint } from "../key-face";
 
 /**
  * One key per Control Room scene, zero config: press = cut to that scene
@@ -17,6 +17,8 @@ abstract class SceneKey extends SingletonAction {
 	protected abstract readonly label: string;
 	/** Glyph for this scene. Screen keys override art() instead. */
 	protected readonly glyph: string | undefined;
+	/** Family colour, so the deck reads as zones before you read an icon. */
+	protected readonly tint: Tint = "neutral";
 	private current = "";
 
 	constructor() {
@@ -50,12 +52,19 @@ abstract class SceneKey extends SingletonAction {
 	}
 
 	/** Composite art for keys that draw more than one shape (the screens). */
-	protected art(_state: KeyState): string | undefined {
+	protected art(_p: Palette): string | undefined {
 		return undefined;
 	}
 
 	private paint(state: KeyState, sub?: string): string {
-		return face({ state, glyph: this.glyph, art: this.art(state), label: sub ? undefined : this.label, sub });
+		return face({
+			state,
+			tint: this.tint,
+			glyph: this.glyph,
+			art: this.art.bind(this) as (p: Palette) => string,
+			label: sub ? undefined : this.label,
+			sub,
+		});
 	}
 
 	private async refresh(): Promise<void> {
@@ -90,15 +99,16 @@ abstract class ScreenSceneKey extends SceneKey {
 	/** 0 = leftmost display, -1 = rightmost. */
 	protected abstract readonly position: number;
 
-	protected override art(state: KeyState): string {
+	protected override art(p: Palette): string {
 		const count = Math.max(obs.displays().length, 1);
 		const index = this.position < 0 ? count + this.position : this.position;
-		return monitorsArt(count, Math.max(0, Math.min(index, count - 1)), state);
+		return monitorsArt(count, Math.max(0, Math.min(index, count - 1)), p);
 	}
 }
 
 @action({ UUID: "com.blessdog.obs-control-room.scene-starting-soon" })
 export class SceneStartingSoon extends SceneKey {
+	protected override readonly tint = "bracket" as const;
 	protected readonly scene = SCENES.startingSoon;
 	protected readonly label = "SOON";
 	protected override readonly glyph = GLYPHS.hourglass;
@@ -106,6 +116,7 @@ export class SceneStartingSoon extends SceneKey {
 
 @action({ UUID: "com.blessdog.obs-control-room.scene-screen-left" })
 export class SceneScreenLeft extends ScreenSceneKey {
+	protected override readonly tint = "screen" as const;
 	protected readonly scene = SCENES.screenLeft;
 	protected readonly label = "LEFT";
 	protected readonly position = 0;
@@ -113,6 +124,7 @@ export class SceneScreenLeft extends ScreenSceneKey {
 
 @action({ UUID: "com.blessdog.obs-control-room.scene-screen-right" })
 export class SceneScreenRight extends ScreenSceneKey {
+	protected override readonly tint = "screen" as const;
 	protected readonly scene = SCENES.screenRight;
 	protected readonly label = "RIGHT";
 	protected readonly position = -1;
@@ -120,6 +132,7 @@ export class SceneScreenRight extends ScreenSceneKey {
 
 @action({ UUID: "com.blessdog.obs-control-room.scene-cam" })
 export class SceneCam extends SceneKey {
+	protected override readonly tint = "camera" as const;
 	protected readonly scene = SCENES.cam;
 	protected readonly label = "CAM";
 	protected override readonly glyph = GLYPHS.camera;
@@ -127,15 +140,17 @@ export class SceneCam extends SceneKey {
 
 @action({ UUID: "com.blessdog.obs-control-room.scene-screen-cam" })
 export class SceneScreenCam extends SceneKey {
+	protected override readonly tint = "screen" as const;
 	protected readonly scene = SCENES.screenCam;
 	protected readonly label = "SCREEN+ME";
-	protected override art(state: KeyState): string {
-		return screenCamArt(state);
+	protected override art(p: Palette): string {
+		return screenCamArt(p);
 	}
 }
 
 @action({ UUID: "com.blessdog.obs-control-room.scene-cam-cutout" })
 export class SceneCamCutout extends SceneKey {
+	protected override readonly tint = "camera" as const;
 	protected readonly scene = SCENES.camCutout;
 	protected readonly label = "CUTOUT";
 	protected override readonly glyph = GLYPHS.person;
@@ -143,6 +158,7 @@ export class SceneCamCutout extends SceneKey {
 
 @action({ UUID: "com.blessdog.obs-control-room.scene-lava-lounge" })
 export class SceneLavaLounge extends SceneKey {
+	protected override readonly tint = "warm" as const;
 	protected readonly scene = "Lava Lounge";
 	protected readonly label = "LAVA";
 	protected override readonly glyph = GLYPHS.lamp;
@@ -150,6 +166,7 @@ export class SceneLavaLounge extends SceneKey {
 
 @action({ UUID: "com.blessdog.obs-control-room.scene-ending" })
 export class SceneEnding extends SceneKey {
+	protected override readonly tint = "bracket" as const;
 	protected readonly scene = SCENES.ending;
 	protected readonly label = "ENDING";
 	protected override readonly glyph = GLYPHS.ending;

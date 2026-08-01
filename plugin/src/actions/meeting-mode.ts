@@ -32,7 +32,7 @@ export class MeetingMode extends SingletonAction {
 	override async onKeyDown(ev: KeyDownEvent): Promise<void> {
 		try {
 			if (!obs.connected) {
-				await ev.action.setImage(face({ state: "idle", glyph: GLYPHS.meeting, sub: "starting OBS" }));
+				await ev.action.setImage(face({ state: "idle", tint: "camera", glyph: GLYPHS.meeting, sub: "starting OBS" }));
 				await obs.ensureOBS();
 			}
 			if (this.vcamActive) {
@@ -66,10 +66,10 @@ export class MeetingMode extends SingletonAction {
 		// broadcasting into that meeting?" must be answerable at a glance.
 		const uri = face(
 			!obs.connected
-				? { state: "offline", glyph: GLYPHS.meeting }
+				? { state: "offline", tint: "camera", glyph: GLYPHS.meeting }
 				: this.vcamActive
-					? { state: "active", glyph: GLYPHS.meeting, sub: "on air" }
-					: { state: "idle", glyph: GLYPHS.meeting },
+					? { state: "active", tint: "camera", glyph: GLYPHS.meeting, sub: "on air" }
+					: { state: "idle", tint: "camera", glyph: GLYPHS.meeting },
 		);
 		for (const a of this.actions) void a.setImage(uri);
 	}

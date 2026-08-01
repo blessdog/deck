@@ -1,7 +1,7 @@
 import { action, KeyDownEvent, SingletonAction, WillAppearEvent } from "@elgato/streamdeck";
 import streamDeck from "@elgato/streamdeck";
 import { obs } from "../obs-connection";
-import { face, GLYPHS, KeyState } from "../key-face";
+import { face, GLYPHS, KeyState, Tint } from "../key-face";
 
 const INPUT = "Camera";
 
@@ -130,26 +130,27 @@ export class CameraPicker extends SingletonAction {
 		for (const a of this.actions) void a.setImage(uri);
 	}
 
-	private async currentFace(): Promise<{ state: KeyState; glyph: string; sub?: string; label?: string }> {
+	private async currentFace(): Promise<{ state: KeyState; tint: Tint; glyph: string; sub?: string; label?: string }> {
 		if (!obs.connected) {
-			return { state: "offline", glyph: GLYPHS.camera };
+			return { state: "offline", tint: "camera" as const, glyph: GLYPHS.camera };
 		}
 		try {
 			const cams = await this.cameras();
 			const { inputSettings } = await obs.call("GetInputSettings", { inputName: INPUT });
 			const current = cams.find((c) => c.id === inputSettings.device);
 			if (!current) {
-				return { state: "alert", glyph: GLYPHS.camera, sub: "gone" };
+				return { state: "alert", tint: "camera" as const, glyph: GLYPHS.camera, sub: "gone" };
 			}
 			// The device name IS live data, so it earns its text line; the
 			// iPhone (the good camera) lights the key, built-in stays quiet.
 			return {
 				state: /facetime/i.test(current.name) ? "idle" : "active",
+				tint: "camera" as const,
 				glyph: GLYPHS.camera,
 				sub: shortName(current.name),
 			};
 		} catch {
-			return { state: "offline", glyph: GLYPHS.camera };
+			return { state: "offline", tint: "camera" as const, glyph: GLYPHS.camera };
 		}
 	}
 }
