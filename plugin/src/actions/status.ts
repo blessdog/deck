@@ -1,7 +1,7 @@
 import { action, KeyDownEvent, SingletonAction, WillAppearEvent } from "@elgato/streamdeck";
 import { execFile } from "node:child_process";
 import { obs } from "../obs-connection";
-import { COLORS, face, fmtDuration } from "../key-face";
+import { face, fmtDuration, KeyState } from "../key-face";
 
 const POLL_MS = 3_000;
 
@@ -33,7 +33,7 @@ export class Status extends SingletonAction {
 			execFile("/usr/bin/open", ["-a", "OBS"]);
 			return;
 		}
-		await ev.action.setImage(face({ label: "STARTING", sub: "OBS", color: COLORS.ready }));
+		await ev.action.setImage(face({ state: "idle", label: "STARTING", sub: "OBS" }));
 		try {
 			await obs.ensureOBS();
 			await ev.action.showOk();
@@ -48,9 +48,9 @@ export class Status extends SingletonAction {
 		for (const a of this.actions) void a.setImage(uri);
 	}
 
-	private async currentFace() {
+	private async currentFace(): Promise<{ state: KeyState; label: string; sub?: string }> {
 		if (!obs.connected) {
-			return { label: "OFFLINE", color: COLORS.offline };
+			return { state: "offline", label: "OFFLINE" };
 		}
 		try {
 			const stream = await obs.call("GetStreamStatus");
@@ -62,24 +62,18 @@ export class Status extends SingletonAction {
 						: 0;
 				const rec = record.outputActive ? " · REC" : "";
 				return {
+					state: "recording",
 					label: "LIVE",
 					sub: `${fmtDuration(stream.outputDuration)} · ${dropped}%${rec}`,
-					color: COLORS.live,
-					dot: true,
 				};
 			}
 			if (record.outputActive) {
-				return {
-					label: "REC",
-					sub: fmtDuration(record.outputDuration),
-					color: COLORS.live,
-					dot: true,
-				};
+				return { state: "recording", label: "REC", sub: fmtDuration(record.outputDuration) };
 			}
 			// scene name lives on the highlighted scene key, not here
-			return { label: "READY", color: COLORS.ready };
+			return { state: "idle", label: "READY" };
 		} catch {
-			return { label: "OFFLINE", color: COLORS.offline };
+			return { state: "offline", label: "OFFLINE" };
 		}
 	}
 }

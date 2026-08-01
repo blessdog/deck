@@ -29,7 +29,10 @@ export const SCENES = {
 	ending: "Ending",
 } as const;
 
-export type DisplayInfo = { id: number; uuid: string; builtin: boolean };
+/** `x` is the display's left edge in global desktop space — smallest x is the
+ *  physically leftmost screen. Left/right is always computed from this, never
+ *  hard-coded, so adding a third monitor doesn't make the keys lie. */
+export type DisplayInfo = { id: number; uuid: string; builtin: boolean; x: number };
 
 export type ObsEvents = {
 	connected: [];
@@ -171,6 +174,28 @@ class OBSConnection extends EventEmitter<ObsEvents> {
 	displayUUIDs(): DisplayInfo[] {
 		const script = join(dirname(dirname(fileURLToPath(import.meta.url))), "display-uuids.py");
 		return JSON.parse(execFileSync(PYTHON, [script], { encoding: "utf8" }));
+	}
+
+	private displayCache: DisplayInfo[] | undefined;
+
+	/**
+	 * Displays left-to-right, cached — key faces redraw often and spawning
+	 * python per repaint would be absurd. Call `forgetDisplays()` when the
+	 * arrangement could have changed (wake, reconnect).
+	 */
+	displays(): DisplayInfo[] {
+		if (!this.displayCache) {
+			try {
+				this.displayCache = this.displayUUIDs().sort((a, b) => a.x - b.x);
+			} catch {
+				this.displayCache = [];
+			}
+		}
+		return this.displayCache;
+	}
+
+	forgetDisplays(): void {
+		this.displayCache = undefined;
 	}
 }
 

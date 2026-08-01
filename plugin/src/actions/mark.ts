@@ -1,6 +1,6 @@
 import { action, KeyDownEvent, SingletonAction, WillAppearEvent } from "@elgato/streamdeck";
 import { obs } from "../obs-connection";
-import { COLORS, face, fmtDuration, GLYPHS } from "../key-face";
+import { face, fmtDuration, GLYPHS } from "../key-face";
 
 /**
  * Flag this moment: while recording, press drops an OBS chapter marker
@@ -40,9 +40,8 @@ export class Mark extends SingletonAction {
 		try {
 			const t = fmtDuration((await obs.call("GetRecordStatus")).outputDuration);
 			await obs.call("CreateRecordChapter", { chapterName: `mark ${t}` });
-			await ev.action.setImage(
-				face({ glyph: GLYPHS.mark, sub: t, color: COLORS.live }),
-			);
+			// Flash the whole key on the mark — confirmation you feel, not read.
+			await ev.action.setImage(face({ state: "active", glyph: GLYPHS.mark, sub: t }));
 			await ev.action.showOk();
 			setTimeout(() => void this.render(), 900);
 		} catch {
@@ -63,10 +62,9 @@ export class Mark extends SingletonAction {
 	}
 
 	private async render(): Promise<void> {
-		const uri = face({
-			glyph: GLYPHS.mark,
-			color: this.recording ? COLORS.ready : COLORS.offline,
-		});
+		// A mark outside a recording has nowhere to live, so the key reads
+		// unavailable rather than merely idle.
+		const uri = face({ state: this.recording ? "idle" : "offline", glyph: GLYPHS.mark });
 		for (const a of this.actions) void a.setImage(uri);
 	}
 }

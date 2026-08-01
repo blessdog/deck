@@ -1,6 +1,6 @@
 import { action, KeyDownEvent, SingletonAction, WillAppearEvent } from "@elgato/streamdeck";
 import { obs } from "../obs-connection";
-import { COLORS, face, GLYPHS } from "../key-face";
+import { face, GLYPHS } from "../key-face";
 
 const MIC = "Mic"; // the one shared mic input across every Control Room scene
 
@@ -54,9 +54,11 @@ export class MuteMic extends SingletonAction {
 	}
 
 	private async render(): Promise<void> {
+		// Muted is the state that ruins a take, so it gets the loud tile: the
+		// whole key goes amber with a slashed mic. Hot mic is the quiet default.
 		const uri = face({
+			state: !obs.connected ? "offline" : this.muted ? "alert" : "idle",
 			glyph: this.muted ? GLYPHS.micMuted : GLYPHS.mic,
-			color: !obs.connected ? COLORS.offline : this.muted ? COLORS.live : COLORS.ready,
 		});
 		for (const a of this.actions) void a.setImage(uri);
 	}

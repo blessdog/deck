@@ -1,7 +1,7 @@
 import { action, KeyDownEvent, SingletonAction, WillAppearEvent } from "@elgato/streamdeck";
 import streamDeck from "@elgato/streamdeck";
 import { obs, SCENES } from "../obs-connection";
-import { COLORS, face, GLYPHS } from "../key-face";
+import { face, GLYPHS } from "../key-face";
 
 /**
  * One press preps a meeting share: Screen + Cam scene, virtual camera ON —
@@ -32,7 +32,7 @@ export class MeetingMode extends SingletonAction {
 	override async onKeyDown(ev: KeyDownEvent): Promise<void> {
 		try {
 			if (!obs.connected) {
-				await ev.action.setImage(face({ glyph: GLYPHS.camera, sub: "starting OBS", color: COLORS.ready }));
+				await ev.action.setImage(face({ state: "idle", glyph: GLYPHS.meeting, sub: "starting OBS" }));
 				await obs.ensureOBS();
 			}
 			if (this.vcamActive) {
@@ -62,12 +62,14 @@ export class MeetingMode extends SingletonAction {
 	}
 
 	private render(): void {
+		// Virtual camera live = the whole key lights, because "am I still
+		// broadcasting into that meeting?" must be answerable at a glance.
 		const uri = face(
 			!obs.connected
-				? { glyph: GLYPHS.camera, color: COLORS.offline }
+				? { state: "offline", glyph: GLYPHS.meeting }
 				: this.vcamActive
-					? { glyph: GLYPHS.camera, sub: "on air", color: COLORS.meeting }
-					: { glyph: GLYPHS.camera, color: COLORS.ready },
+					? { state: "active", glyph: GLYPHS.meeting, sub: "on air" }
+					: { state: "idle", glyph: GLYPHS.meeting },
 		);
 		for (const a of this.actions) void a.setImage(uri);
 	}
