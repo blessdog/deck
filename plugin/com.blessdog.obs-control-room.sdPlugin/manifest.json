@@ -25,21 +25,6 @@
 	},
 	"Actions": [
 		{
-			"Name": "Show Flow",
-			"UUID": "com.blessdog.obs-control-room.show-flow",
-			"Icon": "imgs/actions/show-flow/icon",
-			"Tooltip": "One press runs the show open: cold-start OBS, Starting Soon, countdown, go live. Hold 1.5s while live to end the show.",
-			"Controllers": [
-				"Keypad"
-			],
-			"States": [
-				{
-					"Image": "imgs/actions/show-flow/key",
-					"ShowTitle": false
-				}
-			]
-		},
-		{
 			"Name": "Status",
 			"UUID": "com.blessdog.obs-control-room.status",
 			"Icon": "imgs/actions/status/icon",
@@ -220,21 +205,6 @@
 			]
 		},
 		{
-			"Name": "Pause Record",
-			"UUID": "com.blessdog.obs-control-room.pause-record",
-			"Icon": "imgs/actions/pause-record/icon",
-			"Tooltip": "Pause/resume the rolling recording \u2014 OBS keeps writing the same file on resume. Dim when nothing is recording.",
-			"Controllers": [
-				"Keypad"
-			],
-			"States": [
-				{
-					"Image": "imgs/actions/pause-record/key",
-					"ShowTitle": false
-				}
-			]
-		},
-		{
 			"Name": "Mute Mic",
 			"UUID": "com.blessdog.obs-control-room.mute-mic",
 			"Icon": "imgs/actions/mute-mic/icon",
@@ -260,21 +230,6 @@
 			"States": [
 				{
 					"Image": "imgs/actions/camera-picker/key",
-					"ShowTitle": false
-				}
-			]
-		},
-		{
-			"Name": "Stream",
-			"UUID": "com.blessdog.obs-control-room.stream",
-			"Icon": "imgs/actions/stream/icon",
-			"Tooltip": "Plain stream toggle \u2014 go live without Show Flow's countdown. Cold-starts OBS if it's dead; press while live stops the stream.",
-			"Controllers": [
-				"Keypad"
-			],
-			"States": [
-				{
-					"Image": "imgs/actions/stream/key",
 					"ShowTitle": false
 				}
 			]

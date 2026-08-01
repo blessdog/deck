@@ -14156,6 +14156,40 @@ function fmtDuration(ms) {
     const ss = String(s).padStart(2, "0");
     return h > 0 ? `${h}:${mm}:${ss}` : `${m}:${ss}`;
 }
+/**
+ * The record key, its own face because it's the one that breathes. Not
+ * recording: a plain circle (white ready / dim offline). Recording: a live red
+ * blob that pulses — a soft glow ring and the core both swell on a ~1.3s sine,
+ * with the elapsed time under it. `t` is the animation clock (ms since the
+ * pulse started); pass it every frame from the animator. Static callers omit it.
+ */
+function recordFace(opts) {
+    const { connected, recording, elapsedMs = 0, t = 0, note } = opts;
+    let center;
+    if (recording) {
+        const phase = (Math.sin((t / 1300) * Math.PI * 2) + 1) / 2; // 0..1, ~1.3s breath
+        const coreR = 23 + 4 * phase;
+        const coreO = 0.8 + 0.2 * phase;
+        const glowR = coreR + 9 + 11 * phase;
+        const glowO = 0.1 + 0.22 * phase;
+        center =
+            `<circle cx="72" cy="60" r="${glowR.toFixed(1)}" fill="${COLORS.live}" opacity="${glowO.toFixed(2)}"/>` +
+                `<circle cx="72" cy="60" r="${coreR.toFixed(1)}" fill="${COLORS.live}" opacity="${coreO.toFixed(2)}"/>`;
+    }
+    else {
+        center = `<circle cx="72" cy="66" r="26" fill="${connected ? COLORS.ready : COLORS.offline}"/>`;
+    }
+    const line = recording ? fmtDuration(elapsedMs) : note;
+    const sub = line
+        ? `<text x="72" y="${recording ? 122 : 118}" font-family="Helvetica, Arial, sans-serif" font-size="${recording ? 22 : 20}" fill="${recording ? "#f3aab3" : "#8fa0c5"}" text-anchor="middle">${esc(line)}</text>`
+        : "";
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="144" height="144" viewBox="0 0 144 144">` +
+        `<rect width="144" height="144" rx="18" fill="${COLORS.bg}"/>` +
+        center +
+        sub +
+        `</svg>`;
+    return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+}
 
 const INPUT = "Camera";
 // Never offer OBS's own virtual camera (feedback loop) or the Desk View
@@ -14503,88 +14537,69 @@ let MuteMic = (() => {
 })();
 
 /**
- * Pause/resume the rolling recording — OBS holds its breath and keeps
- * writing the SAME file on resume, so the corpus stays one recording. The
- * face always shows the NEXT action: pause bars while rolling, an amber
- * play triangle while paused (the elapsed timer lives on the Record key).
- * Meaningless when not recording: dim + alert, same grammar as Mark.
+ * A frame clock for a key: repaint the same key fast enough to read as motion.
+ * The only animation path the Stream Deck SDK gives us is pushing successive
+ * images via setImage — animated GIF/SVG freeze on frame one. So we render a
+ * fresh SVG each tick and broadcast it to every visible copy of the action.
+ *
+ * Two disciplines the SDK punishes you for skipping:
+ *   - dedupe: never resubmit an identical frame (the WS + USB pipe is shared by
+ *     all 32 keys), so we skip the push when the frame string is unchanged;
+ *   - stop when hidden: the owner must call stop() from onWillDisappear, or the
+ *     timer runs forever repainting a key nobody can see.
  */
-let PauseRecord = (() => {
-    let _classDecorators = [action({ UUID: "com.blessdog.obs-control-room.pause-record" })];
-    let _classDescriptor;
-    let _classExtraInitializers = [];
-    let _classThis;
-    let _classSuper = SingletonAction;
-    (class extends _classSuper {
-        static { _classThis = this; }
-        static {
-            const _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create(_classSuper[Symbol.metadata] ?? null) : void 0;
-            __esDecorate(null, _classDescriptor = { value: _classThis }, _classDecorators, { kind: "class", name: _classThis.name, metadata: _metadata }, null, _classExtraInitializers);
-            _classThis = _classDescriptor.value;
-            if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
-            __runInitializers(_classThis, _classExtraInitializers);
-        }
-        recording = false;
-        paused = false;
-        constructor() {
-            super();
-            obs.on("connected", () => void this.refresh());
-            obs.on("disconnected", () => {
-                this.recording = false;
-                this.paused = false;
-                void this.render();
-            });
-            // Fires on start/stop AND pause/resume; refresh reads the full truth.
-            obs.on("RecordStateChanged", () => void this.refresh());
-        }
-        onWillAppear(_ev) {
-            void this.refresh();
-        }
-        async onKeyDown(ev) {
-            if (!this.recording) {
-                await ev.action.showAlert(); // nothing rolling, nothing to pause
-                return;
+class KeyAnimator {
+    frame;
+    broadcast;
+    intervalMs;
+    timer;
+    startedAt = 0;
+    last;
+    constructor(
+    /** Render the frame for a given elapsed-since-play time (ms) → data URI. */
+    frame, 
+    /** Push one frame to every visible instance of the owning action. */
+    broadcast, intervalMs) {
+        this.frame = frame;
+        this.broadcast = broadcast;
+        this.intervalMs = intervalMs;
+    }
+    get playing() {
+        return this.timer !== undefined;
+    }
+    play() {
+        if (this.timer)
+            return; // idempotent — safe to call on every willAppear
+        this.startedAt = Date.now();
+        const tick = () => {
+            const uri = this.frame(Date.now() - this.startedAt);
+            if (uri !== this.last) {
+                this.last = uri;
+                this.broadcast(uri);
             }
-            try {
-                await obs.call("ToggleRecordPause");
-                await this.refresh();
-            }
-            catch {
-                await ev.action.showAlert();
-                void this.render();
-            }
+        };
+        tick(); // paint frame 0 now, don't wait one interval
+        this.timer = setInterval(tick, this.intervalMs);
+    }
+    stop(finalUri) {
+        if (this.timer) {
+            clearInterval(this.timer);
+            this.timer = undefined;
         }
-        async refresh() {
-            if (obs.connected) {
-                try {
-                    const s = await obs.call("GetRecordStatus");
-                    this.recording = s.outputActive;
-                    this.paused = s.outputPaused;
-                }
-                catch {
-                    /* keep last known */
-                }
-            }
-            void this.render();
-        }
-        async render() {
-            const uri = face({
-                glyph: this.paused ? GLYPHS.play : GLYPHS.pause,
-                color: !this.recording ? COLORS.offline : this.paused ? COLORS.rec : COLORS.ready,
-            });
-            for (const a of this.actions)
-                void a.setImage(uri);
-        }
-    });
-    return _classThis;
-})();
+        this.last = undefined;
+        if (finalUri)
+            this.broadcast(finalUri);
+    }
+}
 
+// Slow breath: ~7 fps is plenty for a pulse and kind to the shared USB pipe.
+const PULSE_MS = 150;
 /**
- * Corpus recording on one key: press toggles the OBS recording
- * (cold-starting OBS first if it's dead). The face is the record circle,
- * nothing else — white when ready, red + elapsed while rolling, dim when
- * OBS is down. Recordings land in ~/Movies untouched; processing is a
- * separate, later act (media-studio corpus doctrine).
+ * Corpus recording on one key. Idle it's a plain circle (white ready, dim when
+ * OBS is down); the instant it's rolling it becomes a living red blob that
+ * breathes, elapsed time underneath — so a glance says "yes, this is recording".
+ * Press toggles start/stop, cold-starting OBS first if it's dead. Recordings
+ * land in ~/Movies untouched; processing is a separate, later act.
  */
 let Record = (() => {
     let _classDecorators = [action({ UUID: "com.blessdog.obs-control-room.record" })];
@@ -14602,31 +14617,35 @@ let Record = (() => {
             __runInitializers(_classThis, _classExtraInitializers);
         }
         recording = false;
-        timer;
+        // Date.now() at record start, so elapsed is computed locally each frame
+        // instead of hammering OBS with GetRecordStatus every 150ms.
+        startedAtMs = 0;
+        visible = 0;
+        pulse = new KeyAnimator((t) => recordFace({ connected: true, recording: true, t, elapsedMs: Date.now() - this.startedAtMs }), (uri) => this.broadcast(uri), PULSE_MS);
         constructor() {
             super();
             obs.on("connected", () => void this.refresh());
             obs.on("disconnected", () => {
                 this.recording = false;
-                this.stopTimer();
-                void this.render();
+                this.pulse.stop();
+                this.renderStatic();
             });
-            obs.on("RecordStateChanged", ({ outputActive }) => {
-                this.recording = outputActive;
-                if (outputActive)
-                    this.startTimer();
-                else
-                    this.stopTimer();
-                void this.render();
-            });
+            obs.on("RecordStateChanged", () => void this.refresh());
         }
         onWillAppear(_ev) {
+            this.visible++;
             void this.refresh();
+        }
+        onWillDisappear(_ev) {
+            if (--this.visible <= 0) {
+                this.visible = 0;
+                this.pulse.stop(); // never animate a key nobody can see
+            }
         }
         async onKeyDown(ev) {
             try {
                 if (!obs.connected) {
-                    await ev.action.setImage(face({ glyph: GLYPHS.record, sub: "starting OBS", color: COLORS.ready }));
+                    await ev.action.setImage(recordFace({ connected: false, recording: false, note: "starting OBS" }));
                     await obs.ensureOBS();
                 }
                 if (this.recording) {
@@ -14639,158 +14658,40 @@ let Record = (() => {
             }
             catch {
                 await ev.action.showAlert();
-                void this.render();
+                this.renderStatic();
             }
         }
         async refresh() {
             if (obs.connected) {
                 try {
-                    this.recording = (await obs.call("GetRecordStatus")).outputActive;
+                    const s = await obs.call("GetRecordStatus");
+                    this.startedAtMs = Date.now() - (s.outputDuration ?? 0);
+                    this.apply(s.outputActive);
+                    return;
                 }
                 catch {
                     /* keep last known */
                 }
             }
-            if (this.recording)
-                this.startTimer();
-            else
-                this.stopTimer();
-            void this.render();
+            this.renderStatic();
         }
-        async render() {
-            let elapsed;
-            if (this.recording) {
-                try {
-                    elapsed = fmtDuration((await obs.call("GetRecordStatus")).outputDuration);
-                }
-                catch {
-                    /* face still shows recording state */
-                }
+        apply(active) {
+            this.recording = active;
+            if (active) {
+                if (this.visible > 0)
+                    this.pulse.play(); // idempotent
             }
-            const uri = face({
-                glyph: GLYPHS.record,
-                sub: this.recording ? elapsed : undefined,
-                color: !obs.connected ? COLORS.offline : this.recording ? COLORS.live : COLORS.ready,
-            });
+            else {
+                this.pulse.stop();
+                this.renderStatic();
+            }
+        }
+        renderStatic() {
+            this.broadcast(recordFace({ connected: obs.connected, recording: false }));
+        }
+        broadcast(uri) {
             for (const a of this.actions)
                 void a.setImage(uri);
-        }
-        startTimer() {
-            this.timer ??= setInterval(() => void this.render(), 1_000);
-        }
-        stopTimer() {
-            if (this.timer) {
-                clearInterval(this.timer);
-                this.timer = undefined;
-            }
-        }
-    });
-    return _classThis;
-})();
-
-/**
- * Plain stream toggle — go live NOW, no countdown ceremony (Show Flow owns
- * the produced version). Press while OBS is dead cold-starts it first;
- * press while live stops the stream. Face is the broadcast antenna: white
- * ready, red + elapsed while live, dim when OBS is down.
- */
-let Stream = (() => {
-    let _classDecorators = [action({ UUID: "com.blessdog.obs-control-room.stream" })];
-    let _classDescriptor;
-    let _classExtraInitializers = [];
-    let _classThis;
-    let _classSuper = SingletonAction;
-    (class extends _classSuper {
-        static { _classThis = this; }
-        static {
-            const _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create(_classSuper[Symbol.metadata] ?? null) : void 0;
-            __esDecorate(null, _classDescriptor = { value: _classThis }, _classDecorators, { kind: "class", name: _classThis.name, metadata: _metadata }, null, _classExtraInitializers);
-            _classThis = _classDescriptor.value;
-            if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
-            __runInitializers(_classThis, _classExtraInitializers);
-        }
-        streaming = false;
-        timer;
-        constructor() {
-            super();
-            obs.on("connected", () => void this.refresh());
-            obs.on("disconnected", () => {
-                this.streaming = false;
-                this.stopTimer();
-                void this.render();
-            });
-            obs.on("StreamStateChanged", ({ outputActive }) => {
-                this.streaming = outputActive;
-                if (outputActive)
-                    this.startTimer();
-                else
-                    this.stopTimer();
-                void this.render();
-            });
-        }
-        onWillAppear(_ev) {
-            void this.refresh();
-        }
-        async onKeyDown(ev) {
-            try {
-                if (!obs.connected) {
-                    await ev.action.setImage(face({ glyph: GLYPHS.stream, sub: "starting OBS", color: COLORS.ready }));
-                    await obs.ensureOBS();
-                }
-                if (this.streaming) {
-                    await obs.call("StopStream");
-                    await ev.action.showOk();
-                }
-                else {
-                    await obs.call("StartStream");
-                }
-            }
-            catch {
-                await ev.action.showAlert();
-                void this.render();
-            }
-        }
-        async refresh() {
-            if (obs.connected) {
-                try {
-                    this.streaming = (await obs.call("GetStreamStatus")).outputActive;
-                }
-                catch {
-                    /* keep last known */
-                }
-            }
-            if (this.streaming)
-                this.startTimer();
-            else
-                this.stopTimer();
-            void this.render();
-        }
-        async render() {
-            let elapsed;
-            if (this.streaming) {
-                try {
-                    elapsed = fmtDuration((await obs.call("GetStreamStatus")).outputDuration);
-                }
-                catch {
-                    /* face still shows live state */
-                }
-            }
-            const uri = face({
-                glyph: GLYPHS.stream,
-                sub: this.streaming ? elapsed : undefined,
-                color: !obs.connected ? COLORS.offline : this.streaming ? COLORS.live : COLORS.ready,
-            });
-            for (const a of this.actions)
-                void a.setImage(uri);
-        }
-        startTimer() {
-            this.timer ??= setInterval(() => void this.render(), 1_000);
-        }
-        stopTimer() {
-            if (this.timer) {
-                clearInterval(this.timer);
-                this.timer = undefined;
-            }
         }
     });
     return _classThis;
@@ -15014,191 +14915,6 @@ let SceneEnding = (() => {
     return _classThis;
 })();
 
-const COUNTDOWN_S = 10;
-const LONG_PRESS_MS = 1_500;
-const ENDING_HOLD_MS = 3_000;
-// obs-websocket-js rejections stringify to a bare "Error" — log the parts.
-const describe = (err) => err instanceof Error ? `${err.name}(${err.code ?? "?"}): ${err.message}` : String(err);
-/**
- * The whole show open on one key:
- *   press (idle) -> cold-start OBS if dead -> Starting Soon -> 10s countdown
- *   -> Screen + Cam -> StartStream.
- * Press during countdown cancels. While live: short press hints, long press
- * (>=1.5s) plays the Ending scene for 3s and stops the stream.
- */
-let ShowFlow = (() => {
-    let _classDecorators = [action({ UUID: "com.blessdog.obs-control-room.show-flow" })];
-    let _classDescriptor;
-    let _classExtraInitializers = [];
-    let _classThis;
-    let _classSuper = SingletonAction;
-    (class extends _classSuper {
-        static { _classThis = this; }
-        static {
-            const _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create(_classSuper[Symbol.metadata] ?? null) : void 0;
-            __esDecorate(null, _classDescriptor = { value: _classThis }, _classDecorators, { kind: "class", name: _classThis.name, metadata: _metadata }, null, _classExtraInitializers);
-            _classThis = _classDescriptor.value;
-            if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
-            __runInitializers(_classThis, _classExtraInitializers);
-        }
-        log = streamDeck.logger.createScope("show-flow");
-        phase = "idle";
-        pressedAt = 0;
-        countdown = 0;
-        cancelRequested = false;
-        liveTimer;
-        constructor() {
-            super();
-            obs.on("connected", () => void this.render());
-            obs.on("disconnected", () => this.reset());
-            obs.on("StreamStateChanged", ({ outputActive, outputState }) => {
-                if (outputActive) {
-                    this.phase = "live";
-                    this.startLiveTimer();
-                }
-                else if (outputState === "OBS_WEBSOCKET_OUTPUT_STOPPED" && this.phase === "live") {
-                    // stream ended outside the key (OBS UI, official plugin, drop)
-                    this.reset();
-                }
-                void this.render();
-            });
-        }
-        onWillAppear(_ev) {
-            void this.render();
-        }
-        onKeyDown(_ev) {
-            this.pressedAt = Date.now();
-        }
-        async onKeyUp(ev) {
-            const held = Date.now() - this.pressedAt;
-            switch (this.phase) {
-                case "idle":
-                    await this.begin(ev);
-                    break;
-                case "preroll":
-                    this.cancelRequested = true;
-                    break;
-                case "live":
-                    if (held >= LONG_PRESS_MS) {
-                        await this.endShow(ev);
-                    }
-                    else {
-                        const uri = face({ label: "HOLD", sub: "1.5s ends show", color: COLORS.rec });
-                        await ev.action.setImage(uri);
-                        setTimeout(() => void this.render(), 1_200);
-                    }
-                    break;
-            }
-        }
-        async begin(ev) {
-            try {
-                this.phase = "launching";
-                void this.render();
-                await obs.ensureOBS();
-                await obs.call("SetCurrentProgramScene", { sceneName: SCENES.startingSoon });
-                this.phase = "preroll";
-                this.cancelRequested = false;
-                for (this.countdown = COUNTDOWN_S; this.countdown > 0; this.countdown--) {
-                    void this.render();
-                    await sleep(1_000);
-                    if (this.cancelRequested) {
-                        this.log.info("countdown cancelled");
-                        this.reset();
-                        void this.render();
-                        return;
-                    }
-                }
-                this.phase = "golive";
-                void this.render();
-                await obs.call("SetCurrentProgramScene", { sceneName: SCENES.screenCam });
-                await obs.call("StartStream");
-                // "live" phase is set by StreamStateChanged when OBS confirms
-            }
-            catch (err) {
-                this.log.error(`go-live failed: ${describe(err)}`);
-                this.reset();
-                await ev.action.showAlert();
-                const uri = face({ label: "NO KEY?", sub: "stream setup", color: COLORS.rec });
-                for (const a of this.actions)
-                    void a.setImage(uri);
-                try {
-                    await obs.call("SetCurrentProgramScene", { sceneName: SCENES.startingSoon });
-                }
-                catch {
-                    /* OBS may be gone entirely */
-                }
-                setTimeout(() => void this.render(), 4_000);
-            }
-        }
-        async endShow(ev) {
-            try {
-                this.phase = "ending";
-                void this.render();
-                await obs.call("SetCurrentProgramScene", { sceneName: SCENES.ending });
-                await sleep(ENDING_HOLD_MS);
-                // The stream can die on its own during the 3s Ending hold (drop,
-                // OBS UI stop) — StopStream on an inactive output throws, which
-                // was the 2026-07-13 "end-show failed" incident. Stop only if
-                // still active; either way the show ended.
-                const { outputActive } = await obs.call("GetStreamStatus");
-                if (outputActive)
-                    await obs.call("StopStream");
-                this.reset();
-                await ev.action.showOk();
-            }
-            catch (err) {
-                this.log.error(`end-show failed: ${describe(err)}`);
-                this.reset();
-                await ev.action.showAlert();
-            }
-            void this.render();
-        }
-        startLiveTimer() {
-            this.liveTimer ??= setInterval(() => void this.render(), 1_000);
-        }
-        reset() {
-            this.phase = "idle";
-            this.cancelRequested = false;
-            if (this.liveTimer) {
-                clearInterval(this.liveTimer);
-                this.liveTimer = undefined;
-            }
-        }
-        async render() {
-            const uri = face(await this.currentFace());
-            for (const a of this.actions)
-                void a.setImage(uri);
-        }
-        async currentFace() {
-            switch (this.phase) {
-                case "launching":
-                    return { glyph: GLYPHS.play, sub: "starting OBS", color: COLORS.ready };
-                case "preroll":
-                    // press during the countdown cancels; the digits are the face
-                    return { label: String(this.countdown), color: COLORS.live };
-                case "golive":
-                    return { label: "GOING LIVE", color: COLORS.live };
-                case "live": {
-                    let sub;
-                    try {
-                        const s = await obs.call("GetStreamStatus");
-                        sub = fmtDuration(s.outputDuration);
-                    }
-                    catch {
-                        /* face still shows live */
-                    }
-                    return { label: "LIVE", sub, color: COLORS.live, dot: true };
-                }
-                case "ending":
-                    return { label: "ENDING", color: COLORS.rec };
-                default:
-                    return { glyph: GLYPHS.play, color: obs.connected ? COLORS.ready : COLORS.offline };
-            }
-        }
-    });
-    return _classThis;
-})();
-
 const POLL_MS = 3_000;
 /**
  * OBS health at a glance: OFFLINE / READY / REC / LIVE with elapsed time and
@@ -15293,13 +15009,10 @@ let Status = (() => {
 
 streamDeck.actions.registerAction(new Status());
 streamDeck.actions.registerAction(new Record());
-streamDeck.actions.registerAction(new PauseRecord());
 streamDeck.actions.registerAction(new Mark());
 streamDeck.actions.registerAction(new MuteMic());
-streamDeck.actions.registerAction(new Stream());
 streamDeck.actions.registerAction(new CameraPicker());
 streamDeck.actions.registerAction(new MeetingMode());
-streamDeck.actions.registerAction(new ShowFlow());
 streamDeck.actions.registerAction(new SceneStartingSoon());
 streamDeck.actions.registerAction(new SceneScreenLeft());
 streamDeck.actions.registerAction(new SceneScreenRight());

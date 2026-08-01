@@ -96,3 +96,49 @@ export function fmtDuration(ms: number): string {
 	const ss = String(s).padStart(2, "0");
 	return h > 0 ? `${h}:${mm}:${ss}` : `${m}:${ss}`;
 }
+
+/**
+ * The record key, its own face because it's the one that breathes. Not
+ * recording: a plain circle (white ready / dim offline). Recording: a live red
+ * blob that pulses — a soft glow ring and the core both swell on a ~1.3s sine,
+ * with the elapsed time under it. `t` is the animation clock (ms since the
+ * pulse started); pass it every frame from the animator. Static callers omit it.
+ */
+export function recordFace(opts: {
+	connected: boolean;
+	recording: boolean;
+	elapsedMs?: number;
+	/** Animation clock in ms; drives the pulse. Omit for a still frame. */
+	t?: number;
+	/** One-off status line when idle (e.g. "starting OBS"). */
+	note?: string;
+}): string {
+	const { connected, recording, elapsedMs = 0, t = 0, note } = opts;
+
+	let center: string;
+	if (recording) {
+		const phase = (Math.sin((t / 1300) * Math.PI * 2) + 1) / 2; // 0..1, ~1.3s breath
+		const coreR = 23 + 4 * phase;
+		const coreO = 0.8 + 0.2 * phase;
+		const glowR = coreR + 9 + 11 * phase;
+		const glowO = 0.1 + 0.22 * phase;
+		center =
+			`<circle cx="72" cy="60" r="${glowR.toFixed(1)}" fill="${COLORS.live}" opacity="${glowO.toFixed(2)}"/>` +
+			`<circle cx="72" cy="60" r="${coreR.toFixed(1)}" fill="${COLORS.live}" opacity="${coreO.toFixed(2)}"/>`;
+	} else {
+		center = `<circle cx="72" cy="66" r="26" fill="${connected ? COLORS.ready : COLORS.offline}"/>`;
+	}
+
+	const line = recording ? fmtDuration(elapsedMs) : note;
+	const sub = line
+		? `<text x="72" y="${recording ? 122 : 118}" font-family="Helvetica, Arial, sans-serif" font-size="${recording ? 22 : 20}" fill="${recording ? "#f3aab3" : "#8fa0c5"}" text-anchor="middle">${esc(line)}</text>`
+		: "";
+
+	const svg =
+		`<svg xmlns="http://www.w3.org/2000/svg" width="144" height="144" viewBox="0 0 144 144">` +
+		`<rect width="144" height="144" rx="18" fill="${COLORS.bg}"/>` +
+		center +
+		sub +
+		`</svg>`;
+	return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+}

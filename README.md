@@ -10,14 +10,11 @@ in the Stream Deck app under category **"OBS Control Room"**:
 
 | Action | Behavior |
 |---|---|
-| **Show Flow** | Press: cold-start OBS → *Starting Soon* → 10s countdown (press again cancels) → *Screen + Cam* → live. **Hold 1.5s while live**: *Ending* for 3s → stream stops. |
 | **Camera Picker** | Cycles the shared Camera source between physical cameras (iPhone Continuity ↔ built-in FaceTime HD). Face shows which is live; switches the cutout's Camera FX in lockstep. |
 | **Status** | OFFLINE / READY / ⏺ REC / 🔴 LIVE with elapsed time + dropped-frame %. Press while offline = cold start. |
 | **Meeting Mode** | *Screen + Cam* + OBS Virtual Camera on/off — then pick "OBS Virtual Camera" in Zoom/Meet. |
 | **Record** | Toggle the OBS recording (cold-starts OBS if dead). Amber ⏺ + elapsed while rolling. Corpus doctrine: recordings pile up in `~/Movies`; processing is a separate, later act. |
-| **Pause Record** | Pause/resume the rolling recording — OBS keeps writing the SAME file on resume. Face shows the NEXT action (pause bars ↔ play). Dim + alert when nothing records. |
 | **Mute Mic** | Toggle the shared `Mic` input. Face follows OBS's own mute event (never lies): white open mic = hot, red slashed mic = muted. |
-| **Stream** | Plain go-live/stop toggle, no Show Flow ceremony. Cold-starts OBS if dead; red LIVE + elapsed while streaming. |
 | **Mark** | While recording: drops an OBS **chapter marker** into the file itself, named with the record timecode. No daemon, no DB — ffprobe reads chapters back at ingest (verified: media-studio `scripts/verify_record_chapters.py`; OBS auto-adds a `Start` chapter at 0, ingest skips it). Dim + alert when not recording. |
 | **Scene keys** | One key per scene, zero config; the on-air key lights up. Screen share is split into **Screen L** / **Screen R** (per-monitor full capture, left/right computed from display x-origin). |
 
