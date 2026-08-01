@@ -158,6 +158,23 @@ export function face({ state, glyph, art, label, sub }: Face): string {
 }
 
 /**
+ * The power symbol — a broken ring with a bar through the top. Stroked rather
+ * than filled, which is why it's art and not a GLYPHS entry.
+ *
+ * This is what the OBS key wears when OBS is down. It used to say "OFFLINE" on
+ * a dimmed tile, which read as "dead, nothing to see" — when in fact it is the
+ * single most actionable key on the deck, because pressing it launches OBS.
+ * Dim means pressing does nothing; this key does something, so it stays lit.
+ */
+export function powerArt(state: KeyState): string {
+	const ink = INK[state];
+	return (
+		`<path d="M50.8 44.8 A30 30 0 1 0 93.2 44.8" fill="none" stroke="${ink}" stroke-width="11" stroke-linecap="round"/>` +
+		`<rect x="66" y="22" width="12" height="42" rx="6" fill="${ink}"/>`
+	);
+}
+
+/**
  * Screen-plus-camera: a monitor knocked out in the tile colour with a person
  * sitting inside it. Needs to be composite art rather than a single glyph —
  * a same-coloured person drawn on top of a solid monitor is invisible, which

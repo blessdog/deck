@@ -14218,6 +14218,20 @@ function face({ state, glyph, art, label, sub }) {
     return svg(body.join(""));
 }
 /**
+ * The power symbol — a broken ring with a bar through the top. Stroked rather
+ * than filled, which is why it's art and not a GLYPHS entry.
+ *
+ * This is what the OBS key wears when OBS is down. It used to say "OFFLINE" on
+ * a dimmed tile, which read as "dead, nothing to see" — when in fact it is the
+ * single most actionable key on the deck, because pressing it launches OBS.
+ * Dim means pressing does nothing; this key does something, so it stays lit.
+ */
+function powerArt(state) {
+    const ink = INK[state];
+    return (`<path d="M50.8 44.8 A30 30 0 1 0 93.2 44.8" fill="none" stroke="${ink}" stroke-width="11" stroke-linecap="round"/>` +
+        `<rect x="66" y="22" width="12" height="42" rx="6" fill="${ink}"/>`);
+}
+/**
  * Screen-plus-camera: a monitor knocked out in the tile colour with a person
  * sitting inside it. Needs to be composite art rather than a single glyph —
  * a same-coloured person drawn on top of a solid monitor is invisible, which
@@ -15110,7 +15124,7 @@ let Status = (() => {
                 execFile("/usr/bin/open", ["-a", "OBS"]);
                 return;
             }
-            await ev.action.setImage(face({ state: "idle", label: "STARTING", sub: "OBS" }));
+            await ev.action.setImage(face({ state: "alert", art: powerArt("alert"), sub: "starting" }));
             try {
                 await obs.ensureOBS();
                 await ev.action.showOk();
@@ -15127,7 +15141,9 @@ let Status = (() => {
         }
         async currentFace() {
             if (!obs.connected) {
-                return { state: "offline", label: "OFFLINE" };
+                // The power button: OBS is down and this key is what starts it.
+                // Lit, not dimmed — dim is reserved for keys that can't do anything.
+                return { state: "idle", art: powerArt("idle"), label: "OBS" };
             }
             try {
                 const stream = await obs.call("GetStreamStatus");
@@ -15150,7 +15166,7 @@ let Status = (() => {
                 return { state: "idle", label: "READY" };
             }
             catch {
-                return { state: "offline", label: "OFFLINE" };
+                return { state: "idle", art: powerArt("idle"), label: "OBS" };
             }
         }
     });

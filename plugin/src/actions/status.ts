@@ -1,7 +1,7 @@
 import { action, KeyDownEvent, SingletonAction, WillAppearEvent } from "@elgato/streamdeck";
 import { execFile } from "node:child_process";
 import { obs } from "../obs-connection";
-import { face, fmtDuration, KeyState } from "../key-face";
+import { face, fmtDuration, KeyState, powerArt } from "../key-face";
 
 const POLL_MS = 3_000;
 
@@ -33,7 +33,7 @@ export class Status extends SingletonAction {
 			execFile("/usr/bin/open", ["-a", "OBS"]);
 			return;
 		}
-		await ev.action.setImage(face({ state: "idle", label: "STARTING", sub: "OBS" }));
+		await ev.action.setImage(face({ state: "alert", art: powerArt("alert"), sub: "starting" }));
 		try {
 			await obs.ensureOBS();
 			await ev.action.showOk();
@@ -48,9 +48,16 @@ export class Status extends SingletonAction {
 		for (const a of this.actions) void a.setImage(uri);
 	}
 
-	private async currentFace(): Promise<{ state: KeyState; label: string; sub?: string }> {
+	private async currentFace(): Promise<{
+		state: KeyState;
+		label?: string;
+		sub?: string;
+		art?: string;
+	}> {
 		if (!obs.connected) {
-			return { state: "offline", label: "OFFLINE" };
+			// The power button: OBS is down and this key is what starts it.
+			// Lit, not dimmed — dim is reserved for keys that can't do anything.
+			return { state: "idle", art: powerArt("idle"), label: "OBS" };
 		}
 		try {
 			const stream = await obs.call("GetStreamStatus");
@@ -73,7 +80,7 @@ export class Status extends SingletonAction {
 			// scene name lives on the highlighted scene key, not here
 			return { state: "idle", label: "READY" };
 		} catch {
-			return { state: "offline", label: "OFFLINE" };
+			return { state: "idle", art: powerArt("idle"), label: "OBS" };
 		}
 	}
 }
