@@ -34,6 +34,8 @@ export const ACTIONS = {
 	meeting: ["meeting-mode", "Meeting Mode"],
 	soon: ["scene-starting-soon", "Scene: Starting Soon"],
 	ending: ["scene-ending", "Scene: Ending"],
+	brb: ["scene-brb", "Scene: BRB"],
+	float: ["scene-me-float", "Scene: Me + Float"],
 	screenLeft: ["scene-screen-left", "Scene: Screen L"],
 	screenRight: ["scene-screen-right", "Scene: Screen R"],
 	screenCam: ["scene-screen-cam", "Scene: Screen + Cam"],
@@ -52,9 +54,9 @@ export const ACTIONS = {
  */
 export const XL = [
 	// c0          c1          c2           c3     c4         c5          c6       c7
-	["status", null, null, null, null, "soon", "ending", "record"], // row 0 — far
+	["status", null, null, null, "soon", "brb", "ending", "record"], // row 0 — far
 	[null, null, null, null, null, null, null, null], //              row 1 — gutter
-	["screenLeft", "screenRight", "screenCam", null, "cam", "cutout", "lava", null], // row 2
+	["screenLeft", "screenRight", "screenCam", null, "cam", "cutout", "float", "lava"], // row 2
 	["mark", "mute", null, null, "camera", "meeting", null, null], //   row 3 — near
 ];
 

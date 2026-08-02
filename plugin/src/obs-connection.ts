@@ -26,6 +26,8 @@ export const SCENES = {
 	cam: "Cam",
 	camCutout: "Cam Cutout",
 	screenCam: "Screen + Cam",
+	meFloat: "Me + Float",
+	brb: "BRB",
 	ending: "Ending",
 } as const;
 

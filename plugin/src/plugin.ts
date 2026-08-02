@@ -7,9 +7,11 @@ import { MuteMic } from "./actions/mute-mic";
 import { Record } from "./actions/record";
 import {
 	SceneCam,
+	SceneBrb,
 	SceneCamCutout,
 	SceneEnding,
 	SceneLavaLounge,
+	SceneMeFloat,
 	SceneScreenCam,
 	SceneScreenLeft,
 	SceneScreenRight,
@@ -30,6 +32,8 @@ streamDeck.actions.registerAction(new SceneCam());
 streamDeck.actions.registerAction(new SceneCamCutout());
 streamDeck.actions.registerAction(new SceneScreenCam());
 streamDeck.actions.registerAction(new SceneLavaLounge());
+streamDeck.actions.registerAction(new SceneMeFloat());
+streamDeck.actions.registerAction(new SceneBrb());
 streamDeck.actions.registerAction(new SceneEnding());
 
 // Websocket connections die over sleep; retry immediately on wake.

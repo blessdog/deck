@@ -164,6 +164,33 @@ export class SceneLavaLounge extends SceneKey {
 	protected override readonly glyph = GLYPHS.lamp;
 }
 
+/** Full-frame camera with the screen share floating right of centre. */
+@action({ UUID: "com.blessdog.obs-control-room.scene-me-float" })
+export class SceneMeFloat extends SceneKey {
+	protected override readonly tint = "camera" as const;
+	protected readonly scene = SCENES.meFloat;
+	protected readonly label = "ME+FLOAT";
+	protected override art(p: Palette): string {
+		// Him full-frame, the share floating on top — the key is a diagram of
+		// the composition, not another camcorder.
+		return (
+			`<rect x="10" y="24" width="124" height="84" rx="8" fill="${p.ink}" opacity="0.45"/>` +
+			`<circle cx="38" cy="52" r="12" fill="${p.ink}"/>` +
+			`<path d="M18 96 a20 18 0 0 1 40 0 Z" fill="${p.ink}"/>` +
+			`<rect x="58" y="40" width="70" height="46" rx="5" fill="${p.ink}"/>` +
+			`<rect x="64" y="46" width="58" height="34" rx="3" fill="${p.bottom}"/>`
+		);
+	}
+}
+
+@action({ UUID: "com.blessdog.obs-control-room.scene-brb" })
+export class SceneBrb extends SceneKey {
+	protected override readonly tint = "bracket" as const;
+	protected readonly scene = SCENES.brb;
+	protected readonly label = "BRB";
+	protected override readonly glyph = GLYPHS.pause;
+}
+
 @action({ UUID: "com.blessdog.obs-control-room.scene-ending" })
 export class SceneEnding extends SceneKey {
 	protected override readonly tint = "bracket" as const;

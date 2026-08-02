@@ -1,238 +1,268 @@
 {
-	"$schema": "https://schemas.elgato.com/streamdeck/plugins/manifest.json",
-	"UUID": "com.blessdog.obs-control-room",
-	"Name": "OBS Control Room",
-	"Version": "0.1.0.0",
-	"Author": "blessdog",
-	"Description": "Bespoke OBS keys: per-monitor screen share, scene cuts with on-air state, record/mark/pause, mic mute, camera picker, show flow. Companion to the Control Room scene collection.",
-	"Category": "OBS Control Room",
-	"CategoryIcon": "imgs/plugin/category-icon",
-	"CodePath": "bin/plugin.js",
-	"Icon": "imgs/plugin/icon",
-	"SDKVersion": 3,
-	"Software": {
-		"MinimumVersion": "7.1"
-	},
-	"OS": [
-		{
-			"Platform": "mac",
-			"MinimumVersion": "12"
-		}
-	],
-	"Nodejs": {
-		"Version": "24",
-		"Debug": "enabled"
-	},
-	"Actions": [
-		{
-			"Name": "Status",
-			"UUID": "com.blessdog.obs-control-room.status",
-			"Icon": "imgs/actions/status/icon",
-			"Tooltip": "OBS health at a glance: OFFLINE / READY / REC / LIVE with elapsed time and dropped frames. Press while offline to cold-start OBS.",
-			"Controllers": [
-				"Keypad"
-			],
-			"States": [
-				{
-					"Image": "imgs/actions/status/key",
-					"ShowTitle": false
-				}
-			]
-		},
-		{
-			"Name": "Meeting Mode",
-			"UUID": "com.blessdog.obs-control-room.meeting-mode",
-			"Icon": "imgs/actions/meeting-mode/icon",
-			"Tooltip": "Prep a meeting share: Screen + Cam scene with the OBS Virtual Camera on. Press again to turn it off.",
-			"Controllers": [
-				"Keypad"
-			],
-			"States": [
-				{
-					"Image": "imgs/actions/meeting-mode/key",
-					"ShowTitle": false
-				}
-			]
-		},
-		{
-			"Name": "Scene: Starting Soon",
-			"UUID": "com.blessdog.obs-control-room.scene-starting-soon",
-			"Icon": "imgs/actions/scene/icon",
-			"Tooltip": "Cut to the Starting Soon lava-lamp holding scene. The on-air scene's key lights up.",
-			"Controllers": [
-				"Keypad"
-			],
-			"States": [
-				{
-					"Image": "imgs/actions/scene/key",
-					"ShowTitle": false
-				}
-			]
-		},
-		{
-			"Name": "Scene: Screen L",
-			"UUID": "com.blessdog.obs-control-room.scene-screen-left",
-			"Icon": "imgs/actions/scene/icon",
-			"Tooltip": "Cut to the LEFT monitor (full-frame share). The on-air scene's key lights up.",
-			"Controllers": [
-				"Keypad"
-			],
-			"States": [
-				{
-					"Image": "imgs/actions/scene/key",
-					"ShowTitle": false
-				}
-			]
-		},
-		{
-			"Name": "Scene: Screen R",
-			"UUID": "com.blessdog.obs-control-room.scene-screen-right",
-			"Icon": "imgs/actions/scene/icon",
-			"Tooltip": "Cut to the RIGHT monitor (full-frame share). The on-air scene's key lights up.",
-			"Controllers": [
-				"Keypad"
-			],
-			"States": [
-				{
-					"Image": "imgs/actions/scene/key",
-					"ShowTitle": false
-				}
-			]
-		},
-		{
-			"Name": "Scene: Cam",
-			"UUID": "com.blessdog.obs-control-room.scene-cam",
-			"Icon": "imgs/actions/scene/icon",
-			"Tooltip": "Cut to the full camera scene. The on-air scene's key lights up.",
-			"Controllers": [
-				"Keypad"
-			],
-			"States": [
-				{
-					"Image": "imgs/actions/scene/key",
-					"ShowTitle": false
-				}
-			]
-		},
-		{
-			"Name": "Scene: Screen + Cam",
-			"UUID": "com.blessdog.obs-control-room.scene-screen-cam",
-			"Icon": "imgs/actions/scene/icon",
-			"Tooltip": "Cut to screen share with camera bubble. The on-air scene's key lights up.",
-			"Controllers": [
-				"Keypad"
-			],
-			"States": [
-				{
-					"Image": "imgs/actions/scene/key",
-					"ShowTitle": false
-				}
-			]
-		},
-		{
-			"Name": "Scene: Lava Lounge",
-			"UUID": "com.blessdog.obs-control-room.scene-lava-lounge",
-			"Icon": "imgs/actions/scene/icon",
-			"Tooltip": "Cut to the lava lamp with your background-removed camera. The on-air scene's key lights up.",
-			"Controllers": [
-				"Keypad"
-			],
-			"States": [
-				{
-					"Image": "imgs/actions/scene/key",
-					"ShowTitle": false
-				}
-			]
-		},
-		{
-			"Name": "Scene: Ending",
-			"UUID": "com.blessdog.obs-control-room.scene-ending",
-			"Icon": "imgs/actions/scene/icon",
-			"Tooltip": "Cut to the Ending scene. The on-air scene's key lights up.",
-			"Controllers": [
-				"Keypad"
-			],
-			"States": [
-				{
-					"Image": "imgs/actions/scene/key",
-					"ShowTitle": false
-				}
-			]
-		},
-		{
-			"Name": "Scene: Cam Cutout",
-			"UUID": "com.blessdog.obs-control-room.scene-cam-cutout",
-			"Icon": "imgs/actions/scene/icon",
-			"Tooltip": "Cut to the background-removed camera cutout scene. The on-air scene's key lights up.",
-			"Controllers": [
-				"Keypad"
-			],
-			"States": [
-				{
-					"Image": "imgs/actions/scene/key",
-					"ShowTitle": false
-				}
-			]
-		},
-		{
-			"Name": "Record",
-			"UUID": "com.blessdog.obs-control-room.record",
-			"Icon": "imgs/actions/record/icon",
-			"Tooltip": "Toggle the OBS recording (cold-starts OBS if needed). Shows elapsed time while recording; recordings land in ~/Movies as corpus material.",
-			"Controllers": [
-				"Keypad"
-			],
-			"States": [
-				{
-					"Image": "imgs/actions/record/key",
-					"ShowTitle": false
-				}
-			]
-		},
-		{
-			"Name": "Mark",
-			"UUID": "com.blessdog.obs-control-room.mark",
-			"Icon": "imgs/actions/mark/icon",
-			"Tooltip": "While recording: drop a chapter marker into the file itself \u2014 flag the moment without stopping. Ingest reads the chapters back out later.",
-			"Controllers": [
-				"Keypad"
-			],
-			"States": [
-				{
-					"Image": "imgs/actions/mark/key",
-					"ShowTitle": false
-				}
-			]
-		},
-		{
-			"Name": "Mute Mic",
-			"UUID": "com.blessdog.obs-control-room.mute-mic",
-			"Icon": "imgs/actions/mute-mic/icon",
-			"Tooltip": "Toggle the shared Mic input. The face follows OBS's own mute state \u2014 red slashed mic means muted.",
-			"Controllers": [
-				"Keypad"
-			],
-			"States": [
-				{
-					"Image": "imgs/actions/mute-mic/key",
-					"ShowTitle": false
-				}
-			]
-		},
-		{
-			"Name": "Camera Picker",
-			"UUID": "com.blessdog.obs-control-room.camera-picker",
-			"Icon": "imgs/actions/camera-picker/icon",
-			"Tooltip": "Cycle the shared Camera source between physical cameras (iPhone Continuity \u2194 built-in). Face shows which one is live.",
-			"Controllers": [
-				"Keypad"
-			],
-			"States": [
-				{
-					"Image": "imgs/actions/camera-picker/key",
-					"ShowTitle": false
-				}
-			]
-		}
-	]
+  "$schema": "https://schemas.elgato.com/streamdeck/plugins/manifest.json",
+  "UUID": "com.blessdog.obs-control-room",
+  "Name": "OBS Control Room",
+  "Version": "0.1.0.0",
+  "Author": "blessdog",
+  "Description": "Bespoke OBS keys: per-monitor screen share, scene cuts with on-air state, record/mark/pause, mic mute, camera picker, show flow. Companion to the Control Room scene collection.",
+  "Category": "OBS Control Room",
+  "CategoryIcon": "imgs/plugin/category-icon",
+  "CodePath": "bin/plugin.js",
+  "Icon": "imgs/plugin/icon",
+  "SDKVersion": 3,
+  "Software": {
+    "MinimumVersion": "7.1"
+  },
+  "OS": [
+    {
+      "Platform": "mac",
+      "MinimumVersion": "12"
+    }
+  ],
+  "Nodejs": {
+    "Version": "24",
+    "Debug": "enabled"
+  },
+  "Actions": [
+    {
+      "Name": "Status",
+      "UUID": "com.blessdog.obs-control-room.status",
+      "Icon": "imgs/actions/status/icon",
+      "Tooltip": "OBS health at a glance: OFFLINE / READY / REC / LIVE with elapsed time and dropped frames. Press while offline to cold-start OBS.",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/status/key",
+          "ShowTitle": false
+        }
+      ]
+    },
+    {
+      "Name": "Meeting Mode",
+      "UUID": "com.blessdog.obs-control-room.meeting-mode",
+      "Icon": "imgs/actions/meeting-mode/icon",
+      "Tooltip": "Prep a meeting share: Screen + Cam scene with the OBS Virtual Camera on. Press again to turn it off.",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/meeting-mode/key",
+          "ShowTitle": false
+        }
+      ]
+    },
+    {
+      "Name": "Scene: Starting Soon",
+      "UUID": "com.blessdog.obs-control-room.scene-starting-soon",
+      "Icon": "imgs/actions/scene/icon",
+      "Tooltip": "Cut to the Starting Soon lava-lamp holding scene. The on-air scene's key lights up.",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/scene/key",
+          "ShowTitle": false
+        }
+      ]
+    },
+    {
+      "Name": "Scene: Screen L",
+      "UUID": "com.blessdog.obs-control-room.scene-screen-left",
+      "Icon": "imgs/actions/scene/icon",
+      "Tooltip": "Cut to the LEFT monitor (full-frame share). The on-air scene's key lights up.",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/scene/key",
+          "ShowTitle": false
+        }
+      ]
+    },
+    {
+      "Name": "Scene: Screen R",
+      "UUID": "com.blessdog.obs-control-room.scene-screen-right",
+      "Icon": "imgs/actions/scene/icon",
+      "Tooltip": "Cut to the RIGHT monitor (full-frame share). The on-air scene's key lights up.",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/scene/key",
+          "ShowTitle": false
+        }
+      ]
+    },
+    {
+      "Name": "Scene: Cam",
+      "UUID": "com.blessdog.obs-control-room.scene-cam",
+      "Icon": "imgs/actions/scene/icon",
+      "Tooltip": "Cut to the full camera scene. The on-air scene's key lights up.",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/scene/key",
+          "ShowTitle": false
+        }
+      ]
+    },
+    {
+      "Name": "Scene: Screen + Cam",
+      "UUID": "com.blessdog.obs-control-room.scene-screen-cam",
+      "Icon": "imgs/actions/scene/icon",
+      "Tooltip": "Cut to screen share with camera bubble. The on-air scene's key lights up.",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/scene/key",
+          "ShowTitle": false
+        }
+      ]
+    },
+    {
+      "Name": "Scene: Lava Lounge",
+      "UUID": "com.blessdog.obs-control-room.scene-lava-lounge",
+      "Icon": "imgs/actions/scene/icon",
+      "Tooltip": "Cut to the lava lamp with your background-removed camera. The on-air scene's key lights up.",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/scene/key",
+          "ShowTitle": false
+        }
+      ]
+    },
+    {
+      "Name": "Scene: Ending",
+      "UUID": "com.blessdog.obs-control-room.scene-ending",
+      "Icon": "imgs/actions/scene/icon",
+      "Tooltip": "Cut to the Ending scene. The on-air scene's key lights up.",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/scene/key",
+          "ShowTitle": false
+        }
+      ]
+    },
+    {
+      "Name": "Scene: Cam Cutout",
+      "UUID": "com.blessdog.obs-control-room.scene-cam-cutout",
+      "Icon": "imgs/actions/scene/icon",
+      "Tooltip": "Cut to the background-removed camera cutout scene. The on-air scene's key lights up.",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/scene/key",
+          "ShowTitle": false
+        }
+      ]
+    },
+    {
+      "Name": "Record",
+      "UUID": "com.blessdog.obs-control-room.record",
+      "Icon": "imgs/actions/record/icon",
+      "Tooltip": "Toggle the OBS recording (cold-starts OBS if needed). Shows elapsed time while recording; recordings land in ~/Movies as corpus material.",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/record/key",
+          "ShowTitle": false
+        }
+      ]
+    },
+    {
+      "Name": "Mark",
+      "UUID": "com.blessdog.obs-control-room.mark",
+      "Icon": "imgs/actions/mark/icon",
+      "Tooltip": "While recording: drop a chapter marker into the file itself \u2014 flag the moment without stopping. Ingest reads the chapters back out later.",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/mark/key",
+          "ShowTitle": false
+        }
+      ]
+    },
+    {
+      "Name": "Mute Mic",
+      "UUID": "com.blessdog.obs-control-room.mute-mic",
+      "Icon": "imgs/actions/mute-mic/icon",
+      "Tooltip": "Toggle the shared Mic input. The face follows OBS's own mute state \u2014 red slashed mic means muted.",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/mute-mic/key",
+          "ShowTitle": false
+        }
+      ]
+    },
+    {
+      "Name": "Camera Picker",
+      "UUID": "com.blessdog.obs-control-room.camera-picker",
+      "Icon": "imgs/actions/camera-picker/icon",
+      "Tooltip": "Cycle the shared Camera source between physical cameras (iPhone Continuity \u2194 built-in). Face shows which one is live.",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/camera-picker/key",
+          "ShowTitle": false
+        }
+      ]
+    },
+    {
+      "Name": "Scene: Me + Float",
+      "UUID": "com.blessdog.obs-control-room.scene-me-float",
+      "Icon": "imgs/actions/scene/icon",
+      "Tooltip": "Scene: Me + Float",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/scene/key",
+          "ShowTitle": false
+        }
+      ]
+    },
+    {
+      "Name": "Scene: BRB",
+      "UUID": "com.blessdog.obs-control-room.scene-brb",
+      "Icon": "imgs/actions/scene/icon",
+      "Tooltip": "Scene: BRB",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/scene/key",
+          "ShowTitle": false
+        }
+      ]
+    }
+  ]
 }

@@ -13894,6 +13894,8 @@ const SCENES = {
     cam: "Cam",
     camCutout: "Cam Cutout",
     screenCam: "Screen + Cam",
+    meFloat: "Me + Float",
+    brb: "BRB",
     ending: "Ending",
 };
 const FORWARDED = [
@@ -15242,6 +15244,59 @@ let SceneLavaLounge = (() => {
     });
     return _classThis;
 })();
+/** Full-frame camera with the screen share floating right of centre. */
+let SceneMeFloat = (() => {
+    let _classDecorators = [action({ UUID: "com.blessdog.obs-control-room.scene-me-float" })];
+    let _classDescriptor;
+    let _classExtraInitializers = [];
+    let _classThis;
+    let _classSuper = SceneKey;
+    (class extends _classSuper {
+        static { _classThis = this; }
+        static {
+            const _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create(_classSuper[Symbol.metadata] ?? null) : void 0;
+            __esDecorate(null, _classDescriptor = { value: _classThis }, _classDecorators, { kind: "class", name: _classThis.name, metadata: _metadata }, null, _classExtraInitializers);
+            _classThis = _classDescriptor.value;
+            if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
+            __runInitializers(_classThis, _classExtraInitializers);
+        }
+        tint = "camera";
+        scene = SCENES.meFloat;
+        label = "ME+FLOAT";
+        art(p) {
+            // Him full-frame, the share floating on top — the key is a diagram of
+            // the composition, not another camcorder.
+            return (`<rect x="10" y="24" width="124" height="84" rx="8" fill="${p.ink}" opacity="0.45"/>` +
+                `<circle cx="38" cy="52" r="12" fill="${p.ink}"/>` +
+                `<path d="M18 96 a20 18 0 0 1 40 0 Z" fill="${p.ink}"/>` +
+                `<rect x="58" y="40" width="70" height="46" rx="5" fill="${p.ink}"/>` +
+                `<rect x="64" y="46" width="58" height="34" rx="3" fill="${p.bottom}"/>`);
+        }
+    });
+    return _classThis;
+})();
+let SceneBrb = (() => {
+    let _classDecorators = [action({ UUID: "com.blessdog.obs-control-room.scene-brb" })];
+    let _classDescriptor;
+    let _classExtraInitializers = [];
+    let _classThis;
+    let _classSuper = SceneKey;
+    (class extends _classSuper {
+        static { _classThis = this; }
+        static {
+            const _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create(_classSuper[Symbol.metadata] ?? null) : void 0;
+            __esDecorate(null, _classDescriptor = { value: _classThis }, _classDecorators, { kind: "class", name: _classThis.name, metadata: _metadata }, null, _classExtraInitializers);
+            _classThis = _classDescriptor.value;
+            if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
+            __runInitializers(_classThis, _classExtraInitializers);
+        }
+        tint = "bracket";
+        scene = SCENES.brb;
+        label = "BRB";
+        glyph = GLYPHS.pause;
+    });
+    return _classThis;
+})();
 let SceneEnding = (() => {
     let _classDecorators = [action({ UUID: "com.blessdog.obs-control-room.scene-ending" })];
     let _classDescriptor;
@@ -15366,6 +15421,8 @@ streamDeck.actions.registerAction(new SceneCam());
 streamDeck.actions.registerAction(new SceneCamCutout());
 streamDeck.actions.registerAction(new SceneScreenCam());
 streamDeck.actions.registerAction(new SceneLavaLounge());
+streamDeck.actions.registerAction(new SceneMeFloat());
+streamDeck.actions.registerAction(new SceneBrb());
 streamDeck.actions.registerAction(new SceneEnding());
 // Websocket connections die over sleep; retry immediately on wake.
 streamDeck.system.onSystemDidWakeUp(() => obs.poke());
