@@ -118,14 +118,30 @@ the actions above + the HOME shell plan. Kept for reference.)*
 2. **YouTube live enablement** (~16 subs is fine — desktop encoder streaming has no
    subscriber minimum): YouTube Studio → Go Live → verify phone → wait ≤24 h.
    Then copy the stream key and run `node scripts/set-stream-key.mjs <KEY>`.
-3. **Stream Deck**: install the OBS Studio plugin from Marketplace, then drag the
-   actions onto keys per the layout above. The plugin picks up the websocket
-   connection (port 4455) automatically; password is in
-   `~/Library/Application Support/obs-studio/plugin_config/obs-websocket/config.json`.
+3. **Stream Deck**: the layout is written from the repo — edit
+   `scripts/deck-layout.mjs`, then `node scripts/build-profile.mjs`. Never drag
+   keys in the Stream Deck app; that's how the deck and the code drift apart.
+
+## When something looks fine but isn't
+
+Everything in this list presents as working. None of them throws an error, and
+no log line reports any of them — each was found by a human looking at the
+actual picture. Check here first.
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| **Screen share shows the desktop wallpaper — no windows, not even desktop icons** | macOS Screen Recording permission has gone stale. TCC stores the grant against the app's code signature, so an OBS update can leave the row reading "allowed" while ScreenCaptureKit quietly returns a stream containing only the desktop picture. **It does not go black.** Every check passes: right display, right UUID, `type: 0`, correct resolution, source enabled, frames flowing. | System Settings → Privacy & Security → **Screen & System Audio Recording** → toggle OBS **off then on** (seeing it already on is not enough — the toggle is what re-mints the grant), then **quit and relaunch OBS**. Jump straight there with `open "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture"`. |
+| **Camera bubble missing; Cam / Cam Cutout black** | The Camera input points at a Continuity Camera device that no longer exists — the IDs are per-phone, so swapping handsets orphans every camera scene. The source resolves to 0x0 and simply doesn't draw. | Self-healing since 2026-08-01: `camera-picker` re-points Camera and Camera FX on every OBS connect and logs a warning. If it ever can't, press the Camera Picker key. |
+| **A deck key shows a yellow `?`** | The key points at a plugin action that no longer ships — the profile and the code drifted. | `node scripts/check-deck.mjs` names every one, then `node scripts/build-profile.mjs`. |
+| **Record key insists it's recording when OBS isn't** | Fixed 2026-08-01 — it used to trust a cached flag and miss the stop edge. It now re-reads `GetRecordStatus` on every press and reconciles every 5s. | Shouldn't recur; if it does, the log records every `RecordStateChanged`. |
 
 ## Verify after changes
 
-1. Quit OBS → open `OBS Cold Start.app` → OBS returns on *Starting Soon* (~20 s).
-2. Flip through scene keys; ⏺ record ~10 s → playable file in `~/Movies`.
-3. 📹 Virtual Cam on → "OBS Virtual Camera" appears in Zoom/Meet/Photo Booth —
-   that's the polished meeting screen-share path.
+1. `node scripts/check-deck.mjs` → zero orphaned keys, zero unplaced actions.
+2. Quit OBS → press the **OBS** key (power symbol) → OBS returns on *Starting
+   Soon* (~20 s) and every key repaints with live state.
+3. Press each screen key → **look at the picture**, not just the key: it must
+   show real windows, not the bare wallpaper.
+4. Flip through scene keys; record ~10 s → playable file in `~/Movies`.
+5. Press **Mark** twice while recording → `ffprobe` shows the chapters
+   (media-studio `scripts/verify_record_chapters.py`).
