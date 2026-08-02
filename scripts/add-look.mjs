@@ -24,7 +24,7 @@ const REPLACE = rest.includes('--replace');
 const args = rest.filter((a) => a !== '--replace');
 
 if (!kind) {
-  console.error('usage: add-look.mjs <brb|float|character> [name] [image]');
+  console.error('usage: add-look.mjs <brb|float|character|screens> [name] [image]');
   process.exit(1);
 }
 
@@ -33,7 +33,8 @@ const obs = await connect({ launch: true });
 try {
   const { baseWidth: W, baseHeight: H } = await obs.call('GetVideoSettings');
 
-  if (kind === 'brb') await brb(W, H);
+  if (kind === 'screens') await fitScreens(W, H);
+  else if (kind === 'brb') await brb(W, H);
   else if (kind === 'float') await meFloat(W, H);
   else if (kind === 'character') {
     const [name, image] = args;
@@ -51,6 +52,64 @@ try {
 }
 
 // ---------------------------------------------------------------------------
+
+/**
+ * Make every display capture FILL the canvas instead of sitting in black bars.
+ *
+ * Ryan, 2026-08-01: "what's up with all the extra space around the frame".
+ * Measured: Screen R had 125px of pure black down each side. Not a bug —
+ * geometry. The built-in MacBook panel is 3456x2234 (aspect 1.547) and the
+ * canvas is 16:9 (1.778), so fitting the whole screen inside it leaves bars.
+ * The external monitor is natively 16:9, which is why only one screen looked
+ * wrong.
+ *
+ * Rather than letterbox, crop the source to the canvas aspect first. The trim
+ * is biased to the TOP because that's where the menu bar lives — the part of a
+ * screen share nobody needs — so we spend the loss on chrome rather than
+ * content. Nothing is scaled up, so no sharpness is lost.
+ */
+async function fitScreens(W, H) {
+  const canvasAspect = W / H;
+  const { scenes } = await obs.call('GetSceneList');
+  for (const { sceneName } of scenes) {
+    const { sceneItems } = await obs.call('GetSceneItemList', { sceneName });
+    for (const it of sceneItems) {
+      if (it.inputKind !== 'screen_capture') continue;
+      const { sceneItemTransform: t } = await obs.call('GetSceneItemTransform', {
+        sceneName,
+        sceneItemId: it.sceneItemId,
+      });
+      const sw = t.sourceWidth, sh = t.sourceHeight;
+      if (!sw || !sh) continue;
+
+      let cropTop = 0, cropBottom = 0, cropLeft = 0, cropRight = 0;
+      if (sw / sh < canvasAspect) {
+        // Too tall: trim height. 70% off the top (menu bar), 30% off the bottom.
+        const excess = Math.round(sh - sw / canvasAspect);
+        cropTop = Math.round(excess * 0.7);
+        cropBottom = excess - cropTop;
+      } else if (sw / sh > canvasAspect) {
+        const excess = Math.round(sw - sh * canvasAspect);
+        cropLeft = Math.round(excess / 2);
+        cropRight = excess - cropLeft;
+      }
+
+      await obs.call('SetSceneItemTransform', {
+        sceneName,
+        sceneItemId: it.sceneItemId,
+        sceneItemTransform: {
+          cropTop, cropBottom, cropLeft, cropRight,
+          positionX: 0, positionY: 0, alignment: 5,
+          boundsType: 'OBS_BOUNDS_SCALE_INNER',
+          boundsAlignment: 0,
+          boundsWidth: W, boundsHeight: H,
+        },
+      });
+      const kept = ((sh - cropTop - cropBottom) / sh * 100).toFixed(1);
+      console.log(`${sceneName} / ${it.sourceName}: ${sw}x${sh} -> crop T${cropTop} B${cropBottom} L${cropLeft} R${cropRight} (keeps ${kept}% of height)`);
+    }
+  }
+}
 
 /** Create a scene, or bail out politely if it's already there. */
 async function freshScene(sceneName) {
@@ -135,46 +194,56 @@ async function meFloat(W, H) {
   const sceneName = 'Me + Float';
   if (!(await freshScene(sceneName))) return;
 
-  // THE CENTER STAGE PROBLEM (Ryan, 2026-08-01: "right now it's right in the
-  // middle blocking me completely"). Continuity Camera actively keeps him
-  // CENTRED in the camera frame, so a float placed centre-right doesn't sit
-  // beside him — the camera tracks him straight back underneath it. Moving the
-  // float can never fix that, because the camera is chasing.
+  // Ryan's ask, verbatim: "it's still full screen me, but then has a floating
+  // screen share in the middle punch out." FULL BLEED is the point — a scene
+  // that solves the overlap with a big black panel has thrown away the reason
+  // the scene exists ("the whole point was so that we didn't have all this
+  // black space, keeping it interesting").
   //
-  // The fix is to stop mapping the camera frame 1:1 onto the canvas. Center
-  // Stage centres him in the FRAME; nothing stops us putting that frame off to
-  // the left of the CANVAS. He keeps the follow-shot and clears the share.
-  // No camera swap, and no upscaling — upscaling would only add grain to an
-  // already-soft feed (Center Stage runs off the ultra-wide lens).
-  const panelX = Math.round(W * 0.427);   // 820 on a 1920 canvas
-  const camCentre = Math.round(W * 0.214); // where his face lands: ~410
+  // The collision: Continuity Camera's Center Stage keeps him CENTRED in the
+  // camera frame, so the share lands on his face and moving the share can
+  // never help — the camera tracks him back under it.
+  //
+  // The constraint: he's centred in the source, so putting him off-centre AND
+  // filling the canvas needs some upscale. Minimum is s = 2 * (1 - C/W). Push
+  // him only to 40% and that's 1.20 — visually nothing. Pushing further gets
+  // expensive fast (25% would need 1.5x), and upscaling compounds the grain,
+  // because Center Stage runs off the iPhone's ultra-wide lens.
+  const camCentre = Math.round(W * 0.40);
+  const scale = 1.22; // a hair over the 1.20 minimum, so no edge can creep in
+  const cw = Math.round(W * scale);
+  const ch = Math.round(H * scale);
 
-  // Native scale, shifted left so his centre lands on camCentre. Everything
-  // right of panelX is covered by the panel, so the shift can't expose a gap.
   const camId = await addShared(sceneName, 'Camera');
   await obs.call('SetSceneItemTransform', {
     sceneName,
     sceneItemId: camId,
     sceneItemTransform: {
-      positionX: camCentre - W / 2,
-      positionY: 0,
+      positionX: Math.round(camCentre - cw / 2),
+      positionY: Math.round((H - ch) / 2),
       alignment: 5,
       boundsType: 'OBS_BOUNDS_SCALE_INNER',
       boundsAlignment: 0,
-      boundsWidth: W,
-      boundsHeight: H,
+      boundsWidth: cw,
+      boundsHeight: ch,
     },
   });
 
-  // A full-height panel, not a floating rectangle: a deliberate side panel
-  // reads as design, where a rectangle with a sliver of gap beside it reads as
-  // a mistake.
-  const panelW = W - panelX;
+  // The share as a card in the LOWER right: his face sits upper-left of centre,
+  // so dropping the card low keeps it clear of his face while still overlapping
+  // his shoulder — which is what makes it read as floating in the room rather
+  // than pasted on.
+  const fw = Math.round(W * 0.52);
+  const fh = Math.round((fw * 9) / 16);
+  const fx = W - fw - Math.round(W * 0.031);
+  const fy = H - fh - Math.round(H * 0.044);
+  const pad = 8;
+
   await obs.call('CreateInput', {
     sceneName,
     inputName: 'Float Plate',
     inputKind: 'color_source_v3',
-    inputSettings: { color: 0xff0d0d11, width: panelW, height: H },
+    inputSettings: { color: 0xf00a0a0e, width: fw + pad * 2, height: fh + pad * 2 },
   });
   const { sceneItemId: plateId } = await obs.call('GetSceneItemId', {
     sceneName,
@@ -183,20 +252,13 @@ async function meFloat(W, H) {
   await obs.call('SetSceneItemTransform', {
     sceneName,
     sceneItemId: plateId,
-    sceneItemTransform: { positionX: panelX, positionY: 0, alignment: 5 },
+    sceneItemTransform: { positionX: fx - pad, positionY: fy - pad, alignment: 5 },
   });
 
-  // The share, inset in the panel with an even margin.
-  const pad = 20;
-  const fw = panelW - pad * 2;
-  const fh = Math.round((fw * 9) / 16);
-  const fx = panelX + pad;
-  const fy = Math.round((H - fh) / 2);
   const screenId = await addShared(sceneName, 'Display');
   await fit(sceneName, screenId, fx, fy, fw, fh);
-
   await addShared(sceneName, 'Mic');
-  console.log(`Scene "${sceneName}" — he sits at x~${camCentre}, panel from ${panelX}, share ${fw}x${fh}.`);
+  console.log(`Scene "${sceneName}" — full bleed, he sits at x~${camCentre} (${scale}x), card ${fw}x${fh} at ${fx},${fy}.`);
 }
 
 /**
