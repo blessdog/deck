@@ -135,21 +135,46 @@ async function meFloat(W, H) {
   const sceneName = 'Me + Float';
   if (!(await freshScene(sceneName))) return;
 
+  // THE CENTER STAGE PROBLEM (Ryan, 2026-08-01: "right now it's right in the
+  // middle blocking me completely"). Continuity Camera actively keeps him
+  // CENTRED in the camera frame, so a float placed centre-right doesn't sit
+  // beside him — the camera tracks him straight back underneath it. Moving the
+  // float can never fix that, because the camera is chasing.
+  //
+  // The fix is to stop mapping the camera frame 1:1 onto the canvas. Center
+  // Stage centres him in the FRAME; nothing stops us putting that frame off to
+  // the left of the CANVAS. He keeps the follow-shot and clears the share.
+  // No camera swap, and no upscaling — upscaling would only add grain to an
+  // already-soft feed (Center Stage runs off the ultra-wide lens).
+  const panelX = Math.round(W * 0.427);   // 820 on a 1920 canvas
+  const camCentre = Math.round(W * 0.214); // where his face lands: ~410
+
+  // Native scale, shifted left so his centre lands on camCentre. Everything
+  // right of panelX is covered by the panel, so the shift can't expose a gap.
   const camId = await addShared(sceneName, 'Camera');
-  await fit(sceneName, camId, 0, 0, W, H);
+  await obs.call('SetSceneItemTransform', {
+    sceneName,
+    sceneItemId: camId,
+    sceneItemTransform: {
+      positionX: camCentre - W / 2,
+      positionY: 0,
+      alignment: 5,
+      boundsType: 'OBS_BOUNDS_SCALE_INNER',
+      boundsAlignment: 0,
+      boundsWidth: W,
+      boundsHeight: H,
+    },
+  });
 
-  // Float geometry: right of centre, vertically centred, ~58% of the frame.
-  const fw = Math.round(W * 0.58);
-  const fh = Math.round((fw * 9) / 16);
-  const fx = W - fw - Math.round(W * 0.05);
-  const fy = Math.round((H - fh) / 2);
-  const pad = 10;
-
+  // A full-height panel, not a floating rectangle: a deliberate side panel
+  // reads as design, where a rectangle with a sliver of gap beside it reads as
+  // a mistake.
+  const panelW = W - panelX;
   await obs.call('CreateInput', {
     sceneName,
     inputName: 'Float Plate',
     inputKind: 'color_source_v3',
-    inputSettings: { color: 0xff101014, width: fw + pad * 2, height: fh + pad * 2 },
+    inputSettings: { color: 0xff0d0d11, width: panelW, height: H },
   });
   const { sceneItemId: plateId } = await obs.call('GetSceneItemId', {
     sceneName,
@@ -158,14 +183,20 @@ async function meFloat(W, H) {
   await obs.call('SetSceneItemTransform', {
     sceneName,
     sceneItemId: plateId,
-    sceneItemTransform: { positionX: fx - pad, positionY: fy - pad, alignment: 5 },
+    sceneItemTransform: { positionX: panelX, positionY: 0, alignment: 5 },
   });
 
+  // The share, inset in the panel with an even margin.
+  const pad = 20;
+  const fw = panelW - pad * 2;
+  const fh = Math.round((fw * 9) / 16);
+  const fx = panelX + pad;
+  const fy = Math.round((H - fh) / 2);
   const screenId = await addShared(sceneName, 'Display');
   await fit(sceneName, screenId, fx, fy, fw, fh);
 
   await addShared(sceneName, 'Mic');
-  console.log(`Scene "${sceneName}" built — float ${fw}x${fh} at ${fx},${fy}.`);
+  console.log(`Scene "${sceneName}" — he sits at x~${camCentre}, panel from ${panelX}, share ${fw}x${fh}.`);
 }
 
 /**
