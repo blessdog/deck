@@ -23,7 +23,10 @@ import('./scripts/lib/obs.mjs').then(async ({connect}) => {
 });" || exit 1
 
 say_step "Quitting OBS"
-osascript -e 'tell application "OBS" to quit' 2>/dev/null || pkill -x OBS || true
+if ! osascript -e 'tell application "OBS" to quit' 2>/dev/null; then
+  echo "  Couldn't quit OBS. Quit it by hand, then re-run."
+  exit 1
+fi
 for i in $(seq 1 40); do pgrep -x OBS >/dev/null || break; sleep 0.5; done
 sleep 2
 
@@ -39,8 +42,12 @@ sleep 22
 node scripts/verify-zoom.mjs || echo "  !! not loaded — check OBS > Tools > Scripts > Script Log"
 
 say_step "Quitting the Stream Deck app"
-osascript -e 'tell application "Elgato Stream Deck" to quit' 2>/dev/null \
-  || pkill -f "Elgato Stream Deck.app/Contents/MacOS" || true
+if ! osascript -e 'tell application "Elgato Stream Deck" to quit' 2>/dev/null; then
+  echo "  Couldn't quit it. Grant Automation permission, or quit it by hand, then re-run."
+  echo "  (NOT force-killing: a killed Stream Deck offers to restore a stale backup"
+  echo "   on next launch, and accepting that reverts this layout.)"
+  exit 1
+fi
 for i in $(seq 1 40); do pgrep -f "Elgato Stream Deck.app/Contents/MacOS" >/dev/null || break; sleep 0.5; done
 sleep 2
 
@@ -63,4 +70,4 @@ node scripts/check-deck.mjs
 printf "\n\033[1;32mDone. ZOOM is on row 3, third from the left.\033[0m\n"
 printf "Press it while sharing the left monitor: punches in 2x on the cursor.\n"
 printf "Long press toggles follow.\n\n"
-read -n 1 -s -r -p "Press any key to close."
+[ -t 0 ] && read -n 1 -s -r -p "Press any key to close." || true

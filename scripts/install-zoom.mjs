@@ -96,18 +96,22 @@ const settings = {
 	monitor_override_dh: capH || 1080,
 };
 
+// NOTE: `modules["scripts-tool"]` is an ARRAY of script entries, not an object
+// with a `scripts` key. Assuming the latter cost a debugging round: setting
+// `.scripts` on an array is legal JS and JSON.stringify silently drops it, so
+// the write "succeeded" and the entry simply never existed. verify-zoom.mjs is
+// what caught it — the config write reported success either way.
 json.modules ??= {};
-json.modules["scripts-tool"] ??= {};
+if (!Array.isArray(json.modules["scripts-tool"])) json.modules["scripts-tool"] = [];
 const tool = json.modules["scripts-tool"];
-tool.scripts ??= [];
 
-const existing = tool.scripts.find((s) => s.path === LUA || /obs-zoom-to-mouse\.lua$/.test(s.path));
+const existing = tool.find((s) => /obs-zoom-to-mouse\.lua$/.test(s?.path ?? ""));
 if (existing) {
 	existing.path = LUA;
 	existing.settings = { ...(existing.settings ?? {}), ...settings };
 	console.log("updated the existing zoom-to-mouse registration");
 } else {
-	tool.scripts.push({ path: LUA, settings });
+	tool.push({ path: LUA, settings });
 	console.log("registered zoom-to-mouse");
 }
 
