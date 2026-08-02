@@ -30,6 +30,7 @@ export const ACTIONS = {
 	record: ["record", "Record"],
 	mark: ["mark", "Mark"],
 	mute: ["mute-mic", "Mute Mic"],
+	zoom: ["zoom", "Zoom to Cursor"],
 	camera: ["camera-picker", "Camera Picker"],
 	meeting: ["meeting-mode", "Meeting Mode"],
 	soon: ["scene-starting-soon", "Scene: Starting Soon"],
@@ -57,7 +58,7 @@ export const XL = [
 	["status", null, null, null, "soon", "brb", "ending", "record"], // row 0 — far
 	[null, null, null, null, null, null, null, null], //              row 1 — gutter
 	["screenLeft", "screenRight", "screenCam", null, "cam", "cutout", "float", "lava"], // row 2
-	["mark", "mute", null, null, "camera", "meeting", null, null], //   row 3 — near
+	["mark", "mute", "zoom", null, "camera", "meeting", null, null], // row 3 — near
 ];
 
 /**

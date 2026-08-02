@@ -18,11 +18,13 @@ import {
 	SceneStartingSoon,
 } from "./actions/scene-keys";
 import { Status } from "./actions/status";
+import { Zoom } from "./actions/zoom";
 
 streamDeck.actions.registerAction(new Status());
 streamDeck.actions.registerAction(new Record());
 streamDeck.actions.registerAction(new Mark());
 streamDeck.actions.registerAction(new MuteMic());
+streamDeck.actions.registerAction(new Zoom());
 streamDeck.actions.registerAction(new CameraPicker());
 streamDeck.actions.registerAction(new MeetingMode());
 streamDeck.actions.registerAction(new SceneStartingSoon());

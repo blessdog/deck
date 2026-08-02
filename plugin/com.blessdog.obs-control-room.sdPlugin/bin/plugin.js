@@ -15408,10 +15408,111 @@ let Status = (() => {
     return _classThis;
 })();
 
+// Registered by vendor/obs-zoom-to-mouse.lua (see scripts/install-zoom.mjs).
+const ZOOM_HOTKEY = "toggle_zoom_hotkey";
+const FOLLOW_HOTKEY = "toggle_follow_hotkey";
+const LONG_PRESS_MS = 450;
+/**
+ * Punch the screen capture in on the cursor, and follow it.
+ *
+ * The single highest-value key for the work Ryan actually does — screen shares
+ * and commentary. The zoom itself is `obs-zoom-to-mouse`, a Lua script whose
+ * author wrote it "to zoom into an IDE when highlighting certain sections of
+ * code"; we don't reimplement it, we drive it.
+ *
+ * It's driven by NAME over the websocket we already hold
+ * (TriggerHotkeyByName), not by emulating a keystroke. A synthetic keypress
+ * would need Accessibility permission, could collide with whatever app has
+ * focus, and would fire blind. This can't.
+ *
+ * Press = zoom in/out. Long press = toggle follow-the-cursor while zoomed, so
+ * you can pin the view on one spot and talk over it without it drifting.
+ */
+let Zoom = (() => {
+    let _classDecorators = [action({ UUID: "com.blessdog.obs-control-room.zoom" })];
+    let _classDescriptor;
+    let _classExtraInitializers = [];
+    let _classThis;
+    let _classSuper = SingletonAction;
+    (class extends _classSuper {
+        static { _classThis = this; }
+        static {
+            const _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create(_classSuper[Symbol.metadata] ?? null) : void 0;
+            __esDecorate(null, _classDescriptor = { value: _classThis }, _classDecorators, { kind: "class", name: _classThis.name, metadata: _metadata }, null, _classExtraInitializers);
+            _classThis = _classDescriptor.value;
+            if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
+            __runInitializers(_classThis, _classExtraInitializers);
+        }
+        log = streamDeck.logger.createScope("zoom");
+        pressedAt = 0;
+        longPress;
+        constructor() {
+            super();
+            obs.on("connected", () => this.render());
+            obs.on("disconnected", () => this.render());
+        }
+        onWillAppear(_ev) {
+            this.render();
+        }
+        onKeyDown(ev) {
+            this.pressedAt = Date.now();
+            this.longPress = setTimeout(() => {
+                this.longPress = undefined;
+                void this.fire(ev, FOLLOW_HOTKEY, "follow");
+            }, LONG_PRESS_MS);
+        }
+        async onKeyUp(ev) {
+            if (!this.longPress)
+                return; // the long press already fired
+            clearTimeout(this.longPress);
+            this.longPress = undefined;
+            if (Date.now() - this.pressedAt < LONG_PRESS_MS)
+                await this.fire(ev, ZOOM_HOTKEY, "zoom");
+        }
+        async fire(ev, hotkeyName, what) {
+            if (!obs.connected) {
+                await ev.action.showAlert();
+                return;
+            }
+            try {
+                // Verify the hotkey exists rather than firing into the void: if the
+                // lua didn't load, OBS accepts the request and silently does nothing.
+                const { hotkeys } = await obs.call("GetHotkeyList");
+                if (!hotkeys.includes(hotkeyName)) {
+                    this.log.error(`${hotkeyName} not registered — is vendor/obs-zoom-to-mouse.lua loaded?`);
+                    await ev.action.showAlert();
+                    return;
+                }
+                await obs.call("TriggerHotkeyByName", { hotkeyName });
+                await ev.action.showOk();
+                this.log.info(`fired ${what}`);
+            }
+            catch (err) {
+                this.log.error(`${what} failed: ${err}`);
+                await ev.action.showAlert();
+            }
+        }
+        render() {
+            // No state to read back — the script owns whether it's zoomed and doesn't
+            // report it — so the key stays honest by claiming nothing: available when
+            // OBS is up, unavailable when it isn't.
+            const uri = face({
+                state: obs.connected ? "idle" : "offline",
+                tint: "screen",
+                glyph: GLYPHS.zoom,
+            });
+            for (const a of this.actions)
+                void a.setImage(uri);
+        }
+    });
+    return _classThis;
+})();
+
 streamDeck.actions.registerAction(new Status());
 streamDeck.actions.registerAction(new Record());
 streamDeck.actions.registerAction(new Mark());
 streamDeck.actions.registerAction(new MuteMic());
+streamDeck.actions.registerAction(new Zoom());
 streamDeck.actions.registerAction(new CameraPicker());
 streamDeck.actions.registerAction(new MeetingMode());
 streamDeck.actions.registerAction(new SceneStartingSoon());

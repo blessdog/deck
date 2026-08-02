@@ -263,6 +263,21 @@
           "ShowTitle": false
         }
       ]
+    },
+    {
+      "Name": "Zoom to Cursor",
+      "UUID": "com.blessdog.obs-control-room.zoom",
+      "Icon": "imgs/actions/mark/icon",
+      "Tooltip": "Punch the screen capture in on the mouse; long press toggles follow",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/mark/key",
+          "ShowTitle": false
+        }
+      ]
     }
   ]
 }
