@@ -16,7 +16,8 @@ in the Stream Deck app under category **"OBS Control Room"**:
 | **Record** | Toggle the OBS recording (cold-starts OBS if dead). Amber ⏺ + elapsed while rolling. Corpus doctrine: recordings pile up in `~/Movies`; processing is a separate, later act. |
 | **Mute Mic** | Toggle the shared `Mic` input. Face follows OBS's own mute event (never lies): white open mic = hot, red slashed mic = muted. |
 | **Mark** | While recording: drops an OBS **chapter marker** into the file itself, named with the record timecode. No daemon, no DB — ffprobe reads chapters back at ingest (verified: media-studio `scripts/verify_record_chapters.py`; OBS auto-adds a `Start` chapter at 0, ingest skips it). Dim + alert when not recording. |
-| **Scene keys** | One key per scene, zero config; the on-air key lights up. Screen share is split into **Screen L** / **Screen R** (per-monitor full capture, left/right computed from display x-origin). |
+| **Zoom to Cursor** | Punches the left-monitor capture in 2x on the mouse and follows it; long press toggles following. Drives `vendor/obs-zoom-to-mouse.lua` by name over the websocket (`TriggerHotkeyByName`) — no OS hotkey, no Accessibility permission. Checks the hotkey exists before firing, so an unloaded script alerts instead of doing nothing. |
+| **Scene keys** | One key per scene, zero config; the on-air key lights up. Screen keys **draw the real monitor arrangement** (ordered by CoreGraphics x-origin) with the shared one filled, so a third monitor changes the picture instead of making "SCREEN L" lie. |
 
 Build: `cd plugin && PATH="/opt/homebrew/opt/node@24/bin:$PATH" npm run build`,
 then `npx streamdeck restart com.blessdog.obs-control-room` (or `npm run watch`).
@@ -31,70 +32,97 @@ the app never creates `~/Library/Application Support/com.elgato.StreamDeck/NodeJ
 
 | Piece | What it does |
 |---|---|
-| `scripts/setup-scenes.mjs` | Builds the **"Control Room"** OBS scene collection over obs-websocket. Re-run with `--force` to wipe and rebuild. |
+| `scripts/deck-layout.mjs` | **THE LAYOUT, as data.** Which action sits on which key, for XL and SD+. Edit here, never in the Stream Deck app. |
+| `scripts/build-profile.mjs` | Writes `deck-layout.mjs` onto the physical decks. Quits the Stream Deck app first (it rewrites its config on exit) and preserves foreign keys. |
+| `scripts/check-deck.mjs` | **The tripwire.** Fails if any key points at a missing action, or any shipped action sits on no key. Run after every build. |
+| `scripts/add-look.mjs` | Additive scene builder: `brb` · `float` · `screens` · `character "<name>" <image>`. Does NOT wipe the collection. |
+| `scripts/install-zoom.mjs` / `verify-zoom.mjs` | Register the zoom Lua with OBS (needs OBS quit) and ground-truth that it actually loaded. |
+| `scripts/set-record-quality.mjs` | Recording bitrate (needs OBS quit). Currently 45 Mbps. |
+| `FINISH-DECK.command` | Double-clickable: the steps that need OBS and the Stream Deck app quit, in order, with verification. |
+| `scripts/setup-scenes.mjs` | Builds the **"Control Room"** collection from scratch. **Wipes and rebuilds** with `--force` — use `add-look.mjs` to add one scene. |
 | `scripts/cold-start.mjs` | Launches OBS if needed, lands on *Starting Soon*. Flags: `--virtual-cam`, `--and-stream`. |
 | `scripts/set-stream-key.mjs` | One-time: `node scripts/set-stream-key.mjs <KEY>` points OBS at YouTube RTMPS. Key lives in OBS config, never in this repo. |
 | `OBS Cold Start.app` | Wrapper the Stream Deck 🚀 key opens (runs `cold-start.command`, logs to `logs/cold-start.log`). |
 | `scripts/set-display.mjs` | Point the Screen capture at the built-in display (default) or `--external`. |
-| `scripts/snapshot.mjs` | Save a PNG of a scene's program output. **Broken on OBS 32.1.x** — GetSourceScreenshot returns transparent frames; verify via a short recording instead. |
+| `scripts/snapshot.mjs` | Save a PNG of a scene's program output. **Works again as of OBS 32.2.1** (it returned transparent frames on 32.1.x). This is how compositions get checked now — render it and look, don't reason about geometry blind. |
 | `scripts/lib/obs.mjs` | Shared connect helper. Reads port/password from OBS's own websocket config (SSOT) and waits until OBS is actually ready (error-207 poll). Also `displayUUIDs()` via CoreGraphics, since OBS 32.1.x hangs on display enumeration. |
 
 ## Scenes
 
-`Starting Soon` · `Screen L` · `Screen R` · `Cam` · `Cam Cutout` · `Lava Lounge` · `Screen + Cam` (left monitor + camera bubble bottom-right) · `Ending`
+`Starting Soon` · `Screen L` · `Screen R` · `Cam` · `Cam Cutout` · `Lava Lounge` · `Screen + Cam` (camera bubble bottom-right) · **`Me + Float`** (full-bleed camera, share as a card lower-right) · **`BRB`** · `Ending`
 
 One shared `Display` / `Camera` / `Mic` input reused across scenes — edit a device
 once, every scene follows.
 
-## State — 2026-07-21 (deck framework locked in)
+## State — 2026-08-01
 
-This project is now THE Stream Deck surface, full stop (Ryan's reel-in: the
-deck does one thing well — OBS; Resolve profiles and daemon-verb keys are
-dropped; the pipeline side lives in `~/projects/media-studio`, see its
-STATUS.md). Landed this session: **Record**, **Mark** (chapter markers),
-**Scene: Cam Cutout**, a **glyph layer** in `key-face.ts` (`GLYPHS`:
-house/record/stop/mark/play — icon-first faces per Ryan's grammar: the
-picture says what the key does, text only for state detail), and the
-end-show bug fix (StopStream on an already-dead stream threw). Built,
-loaded, OBS-connected clean; **finger-verification on the physical deck
-still pending**.
+**This project is THE Stream Deck surface.** The pipeline side lives in
+`~/projects/media-studio` (see its `STATUS.md`). Bitfocus Companion is dead and
+never comes back — its plugin is retired to `Plugins-retired-2026-08-01/`.
 
-2026-07-21 later: **official-plugin parity keys** landed — **Mute Mic**,
-**Pause Record**, **Stream** toggle (the honest gap list vs Elgato's
-official OBS plugin, media-studio `docs/DECK-ECOSYSTEM.md`; the rest of
-that list is deliberately skipped as not-our-workflow). Live build/test
-session running: Ryan records himself building while cutaway scenes with
-generated backgrounds (Blender / bongpot) land behind the Cam Cutout.
+**The deck, as it sits (17 keys, `check-deck.mjs` green):**
 
-2026-07-21 night: **face grammar locked** (Ryan, after installing the
-official Elgato OBS plugin and holding its keys up against ours): the
-picture IS the key — one large centered glyph, state shown by color
-(white ready / red active / dim unavailable), **text only when it is
-live data** (elapsed, countdown, device name, dropped %) — **never
-instructions** ("press to record", "record first", tag headers: all
-deleted). Scene/status keys stay text because their content IS the
-word. `key-face.ts` is the single generator; contact-sheet render
-verified. The official plugin now coexists on the same websocket — if
-one of our keys loses to its official twin on the deck, swap ours out;
-ours must win on cold-start + honest state or it goes.
+```
+ STATUS    ·      ·      ·    SOON    BRB   ENDING  RECORD     row 0 — far, rarely pressed
+   ·       ·      ·      ·      ·       ·      ·       ·       row 1 — deliberate gutter
+ LEFT    RIGHT  SCRN+ME  ·     CAM   CUTOUT ME+FLOAT LAVA      row 2 — what's on screen
+ MARK    MUTE   ZOOM     ·   CAMERA  MEETING   ·    (nav)      row 3 — NEAREST the hand
+```
 
-**Next (fresh session, in order):**
-1. **HOME nav shell** — deck as launcher: a HOME profile with app tiles
-   (OBS now; Ableton/soundboard later); a house-glyph key on the SAME
-   corner of every profile (proposed bottom-right) via the built-in
-   *Switch Profile* action. Profiles are created in the Stream Deck app
-   GUI with Ryan (his hands/eyes); `GLYPHS.house` is the art source.
-2. **Icon-first art pass** over all faces + Marketplace-grade action
-   icons (Elgato Key Creator / authored SVG; emoji-render acceptable v1).
-3. ~~Retire the Companion "MEDIA STUDIO" page~~ **DONE 2026-07-21**: the
-   deck sat stuck on the half-blank "Companion XL" profile for a week —
-   THE disconnect that blocked Ryan while the real keys lived unseen on
-   the Default Profile. Profile removed (backup:
-   `~/Library/Application Support/com.elgato.StreamDeck/ProfilesV3-retired-2026-07-21/`),
-   Companion app quit (not a login item; its db + DECK.md doctrine kept
-   as history). The XL now has ONE profile: the plugin surface.
-4. Corpus auto-index of `~/Movies` — lands in media-studio's daemon, not
-   here.
+Ordered by **reach, not category**. It used to be exactly backwards — every live
+key on the far rows, the two rows nearest the hand empty.
+
+**Face grammar** (measured off Elgato's shipped artwork, then given colour):
+state is the WHOLE KEY's background · identity is the glyph · text only when
+it's a number that changes. Families get hues — cyan screens, violet camera,
+blue bracket, amber mark, green mic, red record — targeted by **luminance** so
+every family reads with equal weight at the same state. `key-face.ts` is the
+sole generator. **Dim means pressing does nothing; lit means pressing does
+something** (which is why the OBS key is a lit power button when OBS is down).
+
+**Doctrine earned the hard way on 2026-08-01 — five silent failures in one
+session.** Dead deck keys, a camera pointed at a phone Ryan no longer owns, a
+record key latched on, a screen capture returning only wallpaper, and a Lua
+script that registered its hotkeys then died on every callback. **Every one
+presented as working. Every machine-side check passed. All five were found by a
+human looking at the actual thing.** Hence:
+
+- Never act on cached state — re-read from OBS on use (`record.ts`, `camera-picker.ts`).
+- A verifier must **exercise** the thing, not observe it. `verify-zoom.mjs`
+  confirmed the hotkeys registered and still missed a script that was broken,
+  because registration happens before the broken path runs.
+- Render it and **look**. Screenshots work again on 32.2.1.
+
+## Known-good numbers
+
+- Canvas 1920x1080 @ 60fps · record h264 (Apple VT hardware) @ **45 Mbps**.
+  Was 13.9 Mbps, which read as grain. NOT switched to HEVC despite it being
+  ~40% more efficient: the media-studio pipeline is verified end-to-end on
+  h264+AAC hybrid MP4, and changing codec means re-proving ingest.
+- Displays: external at x=-1920 (1920x1080, native 16:9) · built-in at x=0
+  (3456x2234, needs the aspect crop from `add-look.mjs screens`).
+- Camera: `iPhone 14 pro Camera` via Continuity. **Center Stage runs off the
+  ultra-wide lens and digitally crops**, which costs sharpness — that's the
+  price of the follow-shot, not a bug, and it's why `Me + Float` avoids
+  upscaling the camera.
+
+## Next
+
+1. **Finger-verify `Me + Float` with Ryan in frame** — does his face clear the
+   floating card? Center Stage had him out of shot both attempts. Knobs:
+   `camCentre` (40% across) and card width (52%) in `add-look.mjs`.
+2. **Move plugin** (Exeldro, 2.49M downloads, 4.65★, macOS) — needs admin, a
+   `.pkg`. Installs the animated push-aside between `Cam` and `Me + Float`;
+   both scenes already share the same Camera source, which is what Move matches
+   on, so no code changes needed.
+3. **Character scenes** — `add-look.mjs character "<name>" <image>` works today;
+   waiting on Ryan's background images. Each needs a key in `deck-layout.mjs`.
+4. **The $0 iPhone multicam test** in media-studio `docs/IPHONE-MULTICAM.md` —
+   written 2026-07-21, still never run. Camera A stays Continuity+Center Stage
+   (the follow-shot); camera B becomes the locked-off wide, where losing Center
+   Stage costs nothing.
+5. Broadcast-tier features (dropped frames, replay, tally) stay **parked** —
+   Ryan records, he doesn't stream.
 
 ## Stream Deck layout (MK.2, top two rows) — HISTORIC
 
