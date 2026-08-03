@@ -163,6 +163,61 @@ export class RectumRight extends MonitorKey {
 }
 
 /**
+ * GRAB — paste a URL, get the video.
+ *
+ * The preferred way into the clip library (rectum README, 2026-08-03). If a
+ * video has a URL, downloading beats filming a monitor on every axis: the
+ * native file instead of a re-encode of pixels, real audio instead of a
+ * Loopback device that hears every browser tab, no crop step, and — the reason
+ * this key exists at all — **no screen-recording or audio-capture permission**,
+ * which is what the LEFT/RIGHT keys spent a day stuck behind.
+ *
+ * A deck key cannot take typed input, so rectum opens a native prompt
+ * pre-filled from the clipboard. The URL is normally already copied from the
+ * browser, so the real interaction is: press key, press Enter.
+ *
+ * The download can take a while on a long video, so the timeout is generous
+ * and the face shows busy throughout. Cancelling the prompt is not a failure.
+ */
+@action({ UUID: "com.blessdog.obs-control-room.rectum-grab" })
+export class RectumGrab extends SingletonAction {
+	private readonly log = streamDeck.logger.createScope("rectum-grab");
+
+	override onWillAppear(_ev: WillAppearEvent): void {
+		void this.render(false);
+	}
+
+	override async onKeyDown(ev: KeyDownEvent): Promise<void> {
+		await this.render(true);
+		try {
+			// 15 minutes: a full YouTube video on a slow connection is still a
+			// legitimate grab, and a timeout that fires mid-download leaves a
+			// part-file and reads to the user as "the key is broken".
+			const out = await rectum(["grab"], 900_000);
+			if (out.includes("cancelled")) {
+				await this.render(false); // changing your mind is not an error
+				return;
+			}
+			await ev.action.showOk();
+		} catch (err) {
+			this.log.error(`grab: ${String(err)}`);
+			await ev.action.showAlert();
+		}
+		await this.render(false);
+	}
+
+	private async render(busy: boolean): Promise<void> {
+		const image = face({
+			state: busy ? "active" : "idle",
+			tint: "screen",
+			glyph: GLYPHS.record,
+			label: busy ? "…" : "GRAB",
+		});
+		for (const a of this.actions) await a.setImage(image);
+	}
+}
+
+/**
  * Propose the crop for the clip just recorded, and open the preview for Ryan's
  * eyes. Never applies it — a crop is a creative call and the detector can pick
  * the wrong moving region (a scrolling terminal beat a video on 2026-08-02).

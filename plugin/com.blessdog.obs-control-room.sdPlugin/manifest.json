@@ -323,6 +323,21 @@
           "ShowTitle": false
         }
       ]
+    },
+    {
+      "Name": "rectum: Grab clip from URL",
+      "UUID": "com.blessdog.obs-control-room.rectum-grab",
+      "Icon": "imgs/actions/mark/icon",
+      "Tooltip": "Paste a YouTube / Instagram / TikTok URL and download it straight into the clip library",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/mark/key",
+          "ShowTitle": false
+        }
+      ]
     }
   ]
 }

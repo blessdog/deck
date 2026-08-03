@@ -15577,6 +15577,74 @@ let RectumRight = (() => {
     return _classThis;
 })();
 /**
+ * GRAB — paste a URL, get the video.
+ *
+ * The preferred way into the clip library (rectum README, 2026-08-03). If a
+ * video has a URL, downloading beats filming a monitor on every axis: the
+ * native file instead of a re-encode of pixels, real audio instead of a
+ * Loopback device that hears every browser tab, no crop step, and — the reason
+ * this key exists at all — **no screen-recording or audio-capture permission**,
+ * which is what the LEFT/RIGHT keys spent a day stuck behind.
+ *
+ * A deck key cannot take typed input, so rectum opens a native prompt
+ * pre-filled from the clipboard. The URL is normally already copied from the
+ * browser, so the real interaction is: press key, press Enter.
+ *
+ * The download can take a while on a long video, so the timeout is generous
+ * and the face shows busy throughout. Cancelling the prompt is not a failure.
+ */
+let RectumGrab = (() => {
+    let _classDecorators = [action({ UUID: "com.blessdog.obs-control-room.rectum-grab" })];
+    let _classDescriptor;
+    let _classExtraInitializers = [];
+    let _classThis;
+    let _classSuper = SingletonAction;
+    (class extends _classSuper {
+        static { _classThis = this; }
+        static {
+            const _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create(_classSuper[Symbol.metadata] ?? null) : void 0;
+            __esDecorate(null, _classDescriptor = { value: _classThis }, _classDecorators, { kind: "class", name: _classThis.name, metadata: _metadata }, null, _classExtraInitializers);
+            _classThis = _classDescriptor.value;
+            if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
+            __runInitializers(_classThis, _classExtraInitializers);
+        }
+        log = streamDeck.logger.createScope("rectum-grab");
+        onWillAppear(_ev) {
+            void this.render(false);
+        }
+        async onKeyDown(ev) {
+            await this.render(true);
+            try {
+                // 15 minutes: a full YouTube video on a slow connection is still a
+                // legitimate grab, and a timeout that fires mid-download leaves a
+                // part-file and reads to the user as "the key is broken".
+                const out = await rectum(["grab"], 900_000);
+                if (out.includes("cancelled")) {
+                    await this.render(false); // changing your mind is not an error
+                    return;
+                }
+                await ev.action.showOk();
+            }
+            catch (err) {
+                this.log.error(`grab: ${String(err)}`);
+                await ev.action.showAlert();
+            }
+            await this.render(false);
+        }
+        async render(busy) {
+            const image = face({
+                state: busy ? "active" : "idle",
+                tint: "screen",
+                glyph: GLYPHS.record,
+                label: busy ? "…" : "GRAB",
+            });
+            for (const a of this.actions)
+                await a.setImage(image);
+        }
+    });
+    return _classThis;
+})();
+/**
  * Propose the crop for the clip just recorded, and open the preview for Ryan's
  * eyes. Never applies it — a crop is a creative call and the detector can pick
  * the wrong moving region (a scrolling terminal beat a video on 2026-08-02).
@@ -15747,6 +15815,7 @@ streamDeck.actions.registerAction(new SceneEnding());
 streamDeck.actions.registerAction(new RectumLeft());
 streamDeck.actions.registerAction(new RectumRight());
 streamDeck.actions.registerAction(new RectumCrop());
+streamDeck.actions.registerAction(new RectumGrab());
 // Websocket connections die over sleep; retry immediately on wake.
 streamDeck.system.onSystemDidWakeUp(() => obs.poke());
 obs.start();

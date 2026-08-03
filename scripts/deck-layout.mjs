@@ -48,6 +48,7 @@ export const ACTIONS = {
 	rectumLeft: ["rectum-left", "rectum: Record LEFT monitor"],
 	rectumRight: ["rectum-right", "rectum: Record RIGHT monitor"],
 	rectumCrop: ["rectum-crop", "rectum: Crop last clip"],
+	rectumGrab: ["rectum-grab", "rectum: Grab clip from URL"],
 };
 
 /**
@@ -84,16 +85,22 @@ export const SDPLUS = [
  * as page 1: what you press constantly goes on row 3, nearest the hand, and the
  * column-3 gutter stays dark so the hand finds a block by touch.
  *
- * Only three keys because only three actions exist. An invented key that does
+ * Only the keys that have actions behind them. An invented key that does
  * nothing is worse than an empty one — the deck rotted for a week in July
  * precisely because keys pointed at things that were not there.
+ *
+ * GRAB sits apart from LEFT/RIGHT/CROP on purpose. Those three are one flow
+ * (film a monitor, then find the video inside it); GRAB is the other way in
+ * entirely — paste a URL and the video arrives whole. It is also the one that
+ * needs no macOS permission, which is why it is now the DEFAULT path and the
+ * capture keys are the fallback for what cannot be downloaded.
  */
 export const XL_RECTUM = [
 	// c0        c1              c2               c3     c4            c5    c6    c7
 	[null, null, null, null, null, null, null, null], //          row 0 — far
 	[null, null, null, null, null, null, null, null], //          row 1 — gutter
 	[null, null, null, null, null, null, null, null], //          row 2
-	[null, "rectumLeft", "rectumRight", null, "rectumCrop", null, null, null], // row 3 — near (0,3 = nav)
+	[null, "rectumLeft", "rectumRight", null, "rectumCrop", null, "rectumGrab", null], // row 3 — near (0,3 = nav)
 ];
 
 /**

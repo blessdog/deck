@@ -18,7 +18,7 @@ import {
 	SceneStartingSoon,
 } from "./actions/scene-keys";
 import { Status } from "./actions/status";
-import { RectumCrop, RectumLeft, RectumRight } from "./actions/rectum";
+import { RectumCrop, RectumGrab, RectumLeft, RectumRight } from "./actions/rectum";
 import { Zoom } from "./actions/zoom";
 
 streamDeck.actions.registerAction(new Status());
@@ -43,6 +43,7 @@ streamDeck.actions.registerAction(new SceneEnding());
 streamDeck.actions.registerAction(new RectumLeft());
 streamDeck.actions.registerAction(new RectumRight());
 streamDeck.actions.registerAction(new RectumCrop());
+streamDeck.actions.registerAction(new RectumGrab());
 
 // Websocket connections die over sleep; retry immediately on wake.
 streamDeck.system.onSystemDidWakeUp(() => obs.poke());
