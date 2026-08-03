@@ -278,6 +278,51 @@
           "ShowTitle": false
         }
       ]
+    },
+    {
+      "Name": "rectum: Record LEFT monitor",
+      "UUID": "com.blessdog.obs-control-room.rectum-left",
+      "Icon": "imgs/actions/mark/icon",
+      "Tooltip": "Record the whole LEFT monitor with its audio; press again to stop and file the clip",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/mark/key",
+          "ShowTitle": false
+        }
+      ]
+    },
+    {
+      "Name": "rectum: Record RIGHT monitor",
+      "UUID": "com.blessdog.obs-control-room.rectum-right",
+      "Icon": "imgs/actions/mark/icon",
+      "Tooltip": "Record the whole RIGHT monitor with its audio; press again to stop and file the clip",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/mark/key",
+          "ShowTitle": false
+        }
+      ]
+    },
+    {
+      "Name": "rectum: Crop last clip",
+      "UUID": "com.blessdog.obs-control-room.rectum-crop",
+      "Icon": "imgs/actions/mark/icon",
+      "Tooltip": "Find the video inside the clip just recorded and open the proposed crop for review",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/mark/key",
+          "ShowTitle": false
+        }
+      ]
     }
   ]
 }

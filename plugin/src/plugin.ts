@@ -18,6 +18,7 @@ import {
 	SceneStartingSoon,
 } from "./actions/scene-keys";
 import { Status } from "./actions/status";
+import { RectumCrop, RectumLeft, RectumRight } from "./actions/rectum";
 import { Zoom } from "./actions/zoom";
 
 streamDeck.actions.registerAction(new Status());
@@ -37,6 +38,11 @@ streamDeck.actions.registerAction(new SceneLavaLounge());
 streamDeck.actions.registerAction(new SceneMeFloat());
 streamDeck.actions.registerAction(new SceneBrb());
 streamDeck.actions.registerAction(new SceneEnding());
+
+// The rectum page — the clipper. Keys shell out to ~/projects/rectum.
+streamDeck.actions.registerAction(new RectumLeft());
+streamDeck.actions.registerAction(new RectumRight());
+streamDeck.actions.registerAction(new RectumCrop());
 
 // Websocket connections die over sleep; retry immediately on wake.
 streamDeck.system.onSystemDidWakeUp(() => obs.poke());

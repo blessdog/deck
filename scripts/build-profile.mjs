@@ -32,7 +32,14 @@ const shipped = new Set(pluginManifest.Actions.map((a) => a.UUID));
 const findDir = (parent, name) =>
 	readdirSync(parent).find((d) => d.toLowerCase() === name.toLowerCase());
 
-/** Locate the profile bundle + current page for a device model we know. */
+/**
+ * Locate one target per (device, page) we describe.
+ *
+ * Pages are taken in `top.Pages.Pages` order and matched positionally against
+ * `dev.pages`, so page 1 is the OBS surface and page 2 is rectum. A profile may
+ * hold MORE pages than we describe — those are skipped entirely rather than
+ * blanked, on the same principle that keeps foreign keys: other tools own them.
+ */
 function targets() {
 	const found = [];
 	for (const bundle of readdirSync(PROFILES).filter((d) => d.endsWith(".sdProfile"))) {
@@ -44,9 +51,26 @@ function targets() {
 		// two Voicemod "Starter" profiles). Only ever touch the default one —
 		// other profiles belong to other tools and are none of our business.
 		if (top.Name !== "Default Profile") continue;
-		const dir = findDir(join(root, "Profiles"), top.Pages.Current);
-		if (!dir) continue;
-		found.push({ dev, top, file: join(root, "Profiles", dir, "manifest.json") });
+
+		const layouts = dev.pages ?? [dev.layout];
+		const pageIds = top.Pages?.Pages ?? [top.Pages?.Current];
+		layouts.forEach((layout, index) => {
+			const pageId = pageIds[index];
+			if (!pageId) {
+				console.warn(
+					`  ! ${dev.name}: layout page ${index + 1} has no profile page. ` +
+						`Add a page in the Stream Deck app, then re-run.`,
+				);
+				return;
+			}
+			const dir = findDir(join(root, "Profiles"), pageId);
+			if (!dir) return;
+			found.push({
+				dev, top, layout,
+				pageLabel: `page ${index + 1}`,
+				file: join(root, "Profiles", dir, "manifest.json"),
+			});
+		});
 	}
 	return found;
 }
@@ -94,7 +118,7 @@ if (wasRunning) {
 	execFileSync("/bin/sleep", ["1"]); // let it finish flushing its own writes
 }
 
-for (const { dev, top, file } of found) {
+for (const { dev, top, file, layout, pageLabel } of found) {
 	const page = JSON.parse(readFileSync(file, "utf8"));
 	const keypad = (page.Controllers ?? []).find((c) => c.Type === "Keypad") ?? page.Controllers?.[0];
 	if (!keypad) {
@@ -111,7 +135,7 @@ for (const { dev, top, file } of found) {
 	}
 
 	const missing = [];
-	for (const { coord, short } of placements(dev.layout)) {
+	for (const { coord, short } of placements(layout)) {
 		const uuid = uuidOf(short);
 		if (!shipped.has(uuid)) {
 			missing.push(`${coord} → ${uuid}`);
@@ -142,7 +166,7 @@ for (const { dev, top, file } of found) {
 	}
 
 	const ours = Object.values(next).filter((a) => a.UUID.startsWith(PLUGIN)).length;
-	console.log(`${dev.name} "${top.Name}" → ${ours} keys (+${Object.keys(next).length - ours} foreign kept)`);
+	console.log(`${dev.name} "${top.Name}" ${pageLabel} → ${ours} keys (+${Object.keys(next).length - ours} foreign kept)`);
 
 	if (DRY) continue;
 	if (!existsSync(file + ".bak")) copyFileSync(file, file + ".bak");

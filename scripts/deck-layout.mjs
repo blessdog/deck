@@ -43,6 +43,11 @@ export const ACTIONS = {
 	cam: ["scene-cam", "Scene: Cam"],
 	cutout: ["scene-cam-cutout", "Scene: Cam Cutout"],
 	lava: ["scene-lava-lounge", "Scene: Lava Lounge"],
+	// rectum page — the clipper (~/projects/rectum). These keys shell out to
+	// its CLI; the plugin owns the face, rectum owns capture and the library.
+	rectumLeft: ["rectum-left", "rectum: Record LEFT monitor"],
+	rectumRight: ["rectum-right", "rectum: Record RIGHT monitor"],
+	rectumCrop: ["rectum-crop", "rectum: Crop last clip"],
 };
 
 /**
@@ -71,9 +76,40 @@ export const SDPLUS = [
 	["mark", "mute", "cam", "cutout"],
 ];
 
+/**
+ * PAGE 2 — rectum, the clipper. Named for `rect`, the unit it operates on.
+ *
+ * The app's `previous` nav key already sits at 0,3 and cannot be moved, so the
+ * bottom-left corner is spoken for. Everything else follows the same reach rule
+ * as page 1: what you press constantly goes on row 3, nearest the hand, and the
+ * column-3 gutter stays dark so the hand finds a block by touch.
+ *
+ * Only three keys because only three actions exist. An invented key that does
+ * nothing is worse than an empty one — the deck rotted for a week in July
+ * precisely because keys pointed at things that were not there.
+ */
+export const XL_RECTUM = [
+	// c0        c1              c2               c3     c4            c5    c6    c7
+	[null, null, null, null, null, null, null, null], //          row 0 — far
+	[null, null, null, null, null, null, null, null], //          row 1 — gutter
+	[null, null, null, null, null, null, null, null], //          row 2
+	[null, "rectumLeft", "rectumRight", null, "rectumCrop", null, null, null], // row 3 — near (0,3 = nav)
+];
+
+/**
+ * `pages` is written in profile page order. A device may own more pages than we
+ * describe; the extras are left completely alone rather than blanked, because
+ * other tools put keys there and they are none of our business.
+ */
 export const DEVICES = {
-	"20GAT9902": { name: "Stream Deck XL", cols: 8, rows: 4, layout: XL },
-	"20GBD9901": { name: "Stream Deck +", cols: 4, rows: 2, layout: SDPLUS },
+	"20GAT9902": {
+		name: "Stream Deck XL", cols: 8, rows: 4,
+		layout: XL, pages: [XL, XL_RECTUM],
+	},
+	"20GBD9901": {
+		name: "Stream Deck +", cols: 4, rows: 2,
+		layout: SDPLUS, pages: [SDPLUS],
+	},
 };
 
 /** Full action UUID for a short name. */
