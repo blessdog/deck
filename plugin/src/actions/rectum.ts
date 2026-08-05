@@ -7,7 +7,7 @@ import { join } from "node:path";
 import { face, fmtDuration, GLYPHS } from "../key-face";
 
 /**
- * The rectum page — the clipper (`~/projects/rectum`).
+ * The rectum page — the clipper (`~/projects/mediaStudio/rectum`).
  *
  * Record a whole monitor, find the video inside it afterwards. You cannot
  * un-crop a capture, so capture everything and decide framing later; that is
@@ -22,7 +22,20 @@ import { face, fmtDuration, GLYPHS } from "../key-face";
  * a state the system disagrees with is worse than a key that does nothing.
  */
 
-const RECTUM = join(homedir(), "projects", "rectum");
+/**
+ * DOCTRINE (2026-08-04 — "the rectum button is gone"): rectum moved from
+ * `~/projects/rectum` into `~/projects/mediaStudio/rectum` and this const still
+ * named the old path. `status()` swallows an unreachable rectum by design, so
+ * every key kept drawing a healthy face and did nothing — the silent failure
+ * this file's Record-key doctrine exists to prevent, reintroduced by a path.
+ * Probe candidates the way PYTHON does below; a moved repo must degrade to a
+ * key that says it cannot find rectum, never a key that lies.
+ */
+const RECTUM =
+	[
+		join(homedir(), "projects", "mediaStudio", "rectum"),
+		join(homedir(), "projects", "rectum"),
+	].find((p) => existsSync(join(p, "rectum", "__main__.py"))) ?? join(homedir(), "projects", "mediaStudio", "rectum");
 const RECONCILE_MS = 5_000;
 const TICK_MS = 1_000; // elapsed is whole seconds; a faster tick buys nothing
 
