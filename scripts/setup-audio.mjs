@@ -18,10 +18,26 @@
  *     aggregate device needed on the OBS side.
  *
  * Device IDs are resolved BY NAME from OBS's own live device list rather than
- * hardcoded. The fifine's CoreAudio UID embeds its USB location ID
- * (`...fifine Microphone:2112200:2`), which changes when it moves between hub
- * ports — ScreenSage has a stale one saved from a different port. Hardcoding
- * that UID would bake in the same bug.
+ * hardcoded. A CoreAudio UID embeds the device's USB location ID, which changes
+ * when it moves between hub ports, so a hardcoded UID rots.
+ *
+ * BOTH bindings for `Mic` can fail, so this script is the repair tool:
+ *
+ *   - A PINNED UID rots. The fifine re-enumerated
+ *     `...fifine Microphone:2112200:2` -> `...:2120000:2` inside 90 minutes on
+ *     2026-08-08. OBS's pin stopped resolving and a 23-second take came back
+ *     with track 2 at flat -91 dB — digital silence, not room tone. Silent
+ *     failure, discovered only by measuring the file.
+ *   - `device_id: "default"` rots differently. When the fifine re-enumerated,
+ *     macOS ALSO moved the default input to `MacBook Pro Microphone`. So
+ *     `default` would have quietly recorded the laptop's built-in mic — a take
+ *     that sounds wrong rather than one that is obviously empty. Worse.
+ *
+ * Resolution: PIN, and treat this script as the fix. It resolves the fifine by
+ * NAME on every run, so re-running it re-pins to whatever UID the device has
+ * today. It also reports when it had to repair a stale pin, so a silent
+ * re-enumeration becomes a visible line of output instead of a dead track.
+ * Run it as part of cold start, or any time the rig gets re-cabled.
  *
  * Track layout — track 1 is the mix you can post directly, 2/3/4 are the
  * isolated stems so Resolve never has to guess which track has the voice:
@@ -65,6 +81,7 @@ import { connect } from "./lib/obs.mjs";
 import { homedir } from "node:os";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
+import { execFileSync } from "node:child_process";
 
 const DRY = process.argv.includes("--dry-run");
 
@@ -106,12 +123,25 @@ const byName = (name) => {
 	}
 	return hit.itemValue;
 };
-const micDevice = byName(MIC_DEVICE_NAME);
+const micDevice = byName(MIC_DEVICE_NAME); // resolved to prove it's connected
 const spDevice = byName(SP_DEVICE_NAME);
+
+// Which device is macOS actually handing to anything asking for "default"?
+const defaultInputName = (() => {
+	const out = execFileSync("/usr/sbin/system_profiler", ["SPAudioDataType"], { encoding: "utf8" });
+	let current = null;
+	for (const line of out.split("\n")) {
+		const name = line.match(/^\s{8}(\S.*):\s*$/);
+		if (name) current = name[1];
+		if (/Default Input Device:\s*Yes/.test(line)) return current;
+	}
+	return "(unknown)";
+})();
 
 say("Devices resolved:");
 say(`  ${MIC_DEVICE_NAME}  ->  ${micDevice}`);
 say(`  ${SP_DEVICE_NAME}  ->  ${spDevice}`);
+say(`  macOS default input  ->  ${defaultInputName}`);
 
 // ------------------------------------------------------------------ inputs
 const { inputs } = await obs.call("GetInputList");
@@ -129,14 +159,26 @@ say(`\n${MIC} appears in ${micScenes.length} scenes: ${micScenes.join(", ")}`);
 
 say("\nInputs:");
 
-// Pin Mic to the fifine explicitly. "default" silently follows whatever macOS
-// decides is the default input — plug in a headset and the mic swaps mid-record.
+// Pin Mic by name-resolved UID; see the header for why neither binding is safe
+// on its own. The interesting case is REPAIR: if the stored UID is not in the
+// live device list, the mic was recording silence until this run.
 const micSettings = await obs.call("GetInputSettings", { inputName: MIC });
-if (micSettings.inputSettings.device_id !== micDevice) {
-	act(`pin ${MIC} -> ${MIC_DEVICE_NAME} (was "${micSettings.inputSettings.device_id ?? "default"}")`);
+const wasPinnedTo = micSettings.inputSettings.device_id ?? "default";
+const stale = wasPinnedTo !== "default" && !propertyItems.some((i) => i.itemValue === wasPinnedTo);
+if (stale) {
+	say(`  !! ${MIC} was pinned to a device that no longer exists:`);
+	say(`     ${wasPinnedTo}`);
+	say(`     Any recording made since it moved has a SILENT mic track. Repairing.`);
+}
+if (wasPinnedTo !== micDevice) {
+	act(`pin ${MIC} -> ${MIC_DEVICE_NAME} (was "${wasPinnedTo}")`);
 	if (!DRY) await obs.call("SetInputSettings", { inputName: MIC, inputSettings: { device_id: micDevice } });
 } else {
-	act(`${MIC} already pinned to ${MIC_DEVICE_NAME}`);
+	act(`${MIC} pinned to ${MIC_DEVICE_NAME}, UID still valid`);
+}
+if (defaultInputName !== MIC_DEVICE_NAME) {
+	say(`  note: macOS default input is "${defaultInputName}", not ${MIC_DEVICE_NAME}.`);
+	say(`        Harmless for OBS now that Mic is pinned, but it is why "default" is not the fix.`);
 }
 
 async function ensureInput(name, kind, settings) {
