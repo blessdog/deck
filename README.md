@@ -2,6 +2,40 @@
 
 One-button screen shares and streaming: Stream Deck → OBS, with a scripted
 scene collection, a cold-start launcher, and a custom Stream Deck plugin.
+Everything the deck shows is derived from real state — OBS's own events,
+CoreGraphics' actual monitor arrangement — because a key face that lies is
+worse than no key at all.
+
+## The journey
+
+**Companion died first.** The obvious path was Bitfocus Companion, the
+standard deck→OBS bridge. It ended as a half-blank XL profile that
+became THE blocker — a config surface fighting the deck instead of
+driving it. Retired entirely; replaced with a bespoke Elgato SDK v2
+plugin where **the layout is data** (`scripts/deck-layout.mjs`), the
+Stream Deck app is never hand-edited, and a tripwire script fails the
+build if any key points at a missing action.
+
+**The faces never lie.** Five silent failures taught the doctrine:
+verify by exercising, never by observing. The mute key follows OBS's
+own mute event rather than remembering what it pressed; the Status key
+polls real stream state; screen keys draw the actual monitor
+arrangement from CoreGraphics so a third monitor changes the picture
+instead of making a label wrong.
+
+**Keys are born from incidents.** Camera Picker exists because a
+frozen Continuity-Camera session turned "switch cameras" into a
+detour mid-recording — now it's one press. The end-show crash (OBS
+threw when the stream died during the Ending hold) hardened StopStream
+into stop-only-if-still-active. Mark exists so chapter markers land in
+the recording file itself — no daemon, no database; ffprobe reads them
+back at ingest.
+
+**Compositions are checked by rendering.** `scripts/snapshot.mjs`
+saves a PNG of a scene's actual program output — geometry is judged by
+looking at pixels, never by reasoning about coordinates blind. (OBS
+32.1.x returned transparent frames and briefly broke this; 32.2.1
+fixed it.)
 
 ## Custom plugin (`plugin/`)
 
