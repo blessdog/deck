@@ -2,7 +2,7 @@
 id: obs-control-room-store-exists
 kind: open
 conflict-key: what-does-this-project-know
-status: live
+status: superseded
 supersedes: []
 proven: false
 verified-on: 2026-09-02
