@@ -29,10 +29,17 @@ mkdirSync('evidence/screens-check', { recursive: true });
 const osPng = (d) => `evidence/screens-check/display-${d}-os.png`;
 for (const d of DISPLAYS) execFileSync('/usr/sbin/screencapture', ['-x', '-D', String(d), osPng(d)]);
 const diffOf = (a, b) =>
-  parseFloat(execFileSync('/opt/homebrew/bin/magick', [a, '-resize', '96x54!', b, '-resize', '96x54!', '-colorspace', 'gray', '-compose', 'difference', '-composite', '-format', '%[fx:mean*255]', 'info:']).toString());
+  parseFloat(execFileSync('/opt/homebrew/bin/magick', [a, '-alpha', 'off', '-resize', '96x54!', b, '-alpha', 'off', '-resize', '96x54!', '-colorspace', 'gray', '-compose', 'difference', '-composite', '-format', '%[fx:mean*255]', 'info:']).toString());
 const obs = await connect();
+// macOS Screen Capture only delivers frames while its scene is ACTIVE (on
+// program); a screenshot of an inactive screen scene is blank (measured
+// 2026-09-02: mean 0.0 inactive, 0.36 two seconds after going to program).
+// So each scene is put on program for the shot, and program is restored.
+const { currentProgramSceneName: restore } = await obs.call('GetCurrentProgramScene');
 let stale = 0;
 for (const scene of SCENES) {
+  await obs.call('SetCurrentProgramScene', { sceneName: scene });
+  await new Promise((r) => setTimeout(r, 2000));
   const { imageData } = await obs.call('GetSourceScreenshot', { sourceName: scene, imageFormat: 'png', imageWidth: 960 });
   const obsPng = `evidence/screens-check/${scene.replace(/\W/g, '')}-obs.png`;
   writeFileSync(obsPng, Buffer.from(imageData.split(',')[1], 'base64'));
@@ -42,6 +49,7 @@ for (const scene of SCENES) {
   if (verdict === 'STALE') stale++;
   console.log(`${scene}: closest OS display ${best.d}, mean diff ${best.diff.toFixed(1)} (all: ${diffs.map((x) => x.diff.toFixed(0)).join('/')}) → ${verdict}`);
 }
+await obs.call('SetCurrentProgramScene', { sceneName: restore });
 await obs.disconnect();
 if (stale) {
   console.error(
