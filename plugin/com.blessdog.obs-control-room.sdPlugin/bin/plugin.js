@@ -9,7 +9,7 @@ import require$$7 from 'url';
 import require$$0 from 'zlib';
 import require$$0$1 from 'buffer';
 import require$$2 from 'util';
-import fs, { existsSync, readFileSync } from 'node:fs';
+import fs, { existsSync, readFileSync, readdirSync, statSync, mkdirSync } from 'node:fs';
 import path, { join, dirname } from 'node:path';
 import { cwd } from 'node:process';
 import { randomUUID } from 'node:crypto';
@@ -14262,6 +14262,7 @@ const GLYPHS = {
      *  from the other at a glance. */
     meeting: "M54 44 m-15 0 a15 15 0 1 0 30 0 a15 15 0 1 0 -30 0 M22 94 a32 28 0 0 1 64 0 Z M99 50 m-12 0 a12 12 0 1 0 24 0 a12 12 0 1 0 -24 0 M78 92 a23 21 0 0 1 46 0 Z",
     /** Magnifier — zoom to cursor. */
+    folder: "M24 40 h34 l10 10 h60 v54 H24 Z M24 58 h104",
     zoom: "M64 22 a34 34 0 1 0 0 68 a34 34 0 1 0 0 -68 Z M64 34 a22 22 0 1 1 0 44 a22 22 0 1 1 0 -44 Z M88 82 l10 -10 l28 28 l-10 10 Z",
 };
 const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -14310,17 +14311,6 @@ function face({ state, tint, glyph, art, label, sub }) {
     }
     return svg(body.join(""));
 }
-/**
- * The power symbol — a broken ring with a bar through the top. Stroked rather
- * than filled, which is why it's composite art.
- *
- * This is what the OBS key wears when OBS is down. It used to say "OFFLINE" on
- * a dimmed tile, which read as "dead, nothing here" — when in fact it is the
- * most actionable key on the deck, because pressing it launches OBS. Dim means
- * pressing does nothing; this key does something, so it stays lit.
- */
-const powerArt = (p) => `<path d="M50.8 44.8 A30 30 0 1 0 93.2 44.8" fill="none" stroke="${p.ink}" stroke-width="11" stroke-linecap="round"/>` +
-    `<rect x="66" y="22" width="12" height="42" rx="6" fill="${p.ink}"/>`;
 /**
  * Screen-plus-camera: a monitor knocked out in the tile colour with a person
  * sitting inside it. Composite because a same-coloured person drawn on top of
@@ -15321,94 +15311,6 @@ let SceneEnding = (() => {
     return _classThis;
 })();
 
-const POLL_MS = 3_000;
-/**
- * OBS health at a glance: OFFLINE / READY / REC / LIVE with elapsed time and
- * dropped-frame %. Press while offline cold-starts OBS.
- */
-let Status = (() => {
-    let _classDecorators = [action({ UUID: "com.blessdog.obs-control-room.status" })];
-    let _classDescriptor;
-    let _classExtraInitializers = [];
-    let _classThis;
-    let _classSuper = SingletonAction;
-    (class extends _classSuper {
-        static { _classThis = this; }
-        static {
-            const _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create(_classSuper[Symbol.metadata] ?? null) : void 0;
-            __esDecorate(null, _classDescriptor = { value: _classThis }, _classDecorators, { kind: "class", name: _classThis.name, metadata: _metadata }, null, _classExtraInitializers);
-            _classThis = _classDescriptor.value;
-            if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
-            __runInitializers(_classThis, _classExtraInitializers);
-        }
-        timer;
-        constructor() {
-            super();
-            obs.on("connected", () => void this.render());
-            obs.on("disconnected", () => void this.render());
-            obs.on("StreamStateChanged", () => void this.render());
-            obs.on("RecordStateChanged", () => void this.render());
-            obs.on("CurrentProgramSceneChanged", () => void this.render());
-        }
-        onWillAppear(_ev) {
-            this.timer ??= setInterval(() => void this.render(), POLL_MS);
-            void this.render();
-        }
-        async onKeyDown(ev) {
-            // Press always means "get me OBS": launch it when dead, focus it when up.
-            if (obs.connected) {
-                execFile("/usr/bin/open", ["-a", "OBS"]);
-                return;
-            }
-            await ev.action.setImage(face({ state: "alert", art: powerArt, sub: "starting" }));
-            try {
-                await obs.ensureOBS();
-                await ev.action.showOk();
-            }
-            catch {
-                await ev.action.showAlert();
-            }
-            void this.render();
-        }
-        async render() {
-            const uri = face(await this.currentFace());
-            for (const a of this.actions)
-                void a.setImage(uri);
-        }
-        async currentFace() {
-            if (!obs.connected) {
-                // The power button: OBS is down and this key is what starts it.
-                // Lit, not dimmed — dim is reserved for keys that can't do anything.
-                return { state: "idle", tint: "mic", art: powerArt, label: "OBS" };
-            }
-            try {
-                const stream = await obs.call("GetStreamStatus");
-                const record = await obs.call("GetRecordStatus");
-                if (stream.outputActive) {
-                    const dropped = stream.outputTotalFrames > 0
-                        ? Math.round((stream.outputSkippedFrames / stream.outputTotalFrames) * 1000) / 10
-                        : 0;
-                    const rec = record.outputActive ? " · REC" : "";
-                    return {
-                        state: "recording",
-                        label: "LIVE",
-                        sub: `${fmtDuration(stream.outputDuration)} · ${dropped}%${rec}`,
-                    };
-                }
-                if (record.outputActive) {
-                    return { state: "recording", label: "REC", sub: fmtDuration(record.outputDuration) };
-                }
-                // scene name lives on the highlighted scene key, not here
-                return { state: "idle", tint: "mic", label: "READY" };
-            }
-            catch {
-                return { state: "idle", tint: "mic", art: powerArt, label: "OBS" };
-            }
-        }
-    });
-    return _classThis;
-})();
-
 /**
  * The rectum page — the clipper (`~/projects/mediaStudio/rectum`).
  *
@@ -15451,23 +15353,6 @@ const PYTHON = ["/opt/homebrew/bin/python3", "/usr/local/bin/python3"].find((p) 
 function rectum(args, timeoutMs = 120_000) {
     return new Promise((resolve, reject) => {
         execFile(PYTHON, ["-m", "rectum", ...args], { cwd: RECTUM, timeout: timeoutMs }, (err, stdout, stderr) => (err ? reject(new Error(stderr || String(err))) : resolve(stdout)));
-    });
-}
-/**
- * The universal grab (2026-08-13, Ryan: "make the grab button universal
- * depending on the type of media it's grabbing").
- *
- * One key for any medium. The router lives in `scripts/grab.mjs` in THIS repo,
- * not in either tool it calls: rectum owns the clip library, media-tools owns
- * the image library, and neither may depend on the other. This plugin is
- * already the composition layer, so the dispatch belongs on this side of the
- * boundary — and in a script file rather than in here, so it can be run and
- * tested from a terminal without the deck.
- */
-const GRAB_ANY = join(homedir(), "projects", "mediaStudio", "obs-control-room", "scripts", "grab.mjs");
-function grabAny(timeoutMs = 900_000) {
-    return new Promise((resolve, reject) => {
-        execFile(process.execPath, [GRAB_ANY], { timeout: timeoutMs }, (err, stdout, stderr) => (err ? reject(new Error(stderr || String(err))) : resolve(stdout)));
     });
 }
 async function status() {
@@ -15606,13 +15491,7 @@ let RectumRight = (() => {
     return _classThis;
 })();
 /**
- * GRAB — paste a URL, get the media. Video or image; the key works out which.
- *
- * Routes through `scripts/grab.mjs`: known video host or video Content-Type →
- * `rectum fetch` into the clip library; image extension or image Content-Type →
- * `fetch-image` into the image library. Anything it cannot tell apart asks,
- * with two buttons, rather than guessing — filing a painting in the clip
- * library is worse than one extra press, and it is silent when it happens.
+ * GRAB — paste a URL, get the video.
  *
  * The preferred way into the clip library (rectum README, 2026-08-03). If a
  * video has a URL, downloading beats filming a monitor on every axis: the
@@ -15653,7 +15532,7 @@ let RectumGrab = (() => {
                 // 15 minutes: a full YouTube video on a slow connection is still a
                 // legitimate grab, and a timeout that fires mid-download leaves a
                 // part-file and reads to the user as "the key is broken".
-                const out = await grabAny(900_000);
+                const out = await rectum(["grab"], 900_000);
                 if (out.includes("cancelled")) {
                     await this.render(false); // changing your mind is not an error
                     return;
@@ -15729,28 +15608,16 @@ let RectumCrop = (() => {
     return _classThis;
 })();
 
-// Registered by vendor/obs-zoom-to-mouse.lua (see scripts/install-zoom.mjs).
-const ZOOM_HOTKEY = "toggle_zoom_hotkey";
-const FOLLOW_HOTKEY = "toggle_follow_hotkey";
-const LONG_PRESS_MS = 450;
 /**
- * Punch the screen capture in on the cursor, and follow it.
+ * REVEAL — Finder with the newest recording selected, nothing more.
  *
- * The single highest-value key for the work Ryan actually does — screen shares
- * and commentary. The zoom itself is `obs-zoom-to-mouse`, a Lua script whose
- * author wrote it "to zoom into an IDE when highlighting certain sections of
- * code"; we don't reimplement it, we drive it.
- *
- * It's driven by NAME over the websocket we already hold
- * (TriggerHotkeyByName), not by emulating a keystroke. A synthetic keypress
- * would need Accessibility permission, could collide with whatever app has
- * focus, and would fire blind. This can't.
- *
- * Press = zoom in/out. Long press = toggle follow-the-cursor while zoomed, so
- * you can pin the view on one spot and talk over it without it drifting.
+ * Law (knowledge/the-deck-ends-at-the-mp4): the deck never hands a file
+ * downstream. Ryan cuts several snippets together, so the unit he drags from
+ * is the folder, not one file. The directory is read from OBS itself when it
+ * is up (SSOT) and falls back to ~/Movies when it is not.
  */
-let Zoom = (() => {
-    let _classDecorators = [action({ UUID: "com.blessdog.obs-control-room.zoom" })];
+let Reveal = (() => {
+    let _classDecorators = [action({ UUID: "com.blessdog.obs-control-room.reveal" })];
     let _classDescriptor;
     let _classExtraInitializers = [];
     let _classThis;
@@ -15764,63 +15631,127 @@ let Zoom = (() => {
             if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
             __runInitializers(_classThis, _classExtraInitializers);
         }
-        log = streamDeck.logger.createScope("zoom");
-        pressedAt = 0;
-        longPress;
-        constructor() {
-            super();
-            obs.on("connected", () => this.render());
-            obs.on("disconnected", () => this.render());
-        }
+        log = streamDeck.logger.createScope("reveal");
         onWillAppear(_ev) {
-            this.render();
+            void this.render();
         }
-        onKeyDown(ev) {
-            this.pressedAt = Date.now();
-            this.longPress = setTimeout(() => {
-                this.longPress = undefined;
-                void this.fire(ev, FOLLOW_HOTKEY, "follow");
-            }, LONG_PRESS_MS);
-        }
-        async onKeyUp(ev) {
-            if (!this.longPress)
-                return; // the long press already fired
-            clearTimeout(this.longPress);
-            this.longPress = undefined;
-            if (Date.now() - this.pressedAt < LONG_PRESS_MS)
-                await this.fire(ev, ZOOM_HOTKEY, "zoom");
-        }
-        async fire(ev, hotkeyName, what) {
-            if (!obs.connected) {
-                await ev.action.showAlert();
-                return;
-            }
+        async onKeyDown(ev) {
             try {
-                // Verify the hotkey exists rather than firing into the void: if the
-                // lua didn't load, OBS accepts the request and silently does nothing.
-                const { hotkeys } = await obs.call("GetHotkeyList");
-                if (!hotkeys.includes(hotkeyName)) {
-                    this.log.error(`${hotkeyName} not registered — is vendor/obs-zoom-to-mouse.lua loaded?`);
-                    await ev.action.showAlert();
-                    return;
-                }
-                await obs.call("TriggerHotkeyByName", { hotkeyName });
+                const dir = await this.recordDirectory();
+                const newest = readdirSync(dir)
+                    .filter((f) => /\.(mp4|mkv|mov)$/i.test(f))
+                    .map((f) => ({ f, t: statSync(join(dir, f)).mtimeMs }))
+                    .sort((a, b) => b.t - a.t)[0];
+                const target = newest ? join(dir, newest.f) : dir;
+                await new Promise((res, rej) => execFile("/usr/bin/open", newest ? ["-R", target] : [target], (e) => (e ? rej(e) : res())));
+                this.log.info(`revealed ${target}`);
                 await ev.action.showOk();
-                this.log.info(`fired ${what}`);
             }
             catch (err) {
-                this.log.error(`${what} failed: ${err}`);
+                this.log.error(`reveal failed: ${err}`);
                 await ev.action.showAlert();
             }
         }
-        render() {
-            // No state to read back — the script owns whether it's zoomed and doesn't
-            // report it — so the key stays honest by claiming nothing: available when
-            // OBS is up, unavailable when it isn't.
+        async recordDirectory() {
+            if (obs.connected) {
+                try {
+                    return (await obs.call("GetRecordDirectory")).recordDirectory;
+                }
+                catch {
+                    /* fall through to the default */
+                }
+            }
+            return join(process.env.HOME ?? "", "Movies");
+        }
+        async render() {
+            const uri = face({ state: "idle", tint: "bracket", glyph: GLYPHS.folder });
+            for (const a of this.actions)
+                void a.setImage(uri);
+        }
+    });
+    return _classThis;
+})();
+
+/**
+ * PAUSE — pause/resume the running recording. Dim when nothing is recording.
+ *
+ * Never acts on remembered state (Record-key doctrine, 2026-08-01): the press
+ * re-reads GetRecordStatus, and the face follows RecordStateChanged
+ * (OBS_WEBSOCKET_OUTPUT_PAUSED / RESUMED / STOPPED).
+ */
+let Pause = (() => {
+    let _classDecorators = [action({ UUID: "com.blessdog.obs-control-room.pause" })];
+    let _classDescriptor;
+    let _classExtraInitializers = [];
+    let _classThis;
+    let _classSuper = SingletonAction;
+    (class extends _classSuper {
+        static { _classThis = this; }
+        static {
+            const _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create(_classSuper[Symbol.metadata] ?? null) : void 0;
+            __esDecorate(null, _classDescriptor = { value: _classThis }, _classDecorators, { kind: "class", name: _classThis.name, metadata: _metadata }, null, _classExtraInitializers);
+            _classThis = _classDescriptor.value;
+            if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
+            __runInitializers(_classThis, _classExtraInitializers);
+        }
+        log = streamDeck.logger.createScope("pause");
+        recording = false;
+        paused = false;
+        constructor() {
+            super();
+            obs.on("connected", () => void this.refresh());
+            obs.on("disconnected", () => {
+                this.recording = false;
+                this.paused = false;
+                void this.render();
+            });
+            obs.on("RecordStateChanged", ({ outputActive, outputState }) => {
+                this.recording = outputActive;
+                if (outputState === "OBS_WEBSOCKET_OUTPUT_PAUSED")
+                    this.paused = true;
+                if (outputState === "OBS_WEBSOCKET_OUTPUT_RESUMED" || outputState === "OBS_WEBSOCKET_OUTPUT_STOPPED")
+                    this.paused = false;
+                void this.render();
+            });
+        }
+        onWillAppear(_ev) {
+            void this.refresh();
+        }
+        async onKeyDown(ev) {
+            try {
+                const s = await obs.call("GetRecordStatus");
+                if (!s.outputActive) {
+                    await ev.action.showAlert(); // nothing to pause
+                    return;
+                }
+                await obs.call("ToggleRecordPause");
+                await ev.action.showOk();
+            }
+            catch (err) {
+                this.log.error(`pause failed: ${err}`);
+                await ev.action.showAlert();
+            }
+            void this.refresh();
+        }
+        async refresh() {
+            if (obs.connected) {
+                try {
+                    const s = await obs.call("GetRecordStatus");
+                    this.recording = s.outputActive;
+                    this.paused = s.outputPaused;
+                }
+                catch {
+                    /* keep last known */
+                }
+            }
+            void this.render();
+        }
+        async render() {
             const uri = face({
-                state: obs.connected ? "idle" : "offline",
-                tint: "screen",
-                glyph: GLYPHS.zoom,
+                state: !this.recording ? "offline" : this.paused ? "alert" : "idle",
+                tint: "live",
+                glyph: this.paused ? GLYPHS.play : GLYPHS.pause,
+                sub: this.paused ? "paused" : undefined,
             });
             for (const a of this.actions)
                 void a.setImage(uri);
@@ -15829,11 +15760,63 @@ let Zoom = (() => {
     return _classThis;
 })();
 
-streamDeck.actions.registerAction(new Status());
+/** SHOT — a PNG of the program scene into <record dir>/OBS Shots, then reveal it. */
+let Shot = (() => {
+    let _classDecorators = [action({ UUID: "com.blessdog.obs-control-room.shot" })];
+    let _classDescriptor;
+    let _classExtraInitializers = [];
+    let _classThis;
+    let _classSuper = SingletonAction;
+    (class extends _classSuper {
+        static { _classThis = this; }
+        static {
+            const _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create(_classSuper[Symbol.metadata] ?? null) : void 0;
+            __esDecorate(null, _classDescriptor = { value: _classThis }, _classDecorators, { kind: "class", name: _classThis.name, metadata: _metadata }, null, _classExtraInitializers);
+            _classThis = _classDescriptor.value;
+            if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
+            __runInitializers(_classThis, _classExtraInitializers);
+        }
+        log = streamDeck.logger.createScope("shot");
+        constructor() {
+            super();
+            obs.on("connected", () => void this.render());
+            obs.on("disconnected", () => void this.render());
+        }
+        onWillAppear(_ev) {
+            void this.render();
+        }
+        async onKeyDown(ev) {
+            try {
+                const dir = join((await obs.call("GetRecordDirectory")).recordDirectory, "OBS Shots");
+                mkdirSync(dir, { recursive: true });
+                const { currentProgramSceneName } = await obs.call("GetCurrentProgramScene");
+                const stamp = new Date().toISOString().replace(/[:T]/g, "-").slice(0, 19);
+                const imageFilePath = join(dir, `${stamp}.png`);
+                await obs.call("SaveSourceScreenshot", { sourceName: currentProgramSceneName, imageFormat: "png", imageFilePath });
+                execFile("/usr/bin/open", ["-R", imageFilePath]);
+                this.log.info(`shot ${imageFilePath}`);
+                await ev.action.showOk();
+            }
+            catch (err) {
+                this.log.error(`shot failed: ${err}`);
+                await ev.action.showAlert();
+            }
+        }
+        async render() {
+            const uri = face({ state: obs.connected ? "idle" : "offline", tint: "screen", glyph: GLYPHS.camera });
+            for (const a of this.actions)
+                void a.setImage(uri);
+        }
+    });
+    return _classThis;
+})();
+
 streamDeck.actions.registerAction(new Record());
 streamDeck.actions.registerAction(new Mark());
 streamDeck.actions.registerAction(new MuteMic());
-streamDeck.actions.registerAction(new Zoom());
+streamDeck.actions.registerAction(new Pause());
+streamDeck.actions.registerAction(new Shot());
+streamDeck.actions.registerAction(new Reveal());
 streamDeck.actions.registerAction(new CameraPicker());
 streamDeck.actions.registerAction(new MeetingMode());
 streamDeck.actions.registerAction(new SceneStartingSoon());

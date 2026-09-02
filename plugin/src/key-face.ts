@@ -186,6 +186,7 @@ export const GLYPHS = {
 	meeting:
 		"M54 44 m-15 0 a15 15 0 1 0 30 0 a15 15 0 1 0 -30 0 M22 94 a32 28 0 0 1 64 0 Z M99 50 m-12 0 a12 12 0 1 0 24 0 a12 12 0 1 0 -24 0 M78 92 a23 21 0 0 1 46 0 Z",
 	/** Magnifier — zoom to cursor. */
+	folder: "M24 40 h34 l10 10 h60 v54 H24 Z M24 58 h104",
 	zoom: "M64 22 a34 34 0 1 0 0 68 a34 34 0 1 0 0 -68 Z M64 34 a22 22 0 1 1 0 44 a22 22 0 1 1 0 -44 Z M88 82 l10 -10 l28 28 l-10 10 Z",
 } as const;
 

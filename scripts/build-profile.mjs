@@ -15,7 +15,7 @@ import { join } from "node:path";
 import { homedir } from "node:os";
 import { execFileSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { DEVICES, PLUGIN, nameOf, placements, uuidOf } from "./deck-layout.mjs";
+import { DEVICES, NATIVE, PLUGIN, isNative, nameOf, placements, uuidOf } from "./deck-layout.mjs";
 
 const DRY = process.argv.includes("--dry");
 const SD = join(homedir(), "Library/Application Support/com.elgato.StreamDeck");
@@ -100,19 +100,21 @@ if (wasRunning) {
 			stdio: "ignore",
 		});
 	} catch {
+		// osascript's exit code is not proof either way (2026-09-02: it reported
+		// failure while the app had in fact quit). Verify by exercising: wait and
+		// look. Only a still-running app is a failure.
+		console.warn("  ! osascript reported an error quitting the app — checking whether it quit anyway");
+	}
+	for (let i = 0; i < 60 && isRunning(); i++) execFileSync("/bin/sleep", ["0.25"]);
+	if (isRunning()) {
 		console.error(
-			"\nCouldn't quit the Stream Deck app automatically.\n" +
+			"\nStream Deck app is still running.\n" +
 				"macOS needs one-time permission: System Settings → Privacy & Security →\n" +
 				"Automation → allow your terminal to control 'Elgato Stream Deck'.\n" +
 				"Or just quit the Stream Deck app yourself, then re-run this.\n" +
 				"(Do NOT force-kill it — that triggers the 'restore last session' prompt,\n" +
 				" and accepting that prompt reverts this layout.)\n",
 		);
-		process.exit(1);
-	}
-	for (let i = 0; i < 60 && isRunning(); i++) execFileSync("/bin/sleep", ["0.25"]);
-	if (isRunning()) {
-		console.error("Stream Deck app is still running — quit it by hand and re-run.");
 		process.exit(1);
 	}
 	execFileSync("/bin/sleep", ["1"]); // let it finish flushing its own writes
@@ -129,13 +131,37 @@ for (const { dev, top, file, layout, pageLabel } of found) {
 
 	// Keep every key that isn't ours (the app's page-nav key lives here and
 	// cannot be removed), drop all of ours, then lay ours out fresh.
+	// Foreign keys survive unless the layout places something on that exact
+	// coordinate — a native key WE placed earlier (zoom) must be rewritten, not
+	// treated as somebody else's.
+	const placedCoords = new Set(placements(layout).map((p) => p.coord));
 	const next = {};
 	for (const [coord, act] of Object.entries(before)) {
-		if (!act?.UUID?.startsWith(PLUGIN)) next[coord] = act;
+		if (act?.UUID?.startsWith(PLUGIN)) continue;
+		if (placedCoords.has(coord)) {
+			console.warn(`  ! ${coord} replaces foreign ${act?.UUID} "${act?.States?.[0]?.Title?.replace(/\n/g, " ") ?? act?.Name ?? ""}"`);
+			continue;
+		}
+		next[coord] = act;
 	}
 
 	const missing = [];
 	for (const { coord, short } of placements(layout)) {
+		if (isNative(short)) {
+			const n = NATIVE[short];
+			const prior = before[coord];
+			next[coord] = {
+				ActionID: prior?.UUID === n.uuid ? prior.ActionID : randomUUID(),
+				LinkedTitle: false,
+				Name: n.name,
+				Resources: null,
+				Settings: n.settings,
+				State: 0,
+				States: [{ FontFamily: "", FontSize: 11, FontStyle: "Bold", FontUnderline: false, Image: "", OutlineThickness: 2, ShowTitle: true, Title: n.title, TitleAlignment: "middle", TitleColor: "#ffffff" }],
+				UUID: n.uuid,
+			};
+			continue;
+		}
 		const uuid = uuidOf(short);
 		if (!shipped.has(uuid)) {
 			missing.push(`${coord} → ${uuid}`);
@@ -165,7 +191,7 @@ for (const { dev, top, file, layout, pageLabel } of found) {
 		process.exit(1);
 	}
 
-	const ours = Object.values(next).filter((a) => a.UUID.startsWith(PLUGIN)).length;
+	const ours = Object.values(next).filter((a) => a.UUID.startsWith(PLUGIN)).length + placements(layout).filter((p) => isNative(p.short)).length;
 	console.log(`${dev.name} "${top.Name}" ${pageLabel} → ${ours} keys (+${Object.keys(next).length - ours} foreign kept)`);
 
 	if (DRY) continue;

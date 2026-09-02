@@ -19,7 +19,7 @@
 import { readFileSync, readdirSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { homedir } from "node:os";
-import { PLUGIN } from "./deck-layout.mjs";
+import { ACTIONS, NATIVE, PLUGIN, VERIFY } from "./deck-layout.mjs";
 
 const SD = join(homedir(), "Library/Application Support/com.elgato.StreamDeck");
 const PROFILES = join(SD, "ProfilesV3");
@@ -65,6 +65,8 @@ for (const bundle of readdirSync(PROFILES).filter((d) => d.endsWith(".sdProfile"
 }
 
 const unplaced = [...shipped].filter((u) => !placed.has(u));
+// 3. UNVERIFIABLE KEY — no sentence says how a human proves it works.
+const unverified = [...Object.keys(ACTIONS), ...Object.keys(NATIVE)].filter((s) => !VERIFY[s]);
 
 console.log(`checked ${pagesSeen} pages · plugin ships ${shipped.size} actions`);
 
@@ -78,7 +80,12 @@ if (unplaced.length) {
 	for (const u of unplaced) console.error(`    ${u}`);
 }
 
-if (orphans.length || unplaced.length) {
+if (unverified.length) {
+	console.error(`\n✖ ${unverified.length} KEY(S) WITH NO VERIFY SENTENCE — a key nobody can test is a key nobody knows is dead:`);
+	for (const s of unverified) console.error(`    ${s}`);
+}
+
+if (orphans.length || unplaced.length || unverified.length) {
 	console.error("\nFix: edit scripts/deck-layout.mjs, then run scripts/build-profile.mjs\n");
 	process.exit(1);
 }

@@ -26,11 +26,12 @@ export const PLUGIN = "com.blessdog.obs-control-room";
 
 /** Short name → the action's UUID suffix and the label the app shows. */
 export const ACTIONS = {
-	status: ["status", "Status"],
 	record: ["record", "Record"],
 	mark: ["mark", "Mark"],
 	mute: ["mute-mic", "Mute Mic"],
-	zoom: ["zoom", "Zoom to Cursor"],
+	pause: ["pause", "Pause Recording"],
+	shot: ["shot", "Screenshot"],
+	reveal: ["reveal", "Reveal Recording"],
 	camera: ["camera-picker", "Camera Picker"],
 	meeting: ["meeting-mode", "Meeting Mode"],
 	soon: ["scene-starting-soon", "Scene: Starting Soon"],
@@ -61,11 +62,14 @@ export const ACTIONS = {
  */
 export const XL = [
 	// c0          c1          c2           c3     c4         c5          c6       c7
-	["status", null, null, null, "soon", "brb", "ending", "record"], // row 0 — far
-	[null, null, null, null, null, null, null, null], //              row 1 — gutter
+	[null, null, null, null, "soon", "brb", "ending", "record"], //       row 0 — far
+	[null, null, "zoomOut", null, null, null, null, "pause"], //          row 1 — gutter, two exceptions
 	["screenLeft", "screenRight", "screenCam", null, "cam", "cutout", "float", "lava"], // row 2
-	["mark", "mute", "zoom", null, "camera", "meeting", null, null], // row 3 — near
+	["mark", "mute", "zoomIn", null, "camera", "meeting", "shot", "reveal"], // row 3 — near
 ];
+// ZOOM OUT sits directly above ZOOM IN and PAUSE directly below RECORD, so each
+// pair is found by touch; the rest of row 1 stays dark. STATUS is gone
+// (knowledge/recording-friction-is-the-product): every scene key cold-starts OBS.
 
 /**
  * The Stream Deck + (4x2) is also paired and was carrying orphaned keys of its
@@ -73,8 +77,8 @@ export const XL = [
  * the two you press mid-sentence.
  */
 export const SDPLUS = [
-	["status", "screenLeft", "screenRight", "record"],
-	["mark", "mute", "cam", "cutout"],
+	["screenCam", "screenLeft", "screenRight", "record"],
+	["mark", "mute", "cam", "reveal"],
 ];
 
 /**
@@ -115,13 +119,75 @@ export const DEVICES = {
 	},
 	"20GBD9901": {
 		name: "Stream Deck +", cols: 4, rows: 2,
-		layout: SDPLUS, pages: [SDPLUS],
+		// Page 2 is described as EMPTY so that our keys are cleared from it —
+		// it carried a stale copy of the layout (Status key orphaned, 2026-09-02).
+		// Foreign keys on it are still kept.
+		layout: SDPLUS, pages: [SDPLUS, [[null, null, null, null], [null, null, null, null]]],
 	},
 };
 
-/** Full action UUID for a short name. */
-export const uuidOf = (short) => `${PLUGIN}.${ACTIONS[short][0]}`;
-export const nameOf = (short) => ACTIONS[short][1];
+/**
+ * Native Stream Deck actions we place. The Hotkey settings shape was harvested
+ * from a hand-placed key on 2026-09-02. Modifier bitmask: Shift 1 · Ctrl 2 ·
+ * Option 4 · Cmd 8. NativeCode is the macOS virtual keycode (= is 24, - is 27).
+ *
+ * ZOOM drives macOS Accessibility Zoom (knowledge/zoom-is-native-macos-zoom):
+ * Ryan zooms the screen he is looking at and OBS records the composite. The
+ * OBS-side zoom is in archive/zoom-in-obs with the measured reason.
+ */
+const NO_KEY = { KeyCmd: false, KeyCtrl: false, KeyOption: false, KeyShift: false, KeyModifiers: 0, NativeCode: -1, QTKeyCode: 33554431, VKeyCode: -1 };
+const hotkey = (nativeCode, ascii, { cmd = false, ctrl = false, option = false, shift = false } = {}) => ({
+	Coalesce: true,
+	Hotkeys: [
+		{
+			KeyCmd: cmd, KeyCtrl: ctrl, KeyOption: option, KeyShift: shift,
+			KeyModifiers: (shift ? 1 : 0) + (ctrl ? 2 : 0) + (option ? 4 : 0) + (cmd ? 8 : 0),
+			NativeCode: nativeCode, QTKeyCode: ascii, VKeyCode: nativeCode,
+		},
+		NO_KEY, NO_KEY, NO_KEY,
+	],
+});
+export const NATIVE = {
+	zoomIn: { uuid: "com.elgato.streamdeck.system.hotkey", name: "Hotkey", title: "ZOOM\n+", settings: hotkey(24, 61, { option: true, cmd: true }) },
+	zoomOut: { uuid: "com.elgato.streamdeck.system.hotkey", name: "Hotkey", title: "ZOOM\n−", settings: hotkey(27, 45, { option: true, cmd: true }) },
+};
+export const isNative = (short) => short in NATIVE;
+
+/**
+ * How a human proves each key works: one sentence, an action and what to look
+ * at. check-deck.mjs fails on a key without one — a key nobody can test is a
+ * key nobody knows is dead (five of them, 2026-08-01).
+ */
+export const VERIFY = {
+	record: "Press; press again; ~/Movies gains a playable MP4.",
+	pause: "Press mid-recording, press again; the finished file plays through both halves.",
+	mark: "Press twice while recording; ffprobe shows two chapters.",
+	mute: "Press; OBS mixer shows Mic muted and the key turns red.",
+	camera: "Press; the Cam scene switches iPhone ↔ FaceTime.",
+	meeting: "Press; OBS Virtual Camera appears in a Zoom/Meet camera list.",
+	shot: "Press; Finder reveals a PNG of what was on program.",
+	reveal: "Press after a recording; Finder opens with that MP4 selected.",
+	soon: "Press; program shows Starting Soon and the key lights.",
+	ending: "Press; program shows Ending.",
+	brb: "Press; program shows BRB.",
+	float: "Press; full-bleed camera with the share as a card lower-right.",
+	screenLeft: "Press; program shows the LEFT monitor with real windows, not wallpaper.",
+	screenRight: "Press; program shows the RIGHT monitor with real windows.",
+	screenCam: "Press; screen with the camera bubble bottom-left.",
+	cam: "Press; full camera.",
+	cutout: "Press; Ryan on a transparent background, no room (scripts/check-cutout.mjs).",
+	lava: "Press; lava lamp behind the cutout.",
+	rectumLeft: "Press, press again; the rectum library gains a clip of the left monitor.",
+	rectumRight: "Press, press again; the rectum library gains a clip of the right monitor.",
+	rectumCrop: "Press after a rectum recording; the crop proposal opens.",
+	rectumGrab: "Press with a video URL in the front tab; the file lands in the clip library.",
+	zoomIn: "Press with the mouse on the left monitor; the screen AND a Screen L snapshot zoom in.",
+	zoomOut: "Press; the zoom steps back out.",
+};
+
+/** Full action UUID for a short name — ours or native. */
+export const uuidOf = (short) => (isNative(short) ? NATIVE[short].uuid : `${PLUGIN}.${ACTIONS[short][0]}`);
+export const nameOf = (short) => (isNative(short) ? NATIVE[short].name : ACTIONS[short][1]);
 
 /** Every (coord, short-name) pair the layout actually places. */
 export function placements(layout = XL) {
