@@ -1,0 +1,41 @@
+{
+ "filters": [
+  {
+   "filterEnabled": false,
+   "filterIndex": 0,
+   "filterKind": "background_removal",
+   "filterName": "Background Removal",
+   "filterSettings": {
+    "advanced": false,
+    "blur_background": 0,
+    "blur_focus_depth": 0,
+    "blur_focus_point": 0.1,
+    "contour_filter": 0.05,
+    "enable_focal_blur": false,
+    "enable_image_similarity": true,
+    "enable_threshold": true,
+    "feather": 0.08,
+    "image_similarity_threshold": 35,
+    "mask_every_x_frames": 1,
+    "model_select": "models/mediapipe.onnx",
+    "numThreads": 1,
+    "smooth_contour": 0.65,
+    "temporal_smooth_factor": 0.85,
+    "threshold": 0.4,
+    "useGPU": "cpu"
+   }
+  },
+  {
+   "filterEnabled": true,
+   "filterIndex": 1,
+   "filterKind": "chroma_key_filter_v2",
+   "filterName": "Chroma Key",
+   "filterSettings": {
+    "key_color_type": "green",
+    "similarity": 420,
+    "smoothness": 80,
+    "spill": 100
+   }
+  }
+ ]
+}

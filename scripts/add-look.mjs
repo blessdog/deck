@@ -24,7 +24,7 @@ const REPLACE = rest.includes('--replace');
 const args = rest.filter((a) => a !== '--replace');
 
 if (!kind) {
-  console.error('usage: add-look.mjs <brb|float|character|screens> [name] [image]');
+  console.error('usage: add-look.mjs <brb|float|character|screens|cutout> [name] [image]');
   process.exit(1);
 }
 
@@ -36,6 +36,7 @@ try {
   if (kind === 'screens') await fitScreens(W, H);
   else if (kind === 'brb') await brb(W, H);
   else if (kind === 'float') await meFloat(W, H);
+  else if (kind === 'cutout') await cutout();
   else if (kind === 'character') {
     const [name, image] = args;
     if (!name || !image) {
@@ -94,16 +95,21 @@ async function fitScreens(W, H) {
         cropRight = excess - cropLeft;
       }
 
+      // Only re-fit items that are ALREADY the full frame. A Display placed as
+      // a card (Me + Float) keeps its bounds and only gains the crop —
+      // 2026-09-02: this loop flattened the float card to full frame and the
+      // camera underneath vanished; the scene rendered identical to Screen L.
+      const isFullFrame = Math.round(t.boundsWidth) >= W && Math.round(t.boundsHeight) >= H;
+      const transform = isFullFrame
+        ? { cropTop, cropBottom, cropLeft, cropRight,
+            positionX: 0, positionY: 0, alignment: 5,
+            boundsType: 'OBS_BOUNDS_SCALE_INNER', boundsAlignment: 0,
+            boundsWidth: W, boundsHeight: H }
+        : { cropTop, cropBottom, cropLeft, cropRight };
       await obs.call('SetSceneItemTransform', {
         sceneName,
         sceneItemId: it.sceneItemId,
-        sceneItemTransform: {
-          cropTop, cropBottom, cropLeft, cropRight,
-          positionX: 0, positionY: 0, alignment: 5,
-          boundsType: 'OBS_BOUNDS_SCALE_INNER',
-          boundsAlignment: 0,
-          boundsWidth: W, boundsHeight: H,
-        },
+        sceneItemTransform: transform,
       });
       const kept = ((sh - cropTop - cropBottom) / sh * 100).toFixed(1);
       console.log(`${sceneName} / ${it.sourceName}: ${sw}x${sh} -> crop T${cropTop} B${cropBottom} L${cropLeft} R${cropRight} (keeps ${kept}% of height)`);
@@ -259,6 +265,56 @@ async function meFloat(W, H) {
   await fit(sceneName, screenId, fx, fy, fw, fh);
   await addShared(sceneName, 'Mic');
   console.log(`Scene "${sceneName}" — full bleed, he sits at x~${camCentre} (${scale}x), card ${fw}x${fh} at ${fx},${fy}.`);
+}
+
+/**
+ * CUTOUT — make the background-removed camera actually remove the background.
+ * Measured 2026-09-02: the Camera FX source had Background Removal disabled
+ * and a green-screen Chroma Key enabled. There is no green screen; the key
+ * punched holes in a house plant and left Ryan in the room. The remover is
+ * royshil obs-backgroundremoval 1.1.13 (kind `background_removal`); on Apple
+ * Silicon it runs on CoreML.
+ *
+ * MODEL, measured 2026-09-02 on the Cam Cutout scene with Ryan in frame
+ * (evidence/2026-09-02/cutout-model-bakeoff.png, GetStats over 8 s each):
+ *
+ *   selfie_segmentation   30.0 fps   0/241 skipped   11.8 ms render   clean edge
+ *   rvm_mobilenetv3_fp32  27.1 fps  21/240 skipped   36.6 ms          clean, but holes on some frames
+ *   bria_rmbg_1_4_qint8    0.3 fps 267/269 skipped 3640 ms            cleanest, unusable live
+ *   mediapipe / SINet / pphumanseg — room showed through or face destroyed
+ *
+ * selfie_segmentation is the only one that costs nothing at 30 fps.
+ */
+async function cutout() {
+  const sourceName = 'Camera FX';
+  const { filters } = await obs.call('GetSourceFilterList', { sourceName });
+  for (const f of filters) {
+    if (f.filterKind === 'chroma_key_filter_v2') {
+      await obs.call('RemoveSourceFilter', { sourceName, filterName: f.filterName });
+      console.log(`removed ${f.filterName} (no green screen here)`);
+    }
+  }
+  const settings = {
+    useGPU: 'coreml',
+    model_select: 'models/selfie_segmentation.onnx',
+    threshold: 0.5,
+    contour_filter: 0.05,
+    smooth_contour: 0.5,
+    feather: 0.05,
+    temporal_smooth_factor: 0.85,
+    mask_every_x_frames: 1,
+    enable_threshold: true,
+    enable_image_similarity: false,
+    numThreads: 1,
+  };
+  const existing = filters.find((f) => f.filterKind === 'background_removal');
+  if (existing) {
+    await obs.call('SetSourceFilterSettings', { sourceName, filterName: existing.filterName, filterSettings: settings });
+    await obs.call('SetSourceFilterEnabled', { sourceName, filterName: existing.filterName, filterEnabled: true });
+  } else {
+    await obs.call('CreateSourceFilter', { sourceName, filterName: 'Background Removal', filterKind: 'background_removal', filterSettings: settings });
+  }
+  console.log('Camera FX: Background Removal ON (coreml, selfie_segmentation).');
 }
 
 /**
