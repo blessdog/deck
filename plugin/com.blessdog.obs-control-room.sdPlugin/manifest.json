@@ -193,7 +193,7 @@
       "Name": "Mark",
       "UUID": "com.blessdog.obs-control-room.mark",
       "Icon": "imgs/actions/mark/icon",
-      "Tooltip": "While recording: drop a chapter marker into the file itself \u2014 flag the moment without stopping. Ingest reads the chapters back out later.",
+      "Tooltip": "While recording: drop a chapter marker into the file itself — flag the moment without stopping. Ingest reads the chapters back out later.",
       "Controllers": [
         "Keypad"
       ],
@@ -208,7 +208,7 @@
       "Name": "Mute Mic",
       "UUID": "com.blessdog.obs-control-room.mute-mic",
       "Icon": "imgs/actions/mute-mic/icon",
-      "Tooltip": "Toggle the shared Mic input. The face follows OBS's own mute state \u2014 red slashed mic means muted.",
+      "Tooltip": "Toggle the shared Mic input. The face follows OBS's own mute state — red slashed mic means muted.",
       "Controllers": [
         "Keypad"
       ],
@@ -223,7 +223,7 @@
       "Name": "Camera Picker",
       "UUID": "com.blessdog.obs-control-room.camera-picker",
       "Icon": "imgs/actions/camera-picker/icon",
-      "Tooltip": "Cycle the shared Camera source between physical cameras (iPhone Continuity \u2194 built-in). Face shows which one is live.",
+      "Tooltip": "Cycle the shared Camera source between physical cameras (iPhone Continuity ↔ built-in). Face shows which one is live.",
       "Controllers": [
         "Keypad"
       ],
@@ -325,10 +325,10 @@
       ]
     },
     {
-      "Name": "rectum: Grab clip from URL",
+      "Name": "Grab media from URL",
       "UUID": "com.blessdog.obs-control-room.rectum-grab",
       "Icon": "imgs/actions/mark/icon",
-      "Tooltip": "Paste a YouTube / Instagram / TikTok URL and download it straight into the clip library",
+      "Tooltip": "Paste any URL — video or image. YouTube/Instagram/TikTok/X go to the clip library via rectum; images go to the media-tools image library with a provenance sidecar. Ambiguous links ask instead of guessing.",
       "Controllers": [
         "Keypad"
       ],

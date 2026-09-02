@@ -15453,6 +15453,23 @@ function rectum(args, timeoutMs = 120_000) {
         execFile(PYTHON, ["-m", "rectum", ...args], { cwd: RECTUM, timeout: timeoutMs }, (err, stdout, stderr) => (err ? reject(new Error(stderr || String(err))) : resolve(stdout)));
     });
 }
+/**
+ * The universal grab (2026-08-13, Ryan: "make the grab button universal
+ * depending on the type of media it's grabbing").
+ *
+ * One key for any medium. The router lives in `scripts/grab.mjs` in THIS repo,
+ * not in either tool it calls: rectum owns the clip library, media-tools owns
+ * the image library, and neither may depend on the other. This plugin is
+ * already the composition layer, so the dispatch belongs on this side of the
+ * boundary — and in a script file rather than in here, so it can be run and
+ * tested from a terminal without the deck.
+ */
+const GRAB_ANY = join(homedir(), "projects", "mediaStudio", "obs-control-room", "scripts", "grab.mjs");
+function grabAny(timeoutMs = 900_000) {
+    return new Promise((resolve, reject) => {
+        execFile(process.execPath, [GRAB_ANY], { timeout: timeoutMs }, (err, stdout, stderr) => (err ? reject(new Error(stderr || String(err))) : resolve(stdout)));
+    });
+}
 async function status() {
     try {
         return JSON.parse(await rectum(["status", "--json"], 10_000));
@@ -15589,7 +15606,13 @@ let RectumRight = (() => {
     return _classThis;
 })();
 /**
- * GRAB — paste a URL, get the video.
+ * GRAB — paste a URL, get the media. Video or image; the key works out which.
+ *
+ * Routes through `scripts/grab.mjs`: known video host or video Content-Type →
+ * `rectum fetch` into the clip library; image extension or image Content-Type →
+ * `fetch-image` into the image library. Anything it cannot tell apart asks,
+ * with two buttons, rather than guessing — filing a painting in the clip
+ * library is worse than one extra press, and it is silent when it happens.
  *
  * The preferred way into the clip library (rectum README, 2026-08-03). If a
  * video has a URL, downloading beats filming a monitor on every axis: the
@@ -15630,7 +15653,7 @@ let RectumGrab = (() => {
                 // 15 minutes: a full YouTube video on a slow connection is still a
                 // legitimate grab, and a timeout that fires mid-download leaves a
                 // part-file and reads to the user as "the key is broken".
-                const out = await rectum(["grab"], 900_000);
+                const out = await grabAny(900_000);
                 if (out.includes("cancelled")) {
                     await this.render(false); // changing your mind is not an error
                     return;
