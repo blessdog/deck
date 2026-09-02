@@ -2,7 +2,7 @@
 /**
  * One-time: point OBS at YouTube and set the stream key.
  *
- *   node scripts/set-stream-key.mjs <STREAM_KEY>
+ *   node obs/set-stream-key.mjs <STREAM_KEY>
  *
  * The key is stored in OBS's own profile config, never in this repo.
  * Get it from YouTube Studio → Go Live → Stream settings.
@@ -11,7 +11,7 @@ import { connect } from './lib/obs.mjs';
 
 const key = process.argv[2];
 if (!key) {
-  console.error('Usage: node scripts/set-stream-key.mjs <STREAM_KEY>');
+  console.error('Usage: node obs/set-stream-key.mjs <STREAM_KEY>');
   process.exit(1);
 }
 

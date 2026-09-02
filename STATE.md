@@ -3,7 +3,7 @@
 
 # obs-control-room — STATE
 
-*Generated 2026-09-02 17:43 from git, the knowledge store, and this project's own status script. Nothing here is typed by hand, so nothing here can be stale.*
+*Generated 2026-09-02 17:47 from git, the knowledge store, and this project's own status script. Nothing here is typed by hand, so nothing here can be stale.*
 
 ## What is open
 
@@ -54,6 +54,8 @@ OPEN — plans, NOT specs. proven: false. Do not build against these.
 *From git. The full narrative lives in `docs/journal/`; commit subjects are written as search bait, so `git log --grep` is the index.*
 
 ```
+2026-09-02  a44d4e7  deck: the bottom-right key is the app's Next Page key, placed from the layout; REVEAL moves beside PAUSE
+2026-09-02  f9ad68d  STATE.md: regenerated after the deck v2 batch
 2026-09-02  a2cbde6  check-screens: put each screen scene on program before shooting — inactive macOS screen capture renders blank, which looks like a stale grant
 2026-09-02  de7b179  check-screens: compare each OBS screen scene against every display, closest wins; Screen L verified live after the grant toggle
 2026-09-02  edd0f04  bookmark: Stream Deck session-restore prompt after repeated build-profile relaunches
@@ -64,13 +66,11 @@ OPEN — plans, NOT specs. proven: false. Do not build against these.
 2026-09-02  e8debcd  plan: deck mono project — 13 tasks, each proven by a press
 2026-09-02  2ced563  spec: single key grid, zoom pair stacked by touch
 2026-09-02  5e3df6d  spec: deck mono project — key set v2, native zoom, fixes proven by press
-2026-09-02  db4b7c9  deck: GRAB key routes any URL — video to rectum, image to media-tools (built plugin + grab.mjs left uncommitted by an earlier session)
-2026-09-02  17b976e  evidence: native macOS zoom law filed, zoom capture test frames, salvaged earlier zoom control frame
 ```
 
 ### ⚠ UNPUSHED
 
-**13 commit(s) ahead of `origin/master`.** Committed is not the same as safe — a commit that has not left this machine has the durability of the disk it is on.
+**15 commit(s) ahead of `origin/master`.** Committed is not the same as safe — a commit that has not left this machine has the durability of the disk it is on.
 
 ```
 git push origin master

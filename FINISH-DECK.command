@@ -12,7 +12,7 @@ say_step() { printf "\n\033[1;36m== %s\033[0m\n" "$1"; }
 
 say_step "Checking nothing is rolling"
 node -e "
-import('./scripts/lib/obs.mjs').then(async ({connect}) => {
+import('./obs/lib/obs.mjs').then(async ({connect}) => {
   try {
     const obs = await connect();
     const r = await obs.call('GetRecordStatus'), s = await obs.call('GetStreamStatus');
@@ -31,15 +31,15 @@ for i in $(seq 1 40); do pgrep -x OBS >/dev/null || break; sleep 0.5; done
 sleep 2
 
 say_step "Registering zoom-to-cursor"
-node scripts/install-zoom.mjs || exit 1
+# zoom is macOS Accessibility Zoom now (knowledge/zoom-is-native-macos-zoom); nothing to install in OBS
 
 say_step "Raising the recording bitrate (13.9 -> 45 Mbps)"
-node scripts/set-record-quality.mjs 45000 || exit 1
+node obs/set-record-quality.mjs 45000 || exit 1
 
 say_step "Restarting OBS"
 open -a OBS --args --collection "Control Room" --scene "Starting Soon"
 sleep 22
-node scripts/verify-zoom.mjs || echo "  !! not loaded — check OBS > Tools > Scripts > Script Log"
+node obs/check-screens.mjs || echo "  !! screen capture is stale — toggle the Screen Recording grant"
 
 say_step "Quitting the Stream Deck app"
 if ! osascript -e 'tell application "Elgato Stream Deck" to quit' 2>/dev/null; then

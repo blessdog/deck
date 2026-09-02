@@ -75,7 +75,7 @@
  * Runs against a LIVE OBS — everything here goes through obs-websocket, so
  * unlike set-record-quality.mjs, OBS must be RUNNING, not quit.
  *
- *   node scripts/setup-audio.mjs [--dry-run]
+ *   node obs/setup-audio.mjs [--dry-run]
  */
 import { connect } from "./lib/obs.mjs";
 import { homedir } from "node:os";

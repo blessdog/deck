@@ -2,7 +2,7 @@
 /**
  * Save a PNG of a scene's program output (default: current scene).
  *
- *   node scripts/snapshot.mjs [sceneName] [outPath]
+ *   node obs/snapshot.mjs [sceneName] [outPath]
  */
 import { connect } from './lib/obs.mjs';
 import { writeFileSync } from 'node:fs';

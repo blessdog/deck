@@ -24,7 +24,7 @@
  *
  * OBS rewrites its profile on exit, so it must be QUIT before running this.
  *
- *   node scripts/set-record-quality.mjs [kbps]     # default 45000
+ *   node obs/set-record-quality.mjs [kbps]     # default 45000
  */
 import { readFileSync, writeFileSync, existsSync, copyFileSync } from "node:fs";
 import { join } from "node:path";

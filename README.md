@@ -1,4 +1,8 @@
-# OBS Control Room
+# deck — the Stream Deck, as one project
+
+*Renamed from `obs-control-room` on 2026-09-02, when it became the home of
+every key on the deck: the OBS section, the clipper keys, and a reserved
+Ableton section. GitHub: https://github.com/blessdog/deck.*
 
 One-button screen shares and streaming: Stream Deck → OBS, with a scripted
 scene collection, a cold-start launcher, and a custom Stream Deck plugin.
@@ -31,7 +35,7 @@ into stop-only-if-still-active. Mark exists so chapter markers land in
 the recording file itself — no daemon, no database; ffprobe reads them
 back at ingest.
 
-**Compositions are checked by rendering.** `scripts/snapshot.mjs`
+**Compositions are checked by rendering.** `obs/snapshot.mjs`
 saves a PNG of a scene's actual program output — geometry is judged by
 looking at pixels, never by reasoning about coordinates blind. (OBS
 32.1.x returned transparent frames and briefly broke this; 32.2.1
@@ -69,17 +73,17 @@ the app never creates `~/Library/Application Support/com.elgato.StreamDeck/NodeJ
 | `scripts/deck-layout.mjs` | **THE LAYOUT, as data.** Which action sits on which key, for XL and SD+. Edit here, never in the Stream Deck app. |
 | `scripts/build-profile.mjs` | Writes `deck-layout.mjs` onto the physical decks. Quits the Stream Deck app first (it rewrites its config on exit) and preserves foreign keys. |
 | `scripts/check-deck.mjs` | **The tripwire.** Fails if any key points at a missing action, or any shipped action sits on no key. Run after every build. |
-| `scripts/add-look.mjs` | Additive scene builder: `brb` · `float` · `screens` · `character "<name>" <image>`. Does NOT wipe the collection. |
+| `obs/add-look.mjs` | Additive scene builder: `brb` · `float` · `screens` · `character "<name>" <image>`. Does NOT wipe the collection. |
 | `scripts/install-zoom.mjs` / `verify-zoom.mjs` | Register the zoom Lua with OBS (needs OBS quit) and ground-truth that it actually loaded. |
-| `scripts/set-record-quality.mjs` | Recording bitrate (needs OBS quit). Currently 45 Mbps. |
+| `obs/set-record-quality.mjs` | Recording bitrate (needs OBS quit). Currently 45 Mbps. |
 | `FINISH-DECK.command` | Double-clickable: the steps that need OBS and the Stream Deck app quit, in order, with verification. |
-| `scripts/setup-scenes.mjs` | Builds the **"Control Room"** collection from scratch. **Wipes and rebuilds** with `--force` — use `add-look.mjs` to add one scene. |
-| `scripts/cold-start.mjs` | Launches OBS if needed, lands on *Starting Soon*. Flags: `--virtual-cam`, `--and-stream`. |
-| `scripts/set-stream-key.mjs` | One-time: `node scripts/set-stream-key.mjs <KEY>` points OBS at YouTube RTMPS. Key lives in OBS config, never in this repo. |
+| `obs/setup-scenes.mjs` | Builds the **"Control Room"** collection from scratch. **Wipes and rebuilds** with `--force` — use `add-look.mjs` to add one scene. |
+| `obs/cold-start.mjs` | Launches OBS if needed, lands on *Starting Soon*. Flags: `--virtual-cam`, `--and-stream`. |
+| `obs/set-stream-key.mjs` | One-time: `node obs/set-stream-key.mjs <KEY>` points OBS at YouTube RTMPS. Key lives in OBS config, never in this repo. |
 | `OBS Cold Start.app` | Wrapper the Stream Deck 🚀 key opens (runs `cold-start.command`, logs to `logs/cold-start.log`). |
-| `scripts/set-display.mjs` | Point the Screen capture at the built-in display (default) or `--external`. |
-| `scripts/snapshot.mjs` | Save a PNG of a scene's program output. **Works again as of OBS 32.2.1** (it returned transparent frames on 32.1.x). This is how compositions get checked now — render it and look, don't reason about geometry blind. |
-| `scripts/lib/obs.mjs` | Shared connect helper. Reads port/password from OBS's own websocket config (SSOT) and waits until OBS is actually ready (error-207 poll). Also `displayUUIDs()` via CoreGraphics, since OBS 32.1.x hangs on display enumeration. |
+| `obs/set-display.mjs` | Point the Screen capture at the built-in display (default) or `--external`. |
+| `obs/snapshot.mjs` | Save a PNG of a scene's program output. **Works again as of OBS 32.2.1** (it returned transparent frames on 32.1.x). This is how compositions get checked now — render it and look, don't reason about geometry blind. |
+| `obs/lib/obs.mjs` | Shared connect helper. Reads port/password from OBS's own websocket config (SSOT) and waits until OBS is actually ready (error-207 poll). Also `displayUUIDs()` via CoreGraphics, since OBS 32.1.x hangs on display enumeration. |
 
 ## Scenes
 
@@ -179,7 +183,7 @@ the actions above + the HOME shell plan. Kept for reference.)*
    (Camera + mic were already granted.)
 2. **YouTube live enablement** (~16 subs is fine — desktop encoder streaming has no
    subscriber minimum): YouTube Studio → Go Live → verify phone → wait ≤24 h.
-   Then copy the stream key and run `node scripts/set-stream-key.mjs <KEY>`.
+   Then copy the stream key and run `node obs/set-stream-key.mjs <KEY>`.
 3. **Stream Deck**: the layout is written from the repo — edit
    `scripts/deck-layout.mjs`, then `node scripts/build-profile.mjs`. Never drag
    keys in the Stream Deck app; that's how the deck and the code drift apart.
@@ -194,7 +198,7 @@ actual picture. Check here first.
 |---|---|---|
 | **Screen share shows the desktop wallpaper — no windows, not even desktop icons** | macOS Screen Recording permission has gone stale. TCC stores the grant against the app's code signature, so an OBS update can leave the row reading "allowed" while ScreenCaptureKit quietly returns a stream containing only the desktop picture. **It does not go black.** Every check passes: right display, right UUID, `type: 0`, correct resolution, source enabled, frames flowing. | System Settings → Privacy & Security → **Screen & System Audio Recording** → toggle OBS **off then on** (seeing it already on is not enough — the toggle is what re-mints the grant), then **quit and relaunch OBS**. Jump straight there with `open "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture"`. |
 | **Camera bubble missing; Cam / Cam Cutout black** | The Camera input points at a Continuity Camera device that no longer exists — the IDs are per-phone, so swapping handsets orphans every camera scene. The source resolves to 0x0 and simply doesn't draw. | Self-healing since 2026-08-01: `camera-picker` re-points Camera and Camera FX on every OBS connect and logs a warning. If it ever can't, press the Camera Picker key. |
-| **Black bars down the sides of a screen share** | The built-in MacBook panel is 3456x2234 (aspect 1.547) and the canvas is 16:9 — fitting the whole screen inside it letterboxes. Measured 125px of pure black each side. The external monitor is natively 16:9, so only one screen looks wrong. | `node scripts/add-look.mjs screens` — crops each capture to canvas aspect before fitting, biased to trim the top (menu bar) so the loss lands on chrome, not content. Nothing is upscaled. |
+| **Black bars down the sides of a screen share** | The built-in MacBook panel is 3456x2234 (aspect 1.547) and the canvas is 16:9 — fitting the whole screen inside it letterboxes. Measured 125px of pure black each side. The external monitor is natively 16:9, so only one screen looks wrong. | `node obs/add-look.mjs screens` — crops each capture to canvas aspect before fitting, biased to trim the top (menu bar) so the loss lands on chrome, not content. Nothing is upscaled. |
 | **A deck key shows a yellow `?`** | The key points at a plugin action that no longer ships — the profile and the code drifted. | `node scripts/check-deck.mjs` names every one, then `node scripts/build-profile.mjs`. |
 | **Record key insists it's recording when OBS isn't** | Fixed 2026-08-01 — it used to trust a cached flag and miss the stop edge. It now re-reads `GetRecordStatus` on every press and reconciles every 5s. | Shouldn't recur; if it does, the log records every `RecordStateChanged`. |
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Tripwire for the CUTOUT key: the Cam Cutout scene must have a real alpha
 // hole where the room was. Ratio of transparent pixels is the countable line.
-//   node scripts/check-cutout.mjs [outPath]
+//   node obs/check-cutout.mjs [outPath]
 import { connect } from './lib/obs.mjs';
 import { execFileSync } from 'node:child_process';
 import { writeFileSync } from 'node:fs';

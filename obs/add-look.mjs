@@ -7,9 +7,9 @@
  * to add a look is how you end up not adding looks. This is additive and
  * idempotent: it skips a scene that already exists unless you pass --replace.
  *
- *   node scripts/add-look.mjs brb
- *   node scripts/add-look.mjs float
- *   node scripts/add-look.mjs character "Cubicle" ~/Pictures/cubicle.jpg
+ *   node obs/add-look.mjs brb
+ *   node obs/add-look.mjs float
+ *   node obs/add-look.mjs character "Cubicle" ~/Pictures/cubicle.jpg
  *
  * "character" is the template Ryan asked for: hand it a background image and it
  * builds a scene with him cut out over it. Every character scene is the same

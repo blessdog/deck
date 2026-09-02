@@ -2,8 +2,8 @@
 /**
  * Point the shared "Display" source at a display.
  *
- *   node scripts/set-display.mjs             # built-in display
- *   node scripts/set-display.mjs --external  # first external display
+ *   node obs/set-display.mjs             # built-in display
+ *   node obs/set-display.mjs --external  # first external display
  *
  * Display UUIDs come from CoreGraphics (lib/display-uuids.py) because
  * obs-websocket's display enumeration hangs on OBS 32.1.x.

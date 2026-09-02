@@ -1,4 +1,4 @@
-# CLAUDE.md — obs-control-room
+# CLAUDE.md — deck (was obs-control-room until 2026-09-02)
 
 **Read `README.md` first** — it is the manual: the plugin's actions, the build
 loop, the scene collection, the Stream Deck gotchas. This file only says how to
@@ -6,8 +6,12 @@ work here. Ryan's cross-project working agreement is in `~/.claude/CLAUDE.md`.
 
 ## What this is, and what it is NOT
 
-The **capture layer**: Stream Deck → OBS, one-button screen shares, a scripted
-scene collection, and Ryan's own plugin (`com.blessdog.obs-control-room`).
+**Everything the Stream Deck does**, in one repo, sectioned so nothing bleeds:
+`plugin/` (the one plugin, UUID `com.blessdog.obs-control-room` — never renamed,
+renaming it blanked every key once), `scripts/` (the layout as data, the profile
+writer, the tripwire), `obs/` (scenes, looks, verifiers), `rectum/` (clipper
+key glue), `ableton/` (reserved). Laws and measured verdicts are in `knowledge/`;
+query it before choosing a technique.
 
 It ends at the file. OBS writes Hybrid MP4 to `~/Movies`; **`~/projects/media-studio`
 ingests from there and owns everything downstream** — timelines, edits, grades,

@@ -180,7 +180,7 @@ export const VERIFY = {
 	screenRight: "Press; program shows the RIGHT monitor with real windows.",
 	screenCam: "Press; screen with the camera bubble bottom-left.",
 	cam: "Press; full camera.",
-	cutout: "Press; Ryan on a transparent background, no room (scripts/check-cutout.mjs).",
+	cutout: "Press; Ryan on a transparent background, no room (obs/check-cutout.mjs).",
 	lava: "Press; lava lamp behind the cutout.",
 	rectumLeft: "Press, press again; the rectum library gains a clip of the left monitor.",
 	rectumRight: "Press, press again; the rectum library gains a clip of the right monitor.",

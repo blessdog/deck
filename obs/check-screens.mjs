@@ -11,7 +11,7 @@
  * (screencapture, which always sees windows) — and compare. If the OS picture
  * has content the OBS picture lacks, the grant is stale.
  *
- *   node scripts/check-screens.mjs            # both screens
+ *   node obs/check-screens.mjs            # both screens
  *   exit 1 = stale grant; the fix is printed.
  */
 import { connect } from './lib/obs.mjs';
