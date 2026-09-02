@@ -18,26 +18,29 @@ import { connect } from './lib/obs.mjs';
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
 
-const SCENES = [
-  { scene: 'Screen L', display: 2 }, // external, x=-1920 (screencapture -D is 1-based, ordered by CoreGraphics)
-  { scene: 'Screen R', display: 1 }, // built-in
-];
-const DIFF_STALE = 12; // mean abs pixel difference (0–255) on a 96x54 thumbnail; CHOSEN, read a few times and adjust
+// screencapture's -D numbering does not match CoreGraphics' order (measured
+// 2026-09-02: -D 2 was the built-in, not the external), so no mapping is
+// trusted: each OBS scene is compared against EVERY display and the closest
+// wins. A stale grant makes every display far from every scene.
+const SCENES = ['Screen L', 'Screen R'];
+const DISPLAYS = [1, 2];
+const DIFF_STALE = 40; // mean abs difference (0–255) on a 96x54 grey thumbnail. Measured: real match ≈ 5–15, wallpaper-vs-windows ≈ 145. CHOSEN at 40.
 mkdirSync('evidence/screens-check', { recursive: true });
+const osPng = (d) => `evidence/screens-check/display-${d}-os.png`;
+for (const d of DISPLAYS) execFileSync('/usr/sbin/screencapture', ['-x', '-D', String(d), osPng(d)]);
+const diffOf = (a, b) =>
+  parseFloat(execFileSync('/opt/homebrew/bin/magick', [a, '-resize', '96x54!', b, '-resize', '96x54!', '-colorspace', 'gray', '-compose', 'difference', '-composite', '-format', '%[fx:mean*255]', 'info:']).toString());
 const obs = await connect();
 let stale = 0;
-for (const { scene, display } of SCENES) {
+for (const scene of SCENES) {
   const { imageData } = await obs.call('GetSourceScreenshot', { sourceName: scene, imageFormat: 'png', imageWidth: 960 });
   const obsPng = `evidence/screens-check/${scene.replace(/\W/g, '')}-obs.png`;
-  const osPng = `evidence/screens-check/${scene.replace(/\W/g, '')}-os.png`;
   writeFileSync(obsPng, Buffer.from(imageData.split(',')[1], 'base64'));
-  execFileSync('/usr/sbin/screencapture', ['-x', '-D', String(display), osPng]);
-  const diff = parseFloat(
-    execFileSync('/opt/homebrew/bin/magick', [obsPng, '-resize', '96x54!', osPng, '-resize', '96x54!', '-colorspace', 'gray', '-compose', 'difference', '-composite', '-format', '%[fx:mean*255]', 'info:']).toString(),
-  );
-  const verdict = diff > DIFF_STALE ? 'STALE' : 'ok';
+  const diffs = DISPLAYS.map((d) => ({ d, diff: diffOf(obsPng, osPng(d)) }));
+  const best = diffs.reduce((m, x) => (x.diff < m.diff ? x : m));
+  const verdict = best.diff > DIFF_STALE ? 'STALE' : 'ok';
   if (verdict === 'STALE') stale++;
-  console.log(`${scene}: OBS vs OS mean diff ${diff.toFixed(1)} → ${verdict}`);
+  console.log(`${scene}: closest OS display ${best.d}, mean diff ${best.diff.toFixed(1)} (all: ${diffs.map((x) => x.diff.toFixed(0)).join('/')}) → ${verdict}`);
 }
 await obs.disconnect();
 if (stale) {
