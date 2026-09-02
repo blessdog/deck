@@ -3,18 +3,19 @@
 
 # obs-control-room — STATE
 
-*Generated 2026-09-02 17:23 from git, the knowledge store, and this project's own status script. Nothing here is typed by hand, so nothing here can be stale.*
+*Generated 2026-09-02 17:43 from git, the knowledge store, and this project's own status script. Nothing here is typed by hand, so nothing here can be stale.*
 
 ## What is open
 
 Every `kind: open` claim in the store. These are PLANS, not specs — `proven: false`. Do not build against one without a verdict.
 
 ```
-? obs-control-room-store-exists   (2026-09-02)
-    The store was created on 2026-09-02 and is empty. Nothing here has been measured
 ? sp-404-sound-library-on-the-deck-and-ryan-s-own-   (2026-09-02)
     SP-404 sound library on the deck, and Ryan's own recordings into it — an Ableton build, not OBS
     why: Ryan is already building the SP-404 library; if the deck grows an audio section ad hoc inside the OBS ke
+? stream-deck-error-restoring-the-last-session-pro   (2026-09-02)
+    Stream Deck 'error restoring the last session' prompt after build-profile's quit/relaunch
+    why: If Ryan ever clicks Restore, the layout silently reverts to a stale backup — the exact failure build-pro
 ```
 
 ## What this project knows
@@ -22,20 +23,22 @@ Every `kind: open` claim in the store. These are PLANS, not specs — `proven: f
 The full index. Query it before choosing any technique — `find-technique.py "<your situation>"` — rather than reading it. Every claim declares the questions that must find it, and `check-retrieval.py` asserts they do.
 
 ```
-KNOWLEDGE — 6 live claims: 6 from this project (/Users/SSDrive/projects/mediaStudio/obs-control-room/knowledge), 0 universal (~/.claude/knowledge/store)
+KNOWLEDGE — 8 live claims: 8 from this project (/Users/SSDrive/projects/mediaStudio/obs-control-room/knowledge), 0 universal (~/.claude/knowledge/store)
 Query before choosing any technique:  python3 ~/.claude/knowledge/bin/find-technique.py "<your situation>"
 
 LAWS — absolute, no exceptions
   · recording-friction-is-the-product: The deck exists to make starting a snippet recording cost nothing. Every key
   · the-deck-ends-at-the-mp4: The deck stops at the MP4. It never hands a file downstream. The one
+  · what-this-project-knows: This store holds the deck's laws and measured verdicts. Query it before
   · zoom-is-native-macos-zoom: The ZOOM key drives macOS Accessibility Zoom, not an OBS-side zoom. Ryan
 
 VERDICTS — measured, and SCOPED; check the scope before reusing
   · cutout-model-is-selfie-segmentation royshil obs-backgroundremoval 1.1.13 on CoreML, OBS 32.2.2, M-series Mac, 1920x1080 @ 30 f
+  · screen-capture-renders-only-while-active OBS 32.2.2 macOS Screen Capture (ScreenCaptureKit) sources; GetSourceScreenshot over obs-w
 
 OPEN — plans, NOT specs. proven: false. Do not build against these.
-  ? obs-control-room-store-exists The store was created on 2026-09-02 and is empty. Nothing here has been measured
   ? sp-404-sound-library-on-the-deck-and-ryan-s-own- Why it matters: Ryan is already building the SP-404 library; if the deck grows an audio se
+  ? stream-deck-error-restoring-the-last-session-pro Why it matters: If Ryan ever clicks Restore, the layout silently reverts to a stale backup
 ```
 
 ## Where the work stands
@@ -51,6 +54,11 @@ OPEN — plans, NOT specs. proven: false. Do not build against these.
 *From git. The full narrative lives in `docs/journal/`; commit subjects are written as search bait, so `git log --grep` is the index.*
 
 ```
+2026-09-02  a2cbde6  check-screens: put each screen scene on program before shooting — inactive macOS screen capture renders blank, which looks like a stale grant
+2026-09-02  de7b179  check-screens: compare each OBS screen scene against every display, closest wins; Screen L verified live after the grant toggle
+2026-09-02  edd0f04  bookmark: Stream Deck session-restore prompt after repeated build-profile relaunches
+2026-09-02  cf9add0  knowledge: retire the empty-store seed; the deck store now answers what it knows
+2026-09-02  3290de1  STATE.md: generated status report joins the repo
 2026-09-02  615ec44  deck v2: ZOOM goes native (two Hotkey keys), Status key retired, REVEAL/PAUSE/SHOT keys, every key carries a VERIFY sentence
 2026-09-02  55444cb  fix: CUTOUT and ME+FLOAT keys — Background Removal on CoreML (selfie_segmentation, measured), chroma key gone; screens fitter no longer flattens the float card
 2026-09-02  e8debcd  plan: deck mono project — 13 tasks, each proven by a press
@@ -58,16 +66,11 @@ OPEN — plans, NOT specs. proven: false. Do not build against these.
 2026-09-02  5e3df6d  spec: deck mono project — key set v2, native zoom, fixes proven by press
 2026-09-02  db4b7c9  deck: GRAB key routes any URL — video to rectum, image to media-tools (built plugin + grab.mjs left uncommitted by an earlier session)
 2026-09-02  17b976e  evidence: native macOS zoom law filed, zoom capture test frames, salvaged earlier zoom control frame
-2026-09-02  674a2b2  research: deck audit 2026-09-02 — dead keys measured, zoom/cutout options, Ryan's two laws filed
-2026-08-18  befdff9  README journey: Companion's death, faces-never-lie doctrine, keys born from incidents
-2026-08-08  03ca501  chore: WIP safety snapshot before backup setup
-2026-08-08  3dd77bb  chore: WIP safety snapshot before backup setup
-2026-08-04  660c503  fix: every deck key went blank — the plugin and rectum both moved to mediaStudio
 ```
 
 ### ⚠ UNPUSHED
 
-**8 commit(s) ahead of `origin/master`.** Committed is not the same as safe — a commit that has not left this machine has the durability of the disk it is on.
+**13 commit(s) ahead of `origin/master`.** Committed is not the same as safe — a commit that has not left this machine has the durability of the disk it is on.
 
 ```
 git push origin master
@@ -76,7 +79,8 @@ git push origin master
 ### Uncommitted
 
 ```
-?? STATE.md
+ M STATE.md
+?? evidence/2026-09-02/screen-l-obs-vs-os.png
 ```
 
 *Uncommitted is not learned. Commit at the moment of learning.*
