@@ -152,12 +152,15 @@ for (const { dev, top, file, layout, pageLabel } of found) {
 			const prior = before[coord];
 			next[coord] = {
 				ActionID: prior?.UUID === n.uuid ? prior.ActionID : randomUUID(),
-				LinkedTitle: false,
+				LinkedTitle: n.linkedTitle ?? false,
 				Name: n.name,
+				...(n.plugin ? { Plugin: n.plugin } : {}),
 				Resources: null,
 				Settings: n.settings,
 				State: 0,
-				States: [{ FontFamily: "", FontSize: 11, FontStyle: "Bold", FontUnderline: false, Image: "", OutlineThickness: 2, ShowTitle: true, Title: n.title, TitleAlignment: "middle", TitleColor: "#ffffff" }],
+				States: n.title
+					? [{ FontFamily: "", FontSize: 11, FontStyle: "Bold", FontUnderline: false, Image: "", OutlineThickness: 2, ShowTitle: true, Title: n.title, TitleAlignment: "middle", TitleColor: "#ffffff" }]
+					: [{}],
 				UUID: n.uuid,
 			};
 			continue;

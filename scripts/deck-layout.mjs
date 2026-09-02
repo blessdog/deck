@@ -63,13 +63,16 @@ export const ACTIONS = {
 export const XL = [
 	// c0          c1          c2           c3     c4         c5          c6       c7
 	[null, null, null, null, "soon", "brb", "ending", "record"], //       row 0 — far
-	[null, null, "zoomOut", null, null, null, null, "pause"], //          row 1 — gutter, two exceptions
+	[null, null, "zoomOut", null, null, null, "reveal", "pause"], //      row 1 — gutter, three exceptions
 	["screenLeft", "screenRight", "screenCam", null, "cam", "cutout", "float", "lava"], // row 2
-	["mark", "mute", "zoomIn", null, "camera", "meeting", "shot", "reveal"], // row 3 — near
+	["mark", "mute", "zoomIn", null, "camera", "meeting", "shot", "pageNext"], // row 3 — near; 7,3 is the app's own page key
 ];
 // ZOOM OUT sits directly above ZOOM IN and PAUSE directly below RECORD, so each
-// pair is found by touch; the rest of row 1 stays dark. STATUS is gone
-// (knowledge/recording-friction-is-the-product): every scene key cold-starts OBS.
+// pair is found by touch; REVEAL sits beside PAUSE (the file you just made).
+// The bottom-right key is the Stream Deck app's page-navigation key: it must
+// exist for page 2 (rectum) to be reachable, and 2026-09-02 proved that placing
+// anything else there deletes it — so it is placed from here, like every key.
+// STATUS is gone (knowledge/recording-friction-is-the-product).
 
 /**
  * The Stream Deck + (4x2) is also paired and was carrying orphaned keys of its
@@ -148,6 +151,7 @@ const hotkey = (nativeCode, ascii, { cmd = false, ctrl = false, option = false, 
 	],
 });
 export const NATIVE = {
+	pageNext: { uuid: "com.elgato.streamdeck.page.next", name: "Next Page", plugin: { Name: "Pages", UUID: "com.elgato.streamdeck.page", Version: "1.0" }, settings: {}, linkedTitle: true },
 	zoomIn: { uuid: "com.elgato.streamdeck.system.hotkey", name: "Hotkey", title: "ZOOM\n+", settings: hotkey(24, 61, { option: true, cmd: true }) },
 	zoomOut: { uuid: "com.elgato.streamdeck.system.hotkey", name: "Hotkey", title: "ZOOM\n−", settings: hotkey(27, 45, { option: true, cmd: true }) },
 };
@@ -160,6 +164,7 @@ export const isNative = (short) => short in NATIVE;
  */
 export const VERIFY = {
 	record: "Press; press again; ~/Movies gains a playable MP4.",
+	pageNext: "Press; the deck shows page 2 (rectum). Its own Previous key comes back.",
 	pause: "Press mid-recording, press again; the finished file plays through both halves.",
 	mark: "Press twice while recording; ffprobe shows two chapters.",
 	mute: "Press; OBS mixer shows Mic muted and the key turns red.",
