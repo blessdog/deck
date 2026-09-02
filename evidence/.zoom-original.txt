@@ -1,0 +1,8 @@
+--- original zoom settings, for revert ---
+closeViewHotkeysEnabled = 0
+closeViewZoomedIn = 0
+closeViewZoomFactor = 1
+closeViewDesiredZoomFactor = 1.0609
+closeViewZoomMode = 0
+closeViewPanningMode = 1
+closeViewScrollWheelToggle = 0
