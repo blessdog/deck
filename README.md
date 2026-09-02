@@ -129,7 +129,7 @@ human looking at the actual thing.** Hence:
 
 ## Known-good numbers
 
-- Canvas 1920x1080 @ 60fps · record h264 (Apple VT hardware) @ **45 Mbps**.
+- Canvas 1920x1080 @ 30fps (measured 2026-09-02; was documented as 60) · record h264 (Apple VT hardware) @ **45 Mbps**.
   Was 13.9 Mbps, which read as grain. NOT switched to HEVC despite it being
   ~40% more efficient: the media-studio pipeline is verified end-to-end on
   h264+AAC hybrid MP4, and changing codec means re-proving ingest.
