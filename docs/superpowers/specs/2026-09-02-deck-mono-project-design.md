@@ -39,21 +39,17 @@ Renaming the plugin UUID is forbidden: it blanked every key on 2026-08-18.
 
 ## Key set v2
 
-XL page 1 (row 3 nearest the hand; column 3 is the tactile gutter):
+XL page 1 (row 3 nearest the hand; column 3 is the tactile gutter and stays dark):
 
 ```
- ·         ·         ·         ·       SOON     BRB     ENDING   RECORD    row 0
- ·         ·         ·         ·         ·        ·        ·      PAUSE     row 1
- LEFT     RIGHT    SCRN+ME     ·       CAM    CUTOUT  ME+FLOAT   LAVA     row 2
- MARK     MUTE    ZOOM IN   ZOOM OUT  CAMERA  MEETING   SHOT    REVEAL    row 3
+ ·         ·         ·         ·       SOON     BRB     ENDING   RECORD    row 0 — far
+ ·         ·      ZOOM OUT    ·         ·        ·        ·      PAUSE     row 1 — gutter, two exceptions
+ LEFT     RIGHT    SCRN+ME     ·       CAM    CUTOUT  ME+FLOAT   LAVA     row 2 — what's on screen
+ MARK     MUTE    ZOOM IN     ·       CAMERA  MEETING   SHOT    REVEAL    row 3 — nearest the hand
 ```
 
-Wait — the gutter column must stay dark for touch. ZOOM OUT moves:
-
-```
- MARK     MUTE    ZOOM IN     ·       CAMERA  MEETING   SHOT    REVEAL    row 3
- ·         ·      ZOOM OUT    ·         ·        ·        ·      PAUSE     row 1
-```
+ZOOM OUT sits directly above ZOOM IN and PAUSE directly below RECORD, so each
+pair is found by touch; the rest of row 1 stays dark.
 
 Page 2 (rectum) unchanged. SD+ keys: `LEFT RIGHT SCRN+ME RECORD / MARK MUTE CAM
 REVEAL`; SD+ dials 1–3: Mic, SP-404, App Audio via the official Elgato OBS
