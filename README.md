@@ -41,6 +41,54 @@ looking at pixels, never by reasoning about coordinates blind. (OBS
 32.1.x returned transparent frames and briefly broke this; 32.2.1
 fixed it.)
 
+**The deck audit (2026-09-02).** Ryan: *"some of the buttons really don't
+do anything like cutout or me plus float. I don't know what the phone button
+does… there should just be a mono project that everything Stream Deck falls
+under."* One session, every dead key measured, and the repo renamed `deck`.
+
+- **Tried:** snapshot every scene through OBS instead of trusting the keys.
+  **Happened:** Cutout was the raw room with holes in a house plant; Me + Float
+  rendered identical to Screen L; Zoom did nothing.
+  **Mechanism:** Cutout had Background Removal *off* and a green-screen chroma
+  key *on* with no green screen. Me + Float's screen source had been re-fit to
+  full frame by the screens fitter, burying the camera. Zoom's Lua was still
+  registered at the pre-move path. **Verdict:** three fixes, three tripwires
+  (`obs/check-cutout.mjs`, `obs/check-float.mjs`, and the layout's VERIFY
+  sentence per key that `check-deck.mjs` now demands).
+
+  ![the three dead keys](evidence/2026-09-02/dead-keys-contact-sheet.png)
+
+- **Tried:** six background-removal models, live, with Ryan in frame.
+  **Happened:** bria was cleanest at 0.3 fps; rvm ate his face on some frames;
+  mediapipe let the room through. **Verdict (measured):** `selfie_segmentation`,
+  the only one at 30 fps with zero skipped frames —
+  `knowledge/cutout-model-is-selfie-segmentation.md`.
+
+  ![model bake-off](evidence/2026-09-02/cutout-model-bakeoff.png)
+
+- **Tried:** an in-OBS zoom (the Lua, Zoominator). **Verdict (Ryan's law):**
+  zoom is macOS Accessibility Zoom on two native Hotkey keys — *"That way I see
+  it directly and OBS is capturing it. Not me guessing where it's supposed to
+  go in the OBS capture."* The Lua is in `archive/zoom-in-obs/` with the reason.
+
+- **Tried:** a finish-and-ingest key. **Refused by law:** the deck ends at the
+  MP4. He cuts several snippets together, so the unit he drags from is the
+  folder. REVEAL opens Finder on the newest recording and does nothing else.
+
+- **Tried:** the OBS-vs-OS screen tripwire. **Happened:** it read STALE with a
+  fresh grant. **Mechanism:** a macOS Screen Capture source only delivers
+  frames while its scene is on program — an inactive screen scene snapshots
+  blank, which looks exactly like the stale grant. **Verdict:**
+  `obs/check-screens.mjs` puts each scene on program for the shot;
+  `knowledge/screen-capture-renders-only-while-active.md`.
+
+  ![Screen L after the grant toggle](evidence/2026-09-02/screen-l-after-toggle.png)
+
+- **Tried:** placing REVEAL on the bottom-right key. **Happened:** page 2
+  vanished. **Mechanism:** that key is the app's own Next Page key and writing
+  over it deletes it. **Verdict:** the nav key is placed from the layout like
+  every other key, so nothing can take its spot.
+
 ## Custom plugin (`plugin/`)
 
 `com.blessdog.obs-control-room` — bespoke actions (Elgato SDK v2, Node 24),
@@ -49,12 +97,14 @@ in the Stream Deck app under category **"OBS Control Room"**:
 | Action | Behavior |
 |---|---|
 | **Camera Picker** | Cycles the shared Camera source between physical cameras (iPhone Continuity ↔ built-in FaceTime HD). Face shows which is live; switches the cutout's Camera FX in lockstep. |
-| **Status** | OFFLINE / READY / ⏺ REC / 🔴 LIVE with elapsed time + dropped-frame %. Press while offline = cold start. |
 | **Meeting Mode** | *Screen + Cam* + OBS Virtual Camera on/off — then pick "OBS Virtual Camera" in Zoom/Meet. |
 | **Record** | Toggle the OBS recording (cold-starts OBS if dead). Amber ⏺ + elapsed while rolling. Corpus doctrine: recordings pile up in `~/Movies`; processing is a separate, later act. |
 | **Mute Mic** | Toggle the shared `Mic` input. Face follows OBS's own mute event (never lies): white open mic = hot, red slashed mic = muted. |
 | **Mark** | While recording: drops an OBS **chapter marker** into the file itself, named with the record timecode. No daemon, no DB — ffprobe reads chapters back at ingest (verified: media-studio `scripts/verify_record_chapters.py`; OBS auto-adds a `Start` chapter at 0, ingest skips it). Dim + alert when not recording. |
-| **Zoom to Cursor** | Punches the left-monitor capture in 2x on the mouse and follows it; long press toggles following. Drives `vendor/obs-zoom-to-mouse.lua` by name over the websocket (`TriggerHotkeyByName`) — no OS hotkey, no Accessibility permission. Checks the hotkey exists before firing, so an unloaded script alerts instead of doing nothing. |
+| **Pause** | Pause/resume the running recording (`ToggleRecordPause`). Dim when nothing is recording; face follows OBS's own pause events. |
+| **Shot** | PNG of what is on program into `<record dir>/OBS Shots/`, revealed in Finder. |
+| **Reveal** | Finder on the newest recording. Nothing more — the deck ends at the MP4 (`knowledge/the-deck-ends-at-the-mp4.md`). |
+| **Zoom + / Zoom −** | Not ours: two native Stream Deck Hotkey keys sending ⌥⌘= / ⌥⌘− to macOS Accessibility Zoom, placed from `deck-layout.mjs` like every key. |
 | **Scene keys** | One key per scene, zero config; the on-air key lights up. Screen keys **draw the real monitor arrangement** (ordered by CoreGraphics x-origin) with the shared one filled, so a third monitor changes the picture instead of making "SCREEN L" lie. |
 
 Build: `cd plugin && PATH="/opt/homebrew/opt/node@24/bin:$PATH" npm run build`,
@@ -92,44 +142,33 @@ the app never creates `~/Library/Application Support/com.elgato.StreamDeck/NodeJ
 One shared `Display` / `Camera` / `Mic` input reused across scenes — edit a device
 once, every scene follows.
 
-## State — 2026-08-01
+## State — 2026-09-02
 
-**This project is THE Stream Deck surface.** The pipeline side lives in
-`~/projects/media-studio` (see its `STATUS.md`). Bitfocus Companion is dead and
-never comes back — its plugin is retired to `Plugins-retired-2026-08-01/`.
+**This project is THE Stream Deck surface** — renamed `deck` today; the OBS
+section is `obs/`, the clipper keys' glue is `rectum/`, `ableton/` is reserved.
+Bitfocus Companion is dead and never comes back.
 
-**The deck, as it sits (17 keys, `check-deck.mjs` green):**
+**The deck, as it sits (21 keys on XL page 1, `check-deck.mjs` green):**
 
 ```
- STATUS    ·      ·      ·    SOON    BRB   ENDING  RECORD     row 0 — far, rarely pressed
-   ·       ·      ·      ·      ·       ·      ·       ·       row 1 — deliberate gutter
- LEFT    RIGHT  SCRN+ME  ·     CAM   CUTOUT ME+FLOAT LAVA      row 2 — what's on screen
- MARK    MUTE   ZOOM     ·   CAMERA  MEETING   ·    (nav)      row 3 — NEAREST the hand
+   ·        ·        ·        ·      SOON     BRB    ENDING   RECORD    row 0 — far
+   ·        ·     ZOOM −      ·        ·        ·    REVEAL   PAUSE     row 1 — gutter, three exceptions
+ LEFT     RIGHT   SCRN+ME     ·      CAM    CUTOUT  ME+FLOAT  LAVA     row 2 — what's on screen
+ MARK     MUTE    ZOOM +      ·    CAMERA  MEETING   SHOT    (page)   row 3 — nearest the hand
 ```
 
-Ordered by **reach, not category**. It used to be exactly backwards — every live
-key on the far rows, the two rows nearest the hand empty.
+Page 2 is rectum (LEFT · RIGHT · CROP · GRAB). SD+: SCRN+ME LEFT RIGHT RECORD /
+MARK MUTE CAM REVEAL. STATUS is gone (`knowledge/recording-friction-is-the-product.md`).
 
-**Face grammar** (measured off Elgato's shipped artwork, then given colour):
-state is the WHOLE KEY's background · identity is the glyph · text only when
-it's a number that changes. Families get hues — cyan screens, violet camera,
-blue bracket, amber mark, green mic, red record — targeted by **luminance** so
-every family reads with equal weight at the same state. `key-face.ts` is the
-sole generator. **Dim means pressing does nothing; lit means pressing does
-something** (which is why the OBS key is a lit power button when OBS is down).
+**Face grammar** is unchanged: state is the whole key's background, identity is
+the glyph, text only for a number that changes. **Dim means pressing does
+nothing; lit means pressing does something.**
 
-**Doctrine earned the hard way on 2026-08-01 — five silent failures in one
-session.** Dead deck keys, a camera pointed at a phone Ryan no longer owns, a
-record key latched on, a screen capture returning only wallpaper, and a Lua
-script that registered its hotkeys then died on every callback. **Every one
-presented as working. Every machine-side check passed. All five were found by a
-human looking at the actual thing.** Hence:
-
-- Never act on cached state — re-read from OBS on use (`record.ts`, `camera-picker.ts`).
-- A verifier must **exercise** the thing, not observe it. `verify-zoom.mjs`
-  confirmed the hotkeys registered and still missed a script that was broken,
-  because registration happens before the broken path runs.
-- Render it and **look**. Screenshots work again on 32.2.1.
+**Every key carries a VERIFY sentence** in `scripts/deck-layout.mjs` — how a
+human proves it — and `check-deck.mjs` fails on a key without one. The tripwires
+that exercise instead of observe: `obs/check-cutout.mjs` (transparent ratio),
+`obs/check-float.mjs` (card geometry and z-order), `obs/check-screens.mjs`
+(OBS capture vs the OS's own capture of the same display).
 
 ## Known-good numbers
 
@@ -146,21 +185,17 @@ human looking at the actual thing.** Hence:
 
 ## Next
 
-1. **Finger-verify `Me + Float` with Ryan in frame** — does his face clear the
-   floating card? Center Stage had him out of shot both attempts. Knobs:
-   `camCentre` (40% across) and card width (52%) in `add-look.mjs`.
-2. **Move plugin** (Exeldro, 2.49M downloads, 4.65★, macOS) — needs admin, a
-   `.pkg`. Installs the animated push-aside between `Cam` and `Me + Float`;
-   both scenes already share the same Camera source, which is what Move matches
-   on, so no code changes needed.
-3. **Character scenes** — `add-look.mjs character "<name>" <image>` works today;
-   waiting on Ryan's background images. Each needs a key in `deck-layout.mjs`.
-4. **The $0 iPhone multicam test** in media-studio `docs/IPHONE-MULTICAM.md` —
-   written 2026-07-21, still never run. Camera A stays Continuity+Center Stage
-   (the follow-shot); camera B becomes the locked-off wide, where losing Center
-   Stage costs nothing.
-5. Broadcast-tier features (dropped frames, replay, tally) stay **parked** —
-   Ryan records, he doesn't stream.
+1. **Ryan's press ladder** for the 2026-09-02 keys: ZOOM +/− (proves the system
+   zoom is in the recording), CUTOUT and ME + FLOAT in frame, REVEAL, SHOT,
+   RECORD → PAUSE → PAUSE → RECORD. Each is a VERIFY sentence in the layout.
+2. **Move transition** — installer is in `~/Downloads`; admin install, then
+   `obs/set-transition.mjs` (to write) makes camera looks slide instead of cut.
+3. **SD+ dials** — Mic / SP-404 / App Audio via the official Elgato OBS plugin's
+   Audio Mixer Volume; place one by hand, harvest its settings into the layout.
+4. **Character scenes** — `obs/add-look.mjs character "<name>" <image>` works;
+   waiting on background images.
+5. **Ableton / SP-404** — bookmarked; `ableton/` is reserved.
+6. Broadcast-tier features stay **parked** — Ryan records, he doesn't stream.
 
 ## Stream Deck layout (MK.2, top two rows) — HISTORIC
 
@@ -199,6 +234,7 @@ actual picture. Check here first.
 | **Screen share shows the desktop wallpaper — no windows, not even desktop icons** | macOS Screen Recording permission has gone stale. TCC stores the grant against the app's code signature, so an OBS update can leave the row reading "allowed" while ScreenCaptureKit quietly returns a stream containing only the desktop picture. **It does not go black.** Every check passes: right display, right UUID, `type: 0`, correct resolution, source enabled, frames flowing. | System Settings → Privacy & Security → **Screen & System Audio Recording** → toggle OBS **off then on** (seeing it already on is not enough — the toggle is what re-mints the grant), then **quit and relaunch OBS**. Jump straight there with `open "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture"`. |
 | **Camera bubble missing; Cam / Cam Cutout black** | The Camera input points at a Continuity Camera device that no longer exists — the IDs are per-phone, so swapping handsets orphans every camera scene. The source resolves to 0x0 and simply doesn't draw. | Self-healing since 2026-08-01: `camera-picker` re-points Camera and Camera FX on every OBS connect and logs a warning. If it ever can't, press the Camera Picker key. |
 | **Black bars down the sides of a screen share** | The built-in MacBook panel is 3456x2234 (aspect 1.547) and the canvas is 16:9 — fitting the whole screen inside it letterboxes. Measured 125px of pure black each side. The external monitor is natively 16:9, so only one screen looks wrong. | `node obs/add-look.mjs screens` — crops each capture to canvas aspect before fitting, biased to trim the top (menu bar) so the loss lands on chrome, not content. Nothing is upscaled. |
+| **A screen scene's snapshot is blank / transparent while the deck and OBS look fine** | macOS Screen Capture only delivers frames while its scene is on program. An inactive screen scene renders nothing, which is indistinguishable from the stale grant above. | Put the scene on program before shooting (`obs/check-screens.mjs` does), or press its key first. |
 | **A deck key shows a yellow `?`** | The key points at a plugin action that no longer ships — the profile and the code drifted. | `node scripts/check-deck.mjs` names every one, then `node scripts/build-profile.mjs`. |
 | **Record key insists it's recording when OBS isn't** | Fixed 2026-08-01 — it used to trust a cached flag and miss the stop edge. It now re-reads `GetRecordStatus` on every press and reconciles every 5s. | Shouldn't recur; if it does, the log records every `RecordStateChanged`. |
 
