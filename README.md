@@ -89,6 +89,39 @@ under."* One session, every dead key measured, and the repo renamed `deck`.
   over it deletes it. **Verdict:** the nav key is placed from the layout like
   every other key, so nothing can take its spot.
 
+**Day two (2026-09-03).** Ryan: *"the zoom is awesome. lets keep building this
+thing out."* Then, an hour later: *"Screen share is broken on OBS now. It keeps
+showing the wallpaper. This is a known failure bug that keeps returning over
+and over."*
+
+- **Tried:** the August fix, toggling the Screen Recording grant. **Happened:**
+  same OBS process as the day before, verified clean at 17:50, wallpaper by
+  morning; the approval file said OBS's next macOS reminder was two months out;
+  re-applying the source settings changed nothing. **Mechanism:** the
+  ScreenCaptureKit stream inside OBS dies across a night of sleep/wake and OBS
+  never rebuilds a stream whose settings did not change. Pointing each source
+  at the other monitor and back rebuilt it: 81 → 4.1 against the OS's own
+  capture. **Verdict:** the plugin rebuilds every screen stream on connect and
+  on wake (`plugin/src/screen-heal.ts`). The toggle was never the fix; it only
+  made you relaunch OBS. `knowledge/screen-capture-streams-die-overnight.md`.
+
+- **Built:** Move transition (camera looks slide, 350 ms), a camera ISO beside
+  every recording (`~/Movies/iso/<stamp>-cam.mp4`, Source Record on the shared
+  Camera, verified by a 12 s test), and the SD+ dials as our own Volume action
+  (Mic / SP-404 / App Audio; rotate, press to mute, tap to reset) placed from
+  ENCODERS in the layout — no hand-placed key, no property inspector.
+
+- **Broke:** a test-recording script ended with `rm "$(ls -t ~/Movies/*.mp4 |
+  head -1)"`. OBS was not running, the test never started, and the command
+  deleted Ryan's own 140-second recording from 14:50 and its ISO. No snapshot
+  covered it. **Mechanism:** "newest file" is a guess about causality; the rm
+  never checked that the create step had succeeded. **Verdict (law):** delete
+  only the exact path the creating call returned, in a separate command —
+  `~/.claude/knowledge/store/delete-only-what-you-made-by-its-returned-path.md`
+  — enforced by a PreToolUse gate that denies any rm whose target comes from
+  command substitution (`~/.claude/hooks/rm_needs_a_literal_path.py`, proven
+  firing the same hour).
+
 ## Custom plugin (`plugin/`)
 
 `com.blessdog.obs-control-room` — bespoke actions (Elgato SDK v2, Node 24),
