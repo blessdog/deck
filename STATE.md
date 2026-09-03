@@ -3,7 +3,7 @@
 
 # deck — STATE
 
-*Generated 2026-09-03 11:13 from git, the knowledge store, and this project's own status script. Nothing here is typed by hand, so nothing here can be stale.*
+*Generated 2026-09-03 14:42 from git, the knowledge store, and this project's own status script. Nothing here is typed by hand, so nothing here can be stale.*
 
 ## What is open
 
@@ -26,7 +26,7 @@ Every `kind: open` claim in the store. These are PLANS, not specs — `proven: f
 The full index. Query it before choosing any technique — `find-technique.py "<your situation>"` — rather than reading it. Every claim declares the questions that must find it, and `check-retrieval.py` asserts they do.
 
 ```
-KNOWLEDGE — 10 live claims: 10 from this project (/Users/SSDrive/projects/mediaStudio/deck/knowledge), 0 universal (~/.claude/knowledge/store)
+KNOWLEDGE — 11 live claims: 11 from this project (/Users/SSDrive/projects/mediaStudio/deck/knowledge), 0 universal (~/.claude/knowledge/store)
 Query before choosing any technique:  python3 ~/.claude/knowledge/bin/find-technique.py "<your situation>"
 
 LAWS — absolute, no exceptions
@@ -36,6 +36,7 @@ LAWS — absolute, no exceptions
   · zoom-is-native-macos-zoom: The ZOOM key drives macOS Accessibility Zoom, not an OBS-side zoom. Ryan
 
 VERDICTS — measured, and SCOPED; check the scope before reusing
+  · camera-iso-rides-along-with-every-recording OBS 32.2.2 + Source Record 0.4.8 filter on the shared Camera input, hybrid MP4 main record
   · cutout-model-is-selfie-segmentation royshil obs-backgroundremoval 1.1.13 on CoreML, OBS 32.2.2, M-series Mac, 1920x1080 @ 30 f
   · screen-capture-renders-only-while-active OBS 32.2.2 macOS Screen Capture (ScreenCaptureKit) sources; GetSourceScreenshot over obs-w
   · screen-capture-streams-die-overnight OBS 32.2.x macOS Screen Capture (ScreenCaptureKit) on macOS 26, this Mac, OBS left running
@@ -59,6 +60,9 @@ OPEN — plans, NOT specs. proven: false. Do not build against these.
 *From git. The full narrative lives in `docs/journal/`; commit subjects are written as search bait, so `git log --grep` is the index.*
 
 ```
+2026-09-03  b68c48b  obs: camera ISO — Source Record on the shared Camera writes <stamp>-cam.mp4 beside every recording (verified 12 s test)
+2026-09-03  9a04e51  obs: Move transition installed and live (350 ms); set-transition.mjs writes it into the collection when OBS is quit, selects it when running
+2026-09-03  6acf9da  obs: set-transition.mjs makes Move the scene transition; STATE regenerated
 2026-09-03  01ff784  STATE.md: regenerated after the screen-heal fix
 2026-09-03  e6e1c45  bookmark: plugin TS2339 noise on every obs.on site
 2026-09-03  c4bd87b  screen-heal: wiring lives in the module (clears the top-level TS warning)
@@ -68,9 +72,6 @@ OPEN — plans, NOT specs. proven: false. Do not build against these.
 2026-09-02  c2e47d5  rename: obs-control-room → deck; obs/ rectum/ ableton/ sections; workspace's empty streamer/ and OBS/ removed
 2026-09-02  a44d4e7  deck: the bottom-right key is the app's Next Page key, placed from the layout; REVEAL moves beside PAUSE
 2026-09-02  f9ad68d  STATE.md: regenerated after the deck v2 batch
-2026-09-02  a2cbde6  check-screens: put each screen scene on program before shooting — inactive macOS screen capture renders blank, which looks like a stale grant
-2026-09-02  de7b179  check-screens: compare each OBS screen scene against every display, closest wins; Screen L verified live after the grant toggle
-2026-09-02  edd0f04  bookmark: Stream Deck session-restore prompt after repeated build-profile relaunches
 ```
 
 *Remote: `https://github.com/blessdog/deck.git` — `master` is pushed.*
@@ -79,7 +80,6 @@ OPEN — plans, NOT specs. proven: false. Do not build against these.
 
 ```
  M STATE.md
-?? obs/set-transition.mjs
 ```
 
 *Uncommitted is not learned. Commit at the moment of learning.*
