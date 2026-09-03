@@ -14049,6 +14049,56 @@ class OBSConnection extends EventEmitter$2 {
 const obs = new OBSConnection();
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+/**
+ * Rebuild every macOS Screen Capture stream in OBS.
+ *
+ * MECHANISM (measured 2026-09-03): after a night of sleep/wake cycles OBS's
+ * ScreenCaptureKit streams delivered the desktop wallpaper only — no windows —
+ * while every permission read "granted". Re-applying identical settings is a
+ * no-op; pointing each source at another display and back forces a new stream
+ * and both screens came back clean (Screen L 81 → 3.3 against the OS's own
+ * capture). Ryan, the same morning: "This is a known failure bug that keeps
+ * returning over and over." It returns because nothing rebuilt the stream;
+ * this does, on every OBS connect and every system wake, so he never records
+ * eight minutes of wallpaper again.
+ *
+ * Mirror of obs/heal-screens.mjs, on the plugin's own connection.
+ */
+const log = streamDeck.logger.createScope("screen-heal");
+let healing = false;
+async function healScreens() {
+    if (healing || !obs.connected)
+        return 0;
+    healing = true;
+    try {
+        const { inputs } = await obs.call("GetInputList", { inputKind: "screen_capture" });
+        if (!inputs.length)
+            return 0;
+        const uuids = obs.displayUUIDs().map((d) => d.uuid);
+        const originals = [];
+        for (const { inputName } of inputs) {
+            const { inputSettings } = await obs.call("GetInputSettings", { inputName });
+            const current = inputSettings.display_uuid;
+            const other = uuids.find((u) => u !== current) ?? current;
+            originals.push({ inputName, current });
+            await obs.call("SetInputSettings", { inputName, inputSettings: { display_uuid: other } });
+        }
+        await sleep(2000);
+        for (const { inputName, current } of originals) {
+            await obs.call("SetInputSettings", { inputName, inputSettings: { display_uuid: current } });
+        }
+        log.info(`rebuilt ${originals.length} screen capture stream(s)`);
+        return originals.length;
+    }
+    catch (err) {
+        log.warn(`heal failed: ${err}`);
+        return 0;
+    }
+    finally {
+        healing = false;
+    }
+}
+
 /******************************************************************************
 Copyright (c) Microsoft Corporation.
 
@@ -15834,7 +15884,13 @@ streamDeck.actions.registerAction(new RectumLeft());
 streamDeck.actions.registerAction(new RectumRight());
 streamDeck.actions.registerAction(new RectumCrop());
 streamDeck.actions.registerAction(new RectumGrab());
-// Websocket connections die over sleep; retry immediately on wake.
-streamDeck.system.onSystemDidWakeUp(() => obs.poke());
+// Websocket connections die over sleep; retry immediately on wake. Screen
+// capture streams die over sleep too, but silently — they keep delivering the
+// wallpaper — so every wake and every connect rebuilds them (screen-heal.ts).
+streamDeck.system.onSystemDidWakeUp(() => {
+    obs.poke();
+    void sleep(5000).then(healScreens);
+});
+obs.on("connected", () => void sleep(3000).then(healScreens));
 obs.start();
 await streamDeck.connect();
