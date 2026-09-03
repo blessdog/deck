@@ -3,7 +3,7 @@
 
 # deck — STATE
 
-*Generated 2026-09-03 10:18 from git, the knowledge store, and this project's own status script. Nothing here is typed by hand, so nothing here can be stale.*
+*Generated 2026-09-03 11:13 from git, the knowledge store, and this project's own status script. Nothing here is typed by hand, so nothing here can be stale.*
 
 ## What is open
 
@@ -59,6 +59,7 @@ OPEN — plans, NOT specs. proven: false. Do not build against these.
 *From git. The full narrative lives in `docs/journal/`; commit subjects are written as search bait, so `git log --grep` is the index.*
 
 ```
+2026-09-03  01ff784  STATE.md: regenerated after the screen-heal fix
 2026-09-03  e6e1c45  bookmark: plugin TS2339 noise on every obs.on site
 2026-09-03  c4bd87b  screen-heal: wiring lives in the module (clears the top-level TS warning)
 2026-09-03  7da5967  fix: screen share wallpaper bug — the SCK stream dies across sleep, so the plugin rebuilds every screen capture on connect and on wake
@@ -70,7 +71,6 @@ OPEN — plans, NOT specs. proven: false. Do not build against these.
 2026-09-02  a2cbde6  check-screens: put each screen scene on program before shooting — inactive macOS screen capture renders blank, which looks like a stale grant
 2026-09-02  de7b179  check-screens: compare each OBS screen scene against every display, closest wins; Screen L verified live after the grant toggle
 2026-09-02  edd0f04  bookmark: Stream Deck session-restore prompt after repeated build-profile relaunches
-2026-09-02  cf9add0  knowledge: retire the empty-store seed; the deck store now answers what it knows
 ```
 
 *Remote: `https://github.com/blessdog/deck.git` — `master` is pushed.*
@@ -79,6 +79,7 @@ OPEN — plans, NOT specs. proven: false. Do not build against these.
 
 ```
  M STATE.md
+?? obs/set-transition.mjs
 ```
 
 *Uncommitted is not learned. Commit at the moment of learning.*
