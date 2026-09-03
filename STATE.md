@@ -3,7 +3,7 @@
 
 # deck — STATE
 
-*Generated 2026-09-03 14:42 from git, the knowledge store, and this project's own status script. Nothing here is typed by hand, so nothing here can be stale.*
+*Generated 2026-09-03 15:18 from git, the knowledge store, and this project's own status script. Nothing here is typed by hand, so nothing here can be stale.*
 
 ## What is open
 
@@ -60,6 +60,9 @@ OPEN — plans, NOT specs. proven: false. Do not build against these.
 *From git. The full narrative lives in `docs/journal/`; commit subjects are written as search bait, so `git log --grep` is the index.*
 
 ```
+2026-09-03  2e6cf8a  plugin: rebuilt bundle with the Volume dial action (previous commit carried a stale build)
+2026-09-03  03f90d9  deck: SD+ dials are our own Volume action — Mic / SP-404 / App Audio, rotate ±1.5 dB, press mutes, touch resets; placed from ENCODERS in the layout
+2026-09-03  6810b10  STATE.md: regenerated after Move transition and camera ISO
 2026-09-03  b68c48b  obs: camera ISO — Source Record on the shared Camera writes <stamp>-cam.mp4 beside every recording (verified 12 s test)
 2026-09-03  9a04e51  obs: Move transition installed and live (350 ms); set-transition.mjs writes it into the collection when OBS is quit, selects it when running
 2026-09-03  6acf9da  obs: set-transition.mjs makes Move the scene transition; STATE regenerated
@@ -69,9 +72,6 @@ OPEN — plans, NOT specs. proven: false. Do not build against these.
 2026-09-03  7da5967  fix: screen share wallpaper bug — the SCK stream dies across sleep, so the plugin rebuilds every screen capture on connect and on wake
 2026-09-02  7e79947  README journey: the deck audit — three dead keys measured, zoom goes native, one repo named deck
 2026-09-02  5d4e25a  archive: grab-router never wired — the GRAB key runs rectum's own grab; tooltip now says what the key does
-2026-09-02  c2e47d5  rename: obs-control-room → deck; obs/ rectum/ ableton/ sections; workspace's empty streamer/ and OBS/ removed
-2026-09-02  a44d4e7  deck: the bottom-right key is the app's Next Page key, placed from the layout; REVEAL moves beside PAUSE
-2026-09-02  f9ad68d  STATE.md: regenerated after the deck v2 batch
 ```
 
 *Remote: `https://github.com/blessdog/deck.git` — `master` is pushed.*
