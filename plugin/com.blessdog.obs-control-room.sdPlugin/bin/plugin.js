@@ -13906,6 +13906,7 @@ const FORWARDED = [
     "CurrentProgramSceneChanged",
     "InputSettingsChanged",
     "InputMuteStateChanged",
+    "InputVolumeChanged",
 ];
 const RETRY_MS = 3_000;
 const NOT_READY = 207; // obs-websocket: socket is up before OBS finishes init
@@ -15866,12 +15867,153 @@ let Shot = (() => {
     return _classThis;
 })();
 
+const DB_PER_TICK = 1.5;
+const DB_MIN = -60; // indicator floor; OBS goes to -100 but nothing lives there
+const DB_MAX = 6;
+/**
+ * VOLUME — one Stream Deck + dial per OBS audio input (Mic, SP-404, App Audio).
+ *
+ * Rotate: ±1.5 dB per tick. Press: toggle mute. Touch the strip: back to 0 dB.
+ * The strip follows OBS's own InputVolumeChanged / InputMuteStateChanged
+ * events, never a remembered value — the same doctrine as the Mute key.
+ *
+ * Which input a dial controls is per-dial settings (`input`), written by
+ * scripts/build-profile.mjs from ENCODERS in deck-layout.mjs. No property
+ * inspector: the layout is the config.
+ */
+let Volume = (() => {
+    let _classDecorators = [action({ UUID: "com.blessdog.obs-control-room.volume" })];
+    let _classDescriptor;
+    let _classExtraInitializers = [];
+    let _classThis;
+    let _classSuper = SingletonAction;
+    (class extends _classSuper {
+        static { _classThis = this; }
+        static {
+            const _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create(_classSuper[Symbol.metadata] ?? null) : void 0;
+            __esDecorate(null, _classDescriptor = { value: _classThis }, _classDecorators, { kind: "class", name: _classThis.name, metadata: _metadata }, null, _classExtraInitializers);
+            _classThis = _classDescriptor.value;
+            if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
+            __runInitializers(_classThis, _classExtraInitializers);
+        }
+        log = streamDeck.logger.createScope("volume");
+        inputOf = new Map(); // action id → input name
+        constructor() {
+            super();
+            obs.on("connected", () => void this.refreshAll());
+            obs.on("disconnected", () => void this.refreshAll());
+            obs.on("InputVolumeChanged", ({ inputName, inputVolumeDb }) => void this.paintInput(inputName, { db: inputVolumeDb }));
+            obs.on("InputMuteStateChanged", ({ inputName, inputMuted }) => void this.paintInput(inputName, { muted: inputMuted }));
+        }
+        onWillAppear(ev) {
+            const input = ev.payload.settings.input;
+            if (input)
+                this.inputOf.set(ev.action.id, input);
+            void this.refresh(ev.action.id);
+        }
+        onWillDisappear(ev) {
+            this.inputOf.delete(ev.action.id);
+        }
+        async onDialRotate(ev) {
+            const inputName = this.inputOf.get(ev.action.id);
+            if (!inputName || !obs.connected)
+                return;
+            try {
+                const { inputVolumeDb } = await obs.call("GetInputVolume", { inputName });
+                const next = Math.max(DB_MIN, Math.min(DB_MAX, inputVolumeDb + ev.payload.ticks * DB_PER_TICK));
+                await obs.call("SetInputVolume", { inputName, inputVolumeDb: next });
+            }
+            catch (err) {
+                this.log.warn(`rotate ${inputName}: ${err}`);
+            }
+        }
+        async onDialDown(ev) {
+            const inputName = this.inputOf.get(ev.action.id);
+            if (!inputName || !obs.connected)
+                return;
+            try {
+                await obs.call("ToggleInputMute", { inputName });
+            }
+            catch (err) {
+                this.log.warn(`mute ${inputName}: ${err}`);
+            }
+        }
+        async onTouchTap(ev) {
+            const inputName = this.inputOf.get(ev.action.id);
+            if (!inputName || !obs.connected)
+                return;
+            try {
+                await obs.call("SetInputVolume", { inputName, inputVolumeDb: 0 });
+            }
+            catch (err) {
+                this.log.warn(`reset ${inputName}: ${err}`);
+            }
+        }
+        async refreshAll() {
+            for (const id of this.inputOf.keys())
+                await this.refresh(id);
+        }
+        async refresh(actionId) {
+            const inputName = this.inputOf.get(actionId);
+            const a = [...this.actions].find((x) => x.id === actionId);
+            if (!a || !a.isDial())
+                return;
+            if (!inputName) {
+                await a.setFeedback({ title: "no input", value: "—", indicator: 0 });
+                return;
+            }
+            if (!obs.connected) {
+                await a.setFeedback({ title: inputName, value: "OBS off", indicator: 0 });
+                return;
+            }
+            try {
+                const [{ inputVolumeDb }, { inputMuted }] = await Promise.all([
+                    obs.call("GetInputVolume", { inputName }),
+                    obs.call("GetInputMute", { inputName }),
+                ]);
+                await a.setFeedback(this.feedback(inputName, inputVolumeDb, inputMuted));
+            }
+            catch {
+                await a.setFeedback({ title: inputName, value: "?", indicator: 0 });
+            }
+        }
+        async paintInput(inputName, change) {
+            for (const [id, name] of this.inputOf) {
+                if (name !== inputName)
+                    continue;
+                const a = [...this.actions].find((x) => x.id === id);
+                if (!a || !a.isDial())
+                    continue;
+                try {
+                    const db = change.db ?? (await obs.call("GetInputVolume", { inputName })).inputVolumeDb;
+                    const muted = change.muted ?? (await obs.call("GetInputMute", { inputName })).inputMuted;
+                    await a.setFeedback(this.feedback(inputName, db, muted));
+                }
+                catch {
+                    /* next event repaints */
+                }
+            }
+        }
+        feedback(inputName, db, muted) {
+            const clamped = Math.max(DB_MIN, Math.min(DB_MAX, db));
+            const indicator = Math.round(((clamped - DB_MIN) / (DB_MAX - DB_MIN)) * 100);
+            return {
+                title: muted ? `${inputName} · MUTED` : inputName,
+                value: muted ? "muted" : `${db > 0 ? "+" : ""}${db.toFixed(1)} dB`,
+                indicator: muted ? 0 : indicator,
+            };
+        }
+    });
+    return _classThis;
+})();
+
 streamDeck.actions.registerAction(new Record());
 streamDeck.actions.registerAction(new Mark());
 streamDeck.actions.registerAction(new MuteMic());
 streamDeck.actions.registerAction(new Pause());
 streamDeck.actions.registerAction(new Shot());
 streamDeck.actions.registerAction(new Reveal());
+streamDeck.actions.registerAction(new Volume());
 streamDeck.actions.registerAction(new CameraPicker());
 streamDeck.actions.registerAction(new MeetingMode());
 streamDeck.actions.registerAction(new SceneStartingSoon());
