@@ -47,3 +47,9 @@ export async function healScreens(): Promise<number> {
 		healing = false;
 	}
 }
+
+/** Wire the heal to every OBS connect and every system wake. */
+export function installScreenHeal(): void {
+	obs.on("connected", () => void sleep(3000).then(healScreens));
+	streamDeck.system.onSystemDidWakeUp(() => void sleep(5000).then(healScreens));
+}

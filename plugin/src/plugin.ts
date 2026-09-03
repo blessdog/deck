@@ -1,6 +1,6 @@
 import streamDeck from "@elgato/streamdeck";
-import { obs, sleep } from "./obs-connection";
-import { healScreens } from "./screen-heal";
+import { obs } from "./obs-connection";
+import { installScreenHeal } from "./screen-heal";
 import { CameraPicker } from "./actions/camera-picker";
 import { Mark } from "./actions/mark";
 import { MeetingMode } from "./actions/meeting-mode";
@@ -51,11 +51,8 @@ streamDeck.actions.registerAction(new RectumGrab());
 // Websocket connections die over sleep; retry immediately on wake. Screen
 // capture streams die over sleep too, but silently — they keep delivering the
 // wallpaper — so every wake and every connect rebuilds them (screen-heal.ts).
-streamDeck.system.onSystemDidWakeUp(() => {
-	obs.poke();
-	void sleep(5000).then(healScreens);
-});
-obs.on("connected", () => void sleep(3000).then(healScreens));
+streamDeck.system.onSystemDidWakeUp(() => obs.poke());
+installScreenHeal();
 
 obs.start();
 await streamDeck.connect();

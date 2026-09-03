@@ -14098,6 +14098,11 @@ async function healScreens() {
         healing = false;
     }
 }
+/** Wire the heal to every OBS connect and every system wake. */
+function installScreenHeal() {
+    obs.on("connected", () => void sleep(3000).then(healScreens));
+    streamDeck.system.onSystemDidWakeUp(() => void sleep(5000).then(healScreens));
+}
 
 /******************************************************************************
 Copyright (c) Microsoft Corporation.
@@ -15887,10 +15892,7 @@ streamDeck.actions.registerAction(new RectumGrab());
 // Websocket connections die over sleep; retry immediately on wake. Screen
 // capture streams die over sleep too, but silently — they keep delivering the
 // wallpaper — so every wake and every connect rebuilds them (screen-heal.ts).
-streamDeck.system.onSystemDidWakeUp(() => {
-    obs.poke();
-    void sleep(5000).then(healScreens);
-});
-obs.on("connected", () => void sleep(3000).then(healScreens));
+streamDeck.system.onSystemDidWakeUp(() => obs.poke());
+installScreenHeal();
 obs.start();
 await streamDeck.connect();
