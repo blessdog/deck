@@ -3,7 +3,7 @@
 
 # deck — STATE
 
-*Generated 2026-09-03 15:18 from git, the knowledge store, and this project's own status script. Nothing here is typed by hand, so nothing here can be stale.*
+*Generated 2026-09-03 15:45 from git, the knowledge store, and this project's own status script. Nothing here is typed by hand, so nothing here can be stale.*
 
 ## What is open
 
@@ -60,6 +60,9 @@ OPEN — plans, NOT specs. proven: false. Do not build against these.
 *From git. The full narrative lives in `docs/journal/`; commit subjects are written as search bait, so `git log --grep` is the index.*
 
 ```
+2026-09-03  4dd7204  README journey: day two — stream death not stale grant, Move, camera ISO, dials, and the deleted recording with its gate
+2026-09-03  2601310  verify: npm run check / npm run deck, FINISH-DECK.command runs the whole loop with the OBS proofs
+2026-09-03  d2b90bd  STATE.md: regenerated after the SD+ volume dials
 2026-09-03  2e6cf8a  plugin: rebuilt bundle with the Volume dial action (previous commit carried a stale build)
 2026-09-03  03f90d9  deck: SD+ dials are our own Volume action — Mic / SP-404 / App Audio, rotate ±1.5 dB, press mutes, touch resets; placed from ENCODERS in the layout
 2026-09-03  6810b10  STATE.md: regenerated after Move transition and camera ISO
@@ -69,9 +72,6 @@ OPEN — plans, NOT specs. proven: false. Do not build against these.
 2026-09-03  01ff784  STATE.md: regenerated after the screen-heal fix
 2026-09-03  e6e1c45  bookmark: plugin TS2339 noise on every obs.on site
 2026-09-03  c4bd87b  screen-heal: wiring lives in the module (clears the top-level TS warning)
-2026-09-03  7da5967  fix: screen share wallpaper bug — the SCK stream dies across sleep, so the plugin rebuilds every screen capture on connect and on wake
-2026-09-02  7e79947  README journey: the deck audit — three dead keys measured, zoom goes native, one repo named deck
-2026-09-02  5d4e25a  archive: grab-router never wired — the GRAB key runs rectum's own grab; tooltip now says what the key does
 ```
 
 *Remote: `https://github.com/blessdog/deck.git` — `master` is pushed.*
