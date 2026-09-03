@@ -163,7 +163,7 @@ export const isNative = (short) => short in NATIVE;
  * key nobody knows is dead (five of them, 2026-08-01).
  */
 export const VERIFY = {
-	record: "Press; press again; ~/Movies gains a playable MP4.",
+	record: "Press; press again; ~/Movies gains a playable MP4 and ~/Movies/iso gains the matching -cam file.",
 	pageNext: "Press; the deck shows page 2 (rectum). Its own Previous key comes back.",
 	pause: "Press mid-recording, press again; the finished file plays through both halves.",
 	mark: "Press twice while recording; ffprobe shows two chapters.",

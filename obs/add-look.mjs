@@ -24,7 +24,7 @@ const REPLACE = rest.includes('--replace');
 const args = rest.filter((a) => a !== '--replace');
 
 if (!kind) {
-  console.error('usage: add-look.mjs <brb|float|character|screens|cutout> [name] [image]');
+  console.error('usage: add-look.mjs <brb|float|character|screens|cutout|iso> [name] [image]');
   process.exit(1);
 }
 
@@ -37,6 +37,7 @@ try {
   else if (kind === 'brb') await brb(W, H);
   else if (kind === 'float') await meFloat(W, H);
   else if (kind === 'cutout') await cutout();
+  else if (kind === 'iso') await cameraIso();
   else if (kind === 'character') {
     const [name, image] = args;
     if (!name || !image) {
@@ -315,6 +316,44 @@ async function cutout() {
     await obs.call('CreateSourceFilter', { sourceName, filterName: 'Background Removal', filterKind: 'background_removal', filterSettings: settings });
   }
   console.log('Camera FX: Background Removal ON (coreml, selfie_segmentation).');
+}
+
+/**
+ * CAMERA ISO — a clean camera-only file beside every screen recording.
+ *
+ * Ryan edits several snippets together in Resolve, and a camera track that is
+ * separate from the screen means every reframe (bubble ↔ full-bleed ↔ cutout)
+ * is an edit decision, not a re-shoot. Exeldro's Source Record 0.4.8 filter on
+ * the shared Camera input records whenever the MAIN recording runs (mode 3),
+ * with the same Apple VT h264 + AAC the main file uses, so ingest already
+ * understands it. Files land in <record dir>/iso/ with a -cam suffix. Mic is
+ * carried on the ISO too, so the file cuts on its own.
+ */
+async function cameraIso() {
+  const sourceName = 'Camera';
+  const filterName = 'Camera ISO';
+  const { recordDirectory } = await obs.call('GetRecordDirectory');
+  const settings = {
+    record_mode: 3, // OUTPUT_MODE_RECORDING — follows the main recording
+    path: `${recordDirectory}/iso`,
+    filename_formatting: '%CCYY-%MM-%DD_%hh-%mm-%ss-cam',
+    rec_format: 'mp4',
+    encoder: 'com.apple.videotoolbox.videoencoder.ave.avc',
+    different_audio: true,
+    audio_source: 'Mic',
+    audio_encoder: 'CoreAudio_AAC',
+    audio_track: 1,
+    scale: false,
+  };
+  const { filters } = await obs.call('GetSourceFilterList', { sourceName });
+  const existing = filters.find((f) => f.filterKind === 'source_record_filter');
+  if (existing) {
+    await obs.call('SetSourceFilterSettings', { sourceName, filterName: existing.filterName, filterSettings: settings });
+    await obs.call('SetSourceFilterEnabled', { sourceName, filterName: existing.filterName, filterEnabled: true });
+  } else {
+    await obs.call('CreateSourceFilter', { sourceName, filterName, filterKind: 'source_record_filter', filterSettings: settings });
+  }
+  console.log(`Camera ISO: records to ${settings.path} whenever the main recording runs.`);
 }
 
 /**
