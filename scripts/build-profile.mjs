@@ -15,7 +15,7 @@ import { join } from "node:path";
 import { homedir } from "node:os";
 import { execFileSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { DEVICES, NATIVE, PLUGIN, isNative, nameOf, placements, uuidOf } from "./deck-layout.mjs";
+import { DEVICES, ENCODERS, NATIVE, PLUGIN, isNative, nameOf, placements, uuidOf } from "./deck-layout.mjs";
 
 const DRY = process.argv.includes("--dry");
 const SD = join(homedir(), "Library/Application Support/com.elgato.StreamDeck");
@@ -188,14 +188,50 @@ for (const { dev, top, file, layout, pageLabel } of found) {
 		};
 	}
 
+
+	const ours = Object.values(next).filter((a) => a.UUID.startsWith(PLUGIN)).length + placements(layout).filter((p) => isNative(p.short)).length;
+	console.log(`${dev.name} "${top.Name}" ${pageLabel} → ${ours} keys (+${Object.keys(next).length - ours} foreign kept)`);
+
+	// Dials (Stream Deck +): page 1 only, our Volume action with per-dial settings.
+	const encoders = pageLabel === "page 1" ? ENCODERS[top.Device?.Model] : undefined;
+	let encoderCtrl;
+	if (encoders) {
+		encoderCtrl = (page.Controllers ?? []).find((c) => c.Type === "Encoder");
+		if (encoderCtrl) {
+			const beforeEnc = encoderCtrl.Actions ?? {};
+			const nextEnc = {};
+			for (const [coord, act] of Object.entries(beforeEnc)) {
+				if (act?.UUID?.startsWith(PLUGIN)) continue;
+				if (coord in encoders) { console.warn(`  ! dial ${coord} replaces foreign ${act?.UUID}`); continue; }
+				nextEnc[coord] = act;
+			}
+			for (const [coord, { short, settings }] of Object.entries(encoders)) {
+				const uuid = uuidOf(short);
+				if (!shipped.has(uuid)) { missing.push(`dial ${coord} → ${uuid}`); continue; }
+				const prior = beforeEnc[coord];
+				nextEnc[coord] = {
+					ActionID: prior?.UUID === uuid ? prior.ActionID : randomUUID(),
+					Controller: "Encoder",
+					LinkedTitle: true,
+					Name: nameOf(short),
+					Plugin: { Name: PLUGIN_NAME, UUID: PLUGIN, Version: PLUGIN_VERSION },
+					Resources: null,
+					Settings: settings,
+					State: 0,
+					States: [{}],
+					UUID: uuid,
+				};
+			}
+			console.log(`  dials → ${Object.keys(encoders).length} ours (+${Object.keys(nextEnc).length - Object.keys(encoders).length} foreign kept)`);
+			if (!DRY) encoderCtrl.Actions = nextEnc;
+		}
+	}
+
 	if (missing.length) {
 		console.error(`✖ layout references actions the plugin does not ship:`);
 		for (const m of missing) console.error(`    ${m}`);
 		process.exit(1);
 	}
-
-	const ours = Object.values(next).filter((a) => a.UUID.startsWith(PLUGIN)).length + placements(layout).filter((p) => isNative(p.short)).length;
-	console.log(`${dev.name} "${top.Name}" ${pageLabel} → ${ours} keys (+${Object.keys(next).length - ours} foreign kept)`);
 
 	if (DRY) continue;
 	if (!existsSync(file + ".bak")) copyFileSync(file, file + ".bak");

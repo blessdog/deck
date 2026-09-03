@@ -22,6 +22,7 @@ import { RectumCrop, RectumGrab, RectumLeft, RectumRight } from "./actions/rectu
 import { Reveal } from "./actions/reveal";
 import { Pause } from "./actions/pause";
 import { Shot } from "./actions/shot";
+import { Volume } from "./actions/volume";
 
 streamDeck.actions.registerAction(new Record());
 streamDeck.actions.registerAction(new Mark());
@@ -29,6 +30,7 @@ streamDeck.actions.registerAction(new MuteMic());
 streamDeck.actions.registerAction(new Pause());
 streamDeck.actions.registerAction(new Shot());
 streamDeck.actions.registerAction(new Reveal());
+streamDeck.actions.registerAction(new Volume());
 streamDeck.actions.registerAction(new CameraPicker());
 streamDeck.actions.registerAction(new MeetingMode());
 streamDeck.actions.registerAction(new SceneStartingSoon());

@@ -353,6 +353,31 @@
      "ShowTitle": false
     }
    ]
+  },
+  {
+   "Name": "Volume",
+   "UUID": "com.blessdog.obs-control-room.volume",
+   "Icon": "imgs/actions/mark/icon",
+   "Tooltip": "Stream Deck + dial for one OBS audio input: rotate ±1.5 dB, press to mute, touch to reset to 0 dB. The strip follows OBS's own volume and mute events.",
+   "Controllers": [
+    "Encoder"
+   ],
+   "Encoder": {
+    "layout": "$B1",
+    "StackColor": "#34d399",
+    "Icon": "imgs/actions/mark/icon",
+    "TriggerDescription": {
+     "Rotate": "Volume ±1.5 dB",
+     "Push": "Mute / unmute",
+     "Touch": "Reset to 0 dB"
+    }
+   },
+   "States": [
+    {
+     "Image": "imgs/actions/mark/key",
+     "ShowTitle": false
+    }
+   ]
   }
  ]
 }

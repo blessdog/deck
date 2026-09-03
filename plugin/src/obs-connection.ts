@@ -45,6 +45,7 @@ export type ObsEvents = {
 	CurrentProgramSceneChanged: [{ sceneName: string }];
 	InputSettingsChanged: [{ inputName: string; inputSettings: Record<string, unknown> }];
 	InputMuteStateChanged: [{ inputName: string; inputMuted: boolean }];
+	InputVolumeChanged: [{ inputName: string; inputVolumeMul: number; inputVolumeDb: number }];
 };
 
 const FORWARDED = [
@@ -54,6 +55,7 @@ const FORWARDED = [
 	"CurrentProgramSceneChanged",
 	"InputSettingsChanged",
 	"InputMuteStateChanged",
+	"InputVolumeChanged",
 ] as const;
 
 const RETRY_MS = 3_000;

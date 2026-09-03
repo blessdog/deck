@@ -32,6 +32,7 @@ export const ACTIONS = {
 	pause: ["pause", "Pause Recording"],
 	shot: ["shot", "Screenshot"],
 	reveal: ["reveal", "Reveal Recording"],
+	volume: ["volume", "Volume"],
 	camera: ["camera-picker", "Camera Picker"],
 	meeting: ["meeting-mode", "Meeting Mode"],
 	soon: ["scene-starting-soon", "Scene: Starting Soon"],
@@ -111,6 +112,20 @@ export const XL_RECTUM = [
 ];
 
 /**
+ * The Stream Deck +'s four dials, page 1. Each entry is our Volume action with
+ * the OBS input it controls as its per-dial settings — the layout IS the
+ * config, so there is no property inspector to click through. Dial 4 is left
+ * to the app (it carries the stock SD+ brightness key).
+ */
+export const ENCODERS = {
+	"20GBD9901": {
+		"0,0": { short: "volume", settings: { input: "Mic" } },
+		"1,0": { short: "volume", settings: { input: "SP-404" } },
+		"2,0": { short: "volume", settings: { input: "App Audio" } },
+	},
+};
+
+/**
  * `pages` is written in profile page order. A device may own more pages than we
  * describe; the extras are left completely alone rather than blanked, because
  * other tools put keys there and they are none of our business.
@@ -165,6 +180,7 @@ export const isNative = (short) => short in NATIVE;
 export const VERIFY = {
 	record: "Press; press again; ~/Movies gains a playable MP4 and ~/Movies/iso gains the matching -cam file.",
 	pageNext: "Press; the deck shows page 2 (rectum). Its own Previous key comes back.",
+	volume: "Turn SD+ dial 1; the OBS mixer's Mic fader moves and the strip shows the dB. Press it; Mic mutes.",
 	pause: "Press mid-recording, press again; the finished file plays through both halves.",
 	mark: "Press twice while recording; ffprobe shows two chapters.",
 	mute: "Press; OBS mixer shows Mic muted and the key turns red.",
