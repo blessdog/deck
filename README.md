@@ -242,11 +242,17 @@ actual picture. Check here first.
 
 ## Verify after changes
 
-1. `node scripts/check-deck.mjs` → zero orphaned keys, zero unplaced actions.
-2. Quit OBS → press the **OBS** key (power symbol) → OBS returns on *Starting
-   Soon* (~20 s) and every key repaints with live state.
-3. Press each screen key → **look at the picture**, not just the key: it must
-   show real windows, not the bare wallpaper.
-4. Flip through scene keys; record ~10 s → playable file in `~/Movies`.
-5. Press **Mark** twice while recording → `ffprobe` shows the chapters
-   (media-studio `scripts/verify_record_chapters.py`).
+One command runs everything the machine can prove: `./FINISH-DECK.command`
+(build → layout → tripwire → restart → OBS checks), or `npm run check` for the
+checks alone. What it proves:
+
+1. `scripts/check-deck.mjs` → every key resolves, every action is on a key, every key has a VERIFY sentence.
+2. `obs/check-screens.mjs` → Screen L and Screen R match the OS's own capture (not wallpaper).
+3. `obs/check-cutout.mjs` → the Cam Cutout scene has an alpha hole.
+4. `obs/check-float.mjs` → Me + Float is a card over the camera.
+
+What only a press can prove is the VERIFY sentence on each key in
+`scripts/deck-layout.mjs`. Rule from 2026-09-01: verify by exercising, never by
+observing — and from 2026-09-03: a test that cleans up after itself deletes
+only the exact path it created, never "the newest file"
+(`~/.claude/knowledge/store/delete-only-what-you-made-by-its-returned-path.md`).

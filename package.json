@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "check": "node scripts/check-deck.mjs && node obs/check-screens.mjs && node obs/check-cutout.mjs evidence/cutout-check.png && node obs/check-float.mjs",
+    "deck": "cd plugin && npm run build && cd .. && node scripts/build-profile.mjs && node scripts/check-deck.mjs && cd plugin && npx streamdeck restart com.blessdog.obs-control-room"
   },
   "keywords": [],
   "author": "",
