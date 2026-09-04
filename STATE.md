@@ -3,7 +3,7 @@
 
 # deck — STATE
 
-*Generated 2026-09-03 15:45 from git, the knowledge store, and this project's own status script. Nothing here is typed by hand, so nothing here can be stale.*
+*Generated 2026-09-04 08:48 from git, the knowledge store, and this project's own status script. Nothing here is typed by hand, so nothing here can be stale.*
 
 ## What is open
 
@@ -60,6 +60,7 @@ OPEN — plans, NOT specs. proven: false. Do not build against these.
 *From git. The full narrative lives in `docs/journal/`; commit subjects are written as search bait, so `git log --grep` is the index.*
 
 ```
+2026-09-03  6b94ffb  STATE.md: regenerated after day two
 2026-09-03  4dd7204  README journey: day two — stream death not stale grant, Move, camera ISO, dials, and the deleted recording with its gate
 2026-09-03  2601310  verify: npm run check / npm run deck, FINISH-DECK.command runs the whole loop with the OBS proofs
 2026-09-03  d2b90bd  STATE.md: regenerated after the SD+ volume dials
@@ -71,7 +72,6 @@ OPEN — plans, NOT specs. proven: false. Do not build against these.
 2026-09-03  6acf9da  obs: set-transition.mjs makes Move the scene transition; STATE regenerated
 2026-09-03  01ff784  STATE.md: regenerated after the screen-heal fix
 2026-09-03  e6e1c45  bookmark: plugin TS2339 noise on every obs.on site
-2026-09-03  c4bd87b  screen-heal: wiring lives in the module (clears the top-level TS warning)
 ```
 
 *Remote: `https://github.com/blessdog/deck.git` — `master` is pushed.*
