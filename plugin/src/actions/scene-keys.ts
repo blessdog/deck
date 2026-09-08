@@ -148,14 +148,6 @@ export class SceneScreenCam extends SceneKey {
 	}
 }
 
-@action({ UUID: "com.blessdog.obs-control-room.scene-lava-lounge" })
-export class SceneLavaLounge extends SceneKey {
-	protected override readonly tint = "warm" as const;
-	protected readonly scene = "Lava Lounge";
-	protected readonly label = "LAVA";
-	protected override readonly glyph = GLYPHS.lamp;
-}
-
 /** Full-frame camera with the screen share floating right of centre. */
 @action({ UUID: "com.blessdog.obs-control-room.scene-me-float" })
 export class SceneMeFloat extends SceneKey {

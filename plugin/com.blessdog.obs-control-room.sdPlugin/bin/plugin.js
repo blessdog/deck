@@ -13900,9 +13900,6 @@ const SCENES = {
     ending: "Ending",
     /** The REACT punch-in: shared Camera scaled past the canvas (obs/add-look.mjs react). */
     react: "React",
-    /** Overlay scenes nested (hidden) in every speaking scene (obs/setup-cues.mjs). */
-    takeaway: "Takeaway",
-    chapter: "Chapter",
 };
 const FORWARDED = [
     "StreamStateChanged",
@@ -14318,8 +14315,6 @@ const GLYPHS = {
     hourglass: "M44 24 h56 v10 H44 Z M44 98 h56 v10 H44 Z M50 34 h44 L72 66 Z M72 66 L94 98 H50 Z",
     /** Skip-to-end — double chevron into a bar. Reads as "wrap it up". */
     ending: "M28 36 L66 66 L28 96 Z M70 36 L108 66 L70 96 Z M112 34 h12 v64 h-12 Z",
-    /** Lava lamp. */
-    lamp: "M60 22 h24 v8 H60 Z M64 30 h16 l10 62 H54 Z M50 100 h44 v10 H50 Z M72 46 m-7 0 a7 7 0 1 0 14 0 a7 7 0 1 0 -14 0 M66 70 m-9 0 a9 9 0 1 0 18 0 a9 9 0 1 0 -18 0",
     /** Two people — a meeting. Deliberately NOT a camcorder: Meeting Mode sat
      *  next to Camera Picker wearing the same glyph and neither could be told
      *  from the other at a glance. */
@@ -14330,10 +14325,6 @@ const GLYPHS = {
     /** A face inside viewfinder corners — the REACT punch-in (hold for a closer shot). */
     react: "M72 58 m-14 0 a14 14 0 1 0 28 0 a14 14 0 1 0 -28 0 M46 104 a26 24 0 0 1 52 0 Z " +
         "M22 22 h26 v8 H30 v18 h-8 Z M96 22 h26 v26 h-8 V30 H96 Z M22 84 h8 v18 h18 v8 H22 Z M114 84 h8 v26 H96 v-8 h18 Z",
-    /** A lower banner: the frame with a plate across its bottom third. */
-    takeaway: "M18 30 h108 a8 8 0 0 1 8 8 v64 a8 8 0 0 1 -8 8 H18 a8 8 0 0 1 -8 -8 V38 a8 8 0 0 1 8 -8 Z M26 38 h92 v34 H26 Z",
-    /** A chapter: a page with two lines and a ribbon cut into its foot. */
-    chapter: "M30 24 h84 v92 l-42 -22 l-42 22 Z M46 44 h52 v8 H46 Z M46 60 h52 v8 H46 Z",
 };
 const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 /** Rough width estimate, for shrinking a label until it fits the key. */
@@ -14862,131 +14853,6 @@ class Cues extends EventEmitter$2 {
 const cues = new Cues();
 
 /**
- * The cutout latch: the Apple Vision remover ("Mac Vision", obs/lib/cutout.mjs)
- * sitting DISABLED on the shared Camera input. On, every scene that shows the
- * camera — Cam, Screen + Cam, Me + Float, React — becomes a cutout in place;
- * off, the room is back. It is a look, not a scene, so it survives scene
- * changes until someone turns it off: the CUTOUT key, or NORMAL.
- *
- * State follows OBS's own SourceFilterEnableStateChanged event, so the key
- * can never lie about what the filter is doing. Lava Lounge's cutout is a
- * different input (Camera FX) and is not this latch.
- */
-const CUTOUT_SOURCE = "Camera";
-const CUTOUT_FILTER = "Mac Vision";
-class CutoutLatch extends EventEmitter$2 {
-    log = streamDeck.logger.createScope("cutout");
-    latched = false; // not `on`: that name is EventEmitter.on()
-    constructor() {
-        super();
-        obs.on("connected", () => void this.refresh());
-        obs.on("disconnected", () => this.set(false));
-        obs.on("SourceFilterEnableStateChanged", ({ sourceName, filterName, filterEnabled }) => {
-            if (sourceName === CUTOUT_SOURCE && filterName === CUTOUT_FILTER)
-                this.set(filterEnabled);
-        });
-    }
-    get active() {
-        return this.latched;
-    }
-    async refresh() {
-        if (!obs.connected)
-            return;
-        try {
-            const { filterEnabled } = await obs.call("GetSourceFilter", { sourceName: CUTOUT_SOURCE, filterName: CUTOUT_FILTER });
-            this.set(filterEnabled);
-        }
-        catch (err) {
-            // No such filter: obs/add-look.mjs cutout has not run in this collection.
-            this.log.warn(`no ${CUTOUT_FILTER} on ${CUTOUT_SOURCE}: ${err}`);
-            this.set(false);
-        }
-    }
-    /** Flip the filter. Returns the state OBS confirms. */
-    async toggle() {
-        return this.apply(!this.latched);
-    }
-    async apply(enabled) {
-        await obs.call("SetSourceFilterEnabled", { sourceName: CUTOUT_SOURCE, filterName: CUTOUT_FILTER, filterEnabled: enabled });
-        this.set(enabled);
-        return enabled;
-    }
-    set(on) {
-        if (this.latched === on)
-            return;
-        this.latched = on;
-        this.emit("changed", on);
-    }
-}
-const cutout = new CutoutLatch();
-
-/**
- * NORMAL — the way out of any cue or look. Takes down any overlay (TAKEAWAY
- * banner, CHAPTER sting), releases the CUTOUT latch so the room is back,
- * restores the shot and transition that were saved when a cue began, and
- * forgets the cue. It never starts or stops a recording and never touches
- * the mic: only cue-owned and look-owned state is restored.
- *
- * Lit only while a cue, an overlay or the cutout holds the program. Dim means
- * pressing does nothing, and that is the honest face — there is no "normal"
- * to go back to.
- */
-let Normal = (() => {
-    let _classDecorators = [action({ UUID: "com.blessdog.obs-control-room.normal" })];
-    let _classDescriptor;
-    let _classExtraInitializers = [];
-    let _classThis;
-    let _classSuper = SingletonAction;
-    (class extends _classSuper {
-        static { _classThis = this; }
-        static {
-            const _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create(_classSuper[Symbol.metadata] ?? null) : void 0;
-            __esDecorate(null, _classDescriptor = { value: _classThis }, _classDecorators, { kind: "class", name: _classThis.name, metadata: _metadata }, null, _classExtraInitializers);
-            _classThis = _classDescriptor.value;
-            if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
-            __runInitializers(_classThis, _classExtraInitializers);
-        }
-        log = streamDeck.logger.createScope("normal");
-        constructor() {
-            super();
-            obs.on("connected", () => void this.render());
-            obs.on("disconnected", () => void this.render());
-            cues.on("changed", () => void this.render());
-            cutout.on("changed", () => void this.render());
-        }
-        onWillAppear(_ev) {
-            void this.render();
-        }
-        async onKeyDown(ev) {
-            if (!obs.connected || (!cues.active && !cues.anyOverlay && !cutout.active)) {
-                await ev.action.showAlert();
-                return;
-            }
-            try {
-                await cues.hideAllOverlays("normal pressed");
-                if (cutout.active)
-                    await cutout.apply(false);
-                const restored = await cues.restore("normal pressed");
-                if (restored)
-                    await ev.action.showOk();
-            }
-            catch (err) {
-                this.log.error(`normal failed: ${err}`);
-                await ev.action.showAlert();
-            }
-            void this.render();
-        }
-        async render() {
-            const lit = obs.connected && (cues.active !== undefined || cues.anyOverlay || cutout.active);
-            const uri = face({ state: lit ? "idle" : "offline", tint: "camera", glyph: GLYPHS.house });
-            for (const a of this.actions)
-                void a.setImage(uri);
-        }
-    });
-    return _classThis;
-})();
-
-/**
  * REACT — hold for the closer camera shot, release to return to the shot you
  * were on. A momentary key, like push-to-talk: the reaction lasts exactly as
  * long as the thumb does, so there is nothing to remember to undo.
@@ -15080,160 +14946,64 @@ let React = (() => {
     return _classThis;
 })();
 
-/** How long the banner stays up. CHOSEN starting value from the plan; tune on a finished take. */
-const HOLD_MS = 4_000;
 /**
- * TAKEAWAY — show the lower banner over the current shot for a few seconds,
- * then take it down. The words come from <record dir>/takeaway.txt, read live
- * by the OBS text source, so the line is prepared before the take and the deck
- * never carries text. A second press while the banner is up restarts the hold
- * rather than stacking; NORMAL takes it down early.
+ * The cutout latch: the Apple Vision remover ("Mac Vision", obs/lib/cutout.mjs)
+ * sitting DISABLED on the shared Camera input. On, every scene that shows the
+ * camera — Cam, Screen + Cam, Me + Float, React — becomes a cutout in place;
+ * off, the room is back. It is a look, not a scene, so it survives scene
+ * changes until someone turns it off: the CUTOUT key, or NORMAL.
  *
- * The banner is a nested "Takeaway" scene item that obs/setup-cues.mjs places
- * hidden in every speaking scene; the key enables the item in whatever scene
- * is on program. A scene with no such item (a title card) alerts.
+ * State follows OBS's own SourceFilterEnableStateChanged event, so the key
+ * can never lie about what the filter is doing. Lava Lounge's cutout is a
+ * different input (Camera FX) and is not this latch.
  */
-let Takeaway = (() => {
-    let _classDecorators = [action({ UUID: "com.blessdog.obs-control-room.takeaway" })];
-    let _classDescriptor;
-    let _classExtraInitializers = [];
-    let _classThis;
-    let _classSuper = SingletonAction;
-    (class extends _classSuper {
-        static { _classThis = this; }
-        static {
-            const _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create(_classSuper[Symbol.metadata] ?? null) : void 0;
-            __esDecorate(null, _classDescriptor = { value: _classThis }, _classDecorators, { kind: "class", name: _classThis.name, metadata: _metadata }, null, _classExtraInitializers);
-            _classThis = _classDescriptor.value;
-            if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
-            __runInitializers(_classThis, _classExtraInitializers);
+const CUTOUT_SOURCE = "Camera";
+const CUTOUT_FILTER = "Mac Vision";
+class CutoutLatch extends EventEmitter$2 {
+    log = streamDeck.logger.createScope("cutout");
+    latched = false; // not `on`: that name is EventEmitter.on()
+    constructor() {
+        super();
+        obs.on("connected", () => void this.refresh());
+        obs.on("disconnected", () => this.set(false));
+        obs.on("SourceFilterEnableStateChanged", ({ sourceName, filterName, filterEnabled }) => {
+            if (sourceName === CUTOUT_SOURCE && filterName === CUTOUT_FILTER)
+                this.set(filterEnabled);
+        });
+    }
+    get active() {
+        return this.latched;
+    }
+    async refresh() {
+        if (!obs.connected)
+            return;
+        try {
+            const { filterEnabled } = await obs.call("GetSourceFilter", { sourceName: CUTOUT_SOURCE, filterName: CUTOUT_FILTER });
+            this.set(filterEnabled);
         }
-        log = streamDeck.logger.createScope("takeaway");
-        constructor() {
-            super();
-            obs.on("connected", () => void this.render());
-            obs.on("disconnected", () => void this.render());
-            cues.on("changed", () => void this.render());
+        catch (err) {
+            // No such filter: obs/add-look.mjs cutout has not run in this collection.
+            this.log.warn(`no ${CUTOUT_FILTER} on ${CUTOUT_SOURCE}: ${err}`);
+            this.set(false);
         }
-        onWillAppear(_ev) {
-            void this.render();
-        }
-        async onKeyDown(ev) {
-            if (!obs.connected) {
-                await ev.action.showAlert();
-                return;
-            }
-            try {
-                await cues.showOverlay("takeaway", SCENES.takeaway, HOLD_MS);
-            }
-            catch (err) {
-                this.log.error(`takeaway failed: ${err}`);
-                await ev.action.showAlert();
-            }
-            void this.render();
-        }
-        async render() {
-            const state = !obs.connected ? "offline" : cues.overlayActive("takeaway") ? "active" : "idle";
-            const uri = face({ state, tint: "mark", glyph: GLYPHS.takeaway });
-            for (const a of this.actions)
-                void a.setImage(uri);
-        }
-    });
-    return _classThis;
-})();
-
-/** The media source inside the Chapter overlay scene (obs/setup-cues.mjs). */
-const STING_INPUT = "Chapter Sting";
-/** If the media-ended event never arrives, the overlay comes down anyway. */
-const SAFETY_MS = 3_000;
-/**
- * CHAPTER — a subject change you can see and find later: the sting wipes over
- * the current shot with its whoosh, and, while recording, a chapter marker
- * lands in the MP4 at the same moment. Not recording: the sting still plays,
- * there is simply no file for the marker to live in.
- *
- * The sting is a media source with alpha played OVER the shot, not a scene
- * transition — a chapter break is usually the same shot before and after, and
- * OBS cannot transition a scene to itself. It restarts from frame one on each
- * show and the overlay hides itself when the media reports it has ended, so a
- * second press mid-sting restarts rather than stacks.
- */
-let Chapter = (() => {
-    let _classDecorators = [action({ UUID: "com.blessdog.obs-control-room.chapter" })];
-    let _classDescriptor;
-    let _classExtraInitializers = [];
-    let _classThis;
-    let _classSuper = SingletonAction;
-    (class extends _classSuper {
-        static { _classThis = this; }
-        static {
-            const _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create(_classSuper[Symbol.metadata] ?? null) : void 0;
-            __esDecorate(null, _classDescriptor = { value: _classThis }, _classDecorators, { kind: "class", name: _classThis.name, metadata: _metadata }, null, _classExtraInitializers);
-            _classThis = _classDescriptor.value;
-            if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
-            __runInitializers(_classThis, _classExtraInitializers);
-        }
-        log = streamDeck.logger.createScope("chapter");
-        recording = false;
-        constructor() {
-            super();
-            obs.on("connected", () => void this.refresh());
-            obs.on("disconnected", () => {
-                this.recording = false;
-                void this.render();
-            });
-            obs.on("RecordStateChanged", ({ outputActive }) => {
-                this.recording = outputActive;
-                void this.render();
-            });
-            obs.on("MediaInputPlaybackEnded", ({ inputName }) => {
-                if (inputName === STING_INPUT)
-                    void cues.hideOverlay("chapter", "sting ended");
-            });
-            cues.on("changed", () => void this.render());
-        }
-        onWillAppear(_ev) {
-            void this.refresh();
-        }
-        async onKeyDown(ev) {
-            if (!obs.connected) {
-                await ev.action.showAlert();
-                return;
-            }
-            try {
-                if (this.recording) {
-                    const t = fmtDuration((await obs.call("GetRecordStatus")).outputDuration);
-                    await obs.call("CreateRecordChapter", { chapterName: `chapter ${t}` });
-                }
-                await cues.showOverlay("chapter", SCENES.chapter, SAFETY_MS);
-            }
-            catch (err) {
-                this.log.error(`chapter failed: ${err}`);
-                await ev.action.showAlert();
-            }
-            void this.render();
-        }
-        async refresh() {
-            if (obs.connected) {
-                try {
-                    this.recording = (await obs.call("GetRecordStatus")).outputActive;
-                }
-                catch {
-                    /* keep last known */
-                }
-            }
-            void this.render();
-        }
-        async render() {
-            const state = !obs.connected ? "offline" : cues.overlayActive("chapter") ? "active" : "idle";
-            // The recording timecode is the only text: it says a marker WILL land.
-            const uri = face({ state, tint: "mark", glyph: GLYPHS.chapter, sub: this.recording ? "marks" : undefined });
-            for (const a of this.actions)
-                void a.setImage(uri);
-        }
-    });
-    return _classThis;
-})();
+    }
+    /** Flip the filter. Returns the state OBS confirms. */
+    async toggle() {
+        return this.apply(!this.latched);
+    }
+    async apply(enabled) {
+        await obs.call("SetSourceFilterEnabled", { sourceName: CUTOUT_SOURCE, filterName: CUTOUT_FILTER, filterEnabled: enabled });
+        this.set(enabled);
+        return enabled;
+    }
+    set(on) {
+        if (this.latched === on)
+            return;
+        this.latched = on;
+        this.emit("changed", on);
+    }
+}
+const cutout = new CutoutLatch();
 
 /**
  * CUTOUT — a latch, not a scene. Press: the room disappears around Ryan in
@@ -15852,28 +15622,6 @@ let SceneScreenCam = (() => {
         art(p) {
             return screenCamArt(p);
         }
-    });
-    return _classThis;
-})();
-let SceneLavaLounge = (() => {
-    let _classDecorators = [action({ UUID: "com.blessdog.obs-control-room.scene-lava-lounge" })];
-    let _classDescriptor;
-    let _classExtraInitializers = [];
-    let _classThis;
-    let _classSuper = SceneKey;
-    (class extends _classSuper {
-        static { _classThis = this; }
-        static {
-            const _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create(_classSuper[Symbol.metadata] ?? null) : void 0;
-            __esDecorate(null, _classDescriptor = { value: _classThis }, _classDecorators, { kind: "class", name: _classThis.name, metadata: _metadata }, null, _classExtraInitializers);
-            _classThis = _classDescriptor.value;
-            if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
-            __runInitializers(_classThis, _classExtraInitializers);
-        }
-        tint = "warm";
-        scene = "Lava Lounge";
-        label = "LAVA";
-        glyph = GLYPHS.lamp;
     });
     return _classThis;
 })();
@@ -16596,9 +16344,6 @@ let Volume = (() => {
 streamDeck.actions.registerAction(new Record());
 streamDeck.actions.registerAction(new Mark());
 streamDeck.actions.registerAction(new React());
-streamDeck.actions.registerAction(new Normal());
-streamDeck.actions.registerAction(new Takeaway());
-streamDeck.actions.registerAction(new Chapter());
 streamDeck.actions.registerAction(new Cutout());
 streamDeck.actions.registerAction(new MuteMic());
 streamDeck.actions.registerAction(new Pause());
@@ -16612,7 +16357,6 @@ streamDeck.actions.registerAction(new SceneScreenLeft());
 streamDeck.actions.registerAction(new SceneScreenRight());
 streamDeck.actions.registerAction(new SceneCam());
 streamDeck.actions.registerAction(new SceneScreenCam());
-streamDeck.actions.registerAction(new SceneLavaLounge());
 streamDeck.actions.registerAction(new SceneMeFloat());
 streamDeck.actions.registerAction(new SceneBrb());
 streamDeck.actions.registerAction(new SceneEnding());

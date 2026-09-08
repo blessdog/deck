@@ -14,12 +14,13 @@ asked-as:
   - what is the Camera Raw input for
   - what is the Rig scene
   - CUTOUT key is a toggle not a scene
-  - does NORMAL turn off the cutout
+  - how do I turn the cutout off
 ---
 
 **CUTOUT is a latch, not a scene: the key enables the Mac Vision filter on the
 shared Camera, so whatever shot is up — Cam, Screen + Cam, Me + Float, React —
-loses its room in place. Press again, or NORMAL, and the room is back. The
+loses its room in place. Press again and the room is back (NORMAL, the other
+way out, was deleted by Ryan the same day — [[deleted-keys-stay-deleted]]). The
 Camera ISO records a THIRD input, Camera Raw, that nothing else touches.**
 
 Ryan, 2026-09-08: *"I already have a cam scene. What I want is to be able to

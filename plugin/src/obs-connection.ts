@@ -31,9 +31,6 @@ export const SCENES = {
 	ending: "Ending",
 	/** The REACT punch-in: shared Camera scaled past the canvas (obs/add-look.mjs react). */
 	react: "React",
-	/** Overlay scenes nested (hidden) in every speaking scene (obs/setup-cues.mjs). */
-	takeaway: "Takeaway",
-	chapter: "Chapter",
 } as const;
 
 /** `x` is the display's left edge in global desktop space — smallest x is the

@@ -135,15 +135,20 @@ in the Stream Deck app under category **"OBS Control Room"**:
 | **Record** | Toggle the OBS recording (cold-starts OBS if dead). Amber ⏺ + elapsed while rolling. Corpus doctrine: recordings pile up in `~/Movies`; processing is a separate, later act. Since 2026-09-03 every recording also writes a **camera ISO** — `~/Movies/iso/<same stamp>-cam.mp4`, camera + mic only, via Source Record on the shared Camera input (`obs/add-look.mjs iso`) — so reframing is an edit decision in Resolve, not a re-shoot. |
 | **Mute Mic** | Toggle the shared `Mic` input. Face follows OBS's own mute event (never lies): white open mic = hot, red slashed mic = muted. |
 | **React (hold)** | Hold: the shot slides (Move, 350 ms) to the **React** close-up — the same shared Camera at 1.4x; release: back to the shot you were on. The saved shot lives in `plugin/src/cues.ts`, so a scene key pressed mid-hold ends the reaction instead of dragging you back on release, and a fast tap never strands the close-up. Camera ISO is untouched. Built 2026-09-08; awaiting Ryan's press. |
-| **Normal** | The way out of any cue: restores the shot and transition saved when the cue began and forgets the cue. Lit only while a cue holds the program. Never touches record or mic. |
-| **Takeaway** | Shows a lower banner over the current shot for ~4 s (CHOSEN), then takes it down. The line comes from `~/Movies/takeaway.txt`, read live by the OBS text source, so it is prepared before the take (`node obs/takeaway.mjs "the line"`); the deck never carries text. A second press restarts the hold instead of stacking; NORMAL takes it down early. Built 2026-09-08, machine-exercised, awaiting Ryan's press. |
-| **Chapter** | A subject change you can see and find later: while recording, drops a chapter marker in the MP4, then plays a 0.7 s cyan wipe with a whoosh **over** the current shot (a media source with alpha, not a scene transition — OBS cannot transition a scene to itself) and hides itself when OBS reports the media ended. Not recording: the wipe still plays. Built 2026-09-08. |
 | **Mark** | While recording: drops an OBS **chapter marker** into the file itself, named with the record timecode. No daemon, no DB — ffprobe reads chapters back at ingest (verified: media-studio `scripts/verify_record_chapters.py`; OBS auto-adds a `Start` chapter at 0, ingest skips it). Dim + alert when not recording. |
 | **Pause** | Pause/resume the running recording (`ToggleRecordPause`). Dim when nothing is recording; face follows OBS's own pause events. |
 | **Shot** | PNG of what is on program into `<record dir>/OBS Shots/`, revealed in Finder. |
 | **Reveal** | Finder on the newest recording. Nothing more — the deck ends at the MP4 (`knowledge/the-deck-ends-at-the-mp4.md`). |
 | **Zoom + / Zoom −** | Not ours: two native Stream Deck Hotkey keys sending ⌥⌘= / ⌥⌘− to macOS Accessibility Zoom, placed from `deck-layout.mjs` like every key. |
 | **Scene keys** | One key per scene, zero config; the on-air key lights up. Screen keys **draw the real monitor arrangement** (ordered by CoreGraphics x-origin) with the shared one filled, so a third monitor changes the picture instead of making "SCREEN L" lie. |
+
+**Retired 2026-09-08 by Ryan — TAKEAWAY, CHAPTER, NORMAL, LAVA.** He deleted the
+four keys from the deck the same day they shipped: *"I've deleted some of the
+Stream Deck keys that were a waste of space that I didn't like. Don't add them
+again."* Their code is in `archive/cue-keys/`, the layout carries them in
+`RETIRED`, and `check-deck.mjs` fails if one comes back
+(`knowledge/deleted-keys-stay-deleted.md`). The Takeaway/Chapter overlay scenes
+and Lava Lounge stay in the collection; CUTOUT releases by pressing CUTOUT again.
 
 Build: `cd plugin && PATH="/opt/homebrew/opt/node@24/bin:$PATH" npm run build`,
 then `npx streamdeck restart com.blessdog.obs-control-room` (or `npm run watch`).

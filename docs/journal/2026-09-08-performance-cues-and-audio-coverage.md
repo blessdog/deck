@@ -136,3 +136,28 @@ screen from roughly +250 to +830 ms and gone after. One frame is an anecdote;
 nine are a measurement.
 
 Four cue keys on the deck now, all waiting for the same thing: his thumb.
+
+## Evening: the thumb came down, and it was a delete
+
+**Tried.** Four cue keys — TAKEAWAY, CHAPTER, NORMAL, LAVA — machine-exercised
+and left on the deck for Ryan's press.
+
+**Happened.** He deleted them in the Stream Deck app and said: *"I've deleted
+some of the Stream Deck keys that were a waste of space that I didn't like.
+Don't add them again."* The tripwire went red on exactly those four as shipped
+actions with no key, which is the one shape it could see. What it could not
+see was worse: `build-profile.mjs` still carried them in the layout, and one
+run would have put all four back.
+
+**Mechanism.** The layout is the SSOT for which action sits on which key, so
+when Ryan edits the deck directly the truth runs the other way for a moment,
+and nothing in the loop said so. A shipped action with no key looks identical
+whether he removed it or nobody placed it yet, so the retirement cannot be
+inferred — it has to be declared.
+
+**Verdict — law.** `knowledge/deleted-keys-stay-deleted`. The four are in
+`RETIRED` in `deck-layout.mjs`, their code is runnable in `archive/cue-keys/`,
+and `check-deck.mjs` now fails on a retired name in `ACTIONS` or on any grid
+(proven firing on a re-added LAVA before commit). Layout diffed against the
+live XL and SD+ pages: 0 mismatches. He removed keys, not scenes: the overlay
+scenes and Lava Lounge stay in OBS.

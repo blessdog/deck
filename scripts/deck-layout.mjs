@@ -34,9 +34,6 @@ export const ACTIONS = {
 	record: ["record", "Record"],
 	mark: ["mark", "Mark"],
 	react: ["react", "React (hold)"],
-	normal: ["normal", "Normal"],
-	takeaway: ["takeaway", "Takeaway"],
-	chapter: ["chapter", "Chapter"],
 	mute: ["mute-mic", "Mute Mic"],
 	pause: ["pause", "Pause Recording"],
 	shot: ["shot", "Screenshot"],
@@ -53,7 +50,6 @@ export const ACTIONS = {
 	screenCam: ["scene-screen-cam", "Scene: Screen + Cam"],
 	cam: ["scene-cam", "Scene: Cam"],
 	cutout: ["cutout", "Cutout"],
-	lava: ["scene-lava-lounge", "Scene: Lava Lounge"],
 	// rectum page — the clipper (~/projects/rectum). These keys shell out to
 	// its CLI; the plugin owns the face, rectum owns capture and the library.
 	rectumLeft: ["rectum-left", "rectum: Record LEFT monitor"],
@@ -61,6 +57,15 @@ export const ACTIONS = {
 	rectumCrop: ["rectum-crop", "rectum: Crop last clip"],
 	rectumGrab: ["rectum-grab", "rectum: Grab clip from URL"],
 };
+
+/**
+ * Keys Ryan removed from the deck himself. A retired short name may not be
+ * placed on any grid or re-declared in ACTIONS — check-deck.mjs fails the
+ * build if one is. Ryan, 2026-09-08: "I've deleted some of the Stream Deck
+ * keys that were a waste of space that I didn't like. Don't add them again."
+ * The code lives on in archive/cue-keys, runnable, with the reason on top.
+ */
+export const RETIRED = new Set(["takeaway", "chapter", "normal", "lava"]);
 
 /**
  * The Stream Deck XL grid, written the way it sits on the desk. `null` is a
@@ -73,19 +78,21 @@ export const ACTIONS = {
 export const XL = [
 	// c0          c1          c2           c3     c4         c5          c6       c7
 	[null, null, null, null, "soon", "brb", "ending", "record"], //       row 0 — far
-	["takeaway", "chapter", "zoomOut", null, "react", "normal", "reveal", "pause"], // row 1 — was the gutter; now the cue row
-	["screenLeft", "screenRight", "screenCam", null, "cam", "cutout", "float", "lava"], // row 2
+	[null, null, "zoomOut", null, "react", null, "reveal", "pause"], // row 1 — REACT above CAM, the rest dark
+	["screenLeft", "screenRight", "screenCam", null, "cam", "cutout", "float", null], // row 2
 	["mark", "mute", "zoomIn", null, "camera", "meeting", "shot", "pageNext"], // row 3 — near; 7,3 is the app's own page key
 ];
 // ZOOM OUT sits directly above ZOOM IN and PAUSE directly below RECORD, so each
 // pair is found by touch; REVEAL sits beside PAUSE (the file you just made).
-// REACT and NORMAL (2026-09-08) sit directly above CAM and CUTOUT: the camera
-// block's own row, found by touch from the CAM key. CHOSEN, not measured — if
-// REACT earns its place mid-sentence, a row-3 key should yield to it.
-// TAKEAWAY and CHAPTER (2026-09-08) take row 1 c0–c1, beside ZOOM −, so row 1
-// reads as the cue row: things you do TO the shot, above the shots themselves.
-// CHOSEN; the "full gutter row" of the design note above is gone — column 3
-// stays dark as the tactile landmark between the screen and camera blocks.
+// REACT (2026-09-08) sits directly above CAM: found by touch from the CAM key.
+// CHOSEN, not measured — if REACT earns its place mid-sentence, a row-3 key
+// should yield to it. Column 3 stays dark as the tactile landmark between the
+// screen and camera blocks.
+// TAKEAWAY, CHAPTER, NORMAL and LAVA are RETIRED. They shipped 2026-09-08 and
+// Ryan deleted them from the deck the same day: "I've deleted some of the
+// Stream Deck keys that were a waste of space that I didn't like. Don't add
+// them again." Their code is in archive/cue-keys; the law is
+// knowledge/deleted-keys-stay-deleted. check-deck.mjs fails if one comes back.
 // No SP-404 pad keys. Ryan, 2026-09-08: "i have the sp-404 as the trigger.
 // There's no sense in having a redundant key that plays on the stream deck."
 // The three that lived at row 0 c0–c2 for one evening are in archive/sp-pad-keys.
@@ -203,10 +210,7 @@ export const VERIFY = {
 	pause: "Press mid-recording, press again; the finished file plays through both halves.",
 	mark: "Press twice while recording; ffprobe shows two chapters.",
 	react: "Hold; program slides to the React close-up and the key lights. Release; the shot you were on comes back. A fast tap does the same and never strands the close-up.",
-	normal: "Hold REACT, press a scene key, release REACT: program stays on that scene. Hold REACT and press NORMAL: the saved shot comes back, NORMAL goes dim and REACT stops glowing. With CUTOUT latched, NORMAL also puts the room back and CUTOUT goes dim.",
 	mute: "Press; OBS mixer shows Mic muted and the key turns red.",
-	takeaway: "Press; a dark banner with the line from ~/Movies/takeaway.txt slides onto the bottom of program and is gone about 4 s later. Press twice fast; it stays up once, not twice.",
-	chapter: "Press while recording; a cyan bar wipes across program with a whoosh and ffprobe shows a chapter at that timecode. Press when not recording; the wipe plays, no error.",
 	camera: "Press; the Cam scene switches iPhone ↔ FaceTime.",
 	meeting: "Press; OBS Virtual Camera appears in a Zoom/Meet camera list.",
 	shot: "Press; Finder reveals a PNG of what was on program.",
@@ -220,7 +224,6 @@ export const VERIFY = {
 	screenCam: "Press; screen with the camera bubble bottom-left.",
 	cam: "Press; full camera.",
 	cutout: "Press on Cam, Screen + Cam or Me + Float; the room vanishes around Ryan in THAT shot and the key lights. Press again; the room is back. Pressed on a screen-only scene it arms silently and shows the moment a camera scene goes up. The ISO file stays the raw room (obs/check-cutout.mjs).",
-	lava: "Press; lava lamp behind the cutout (its own always-on Camera FX, not the CUTOUT latch).",
 	rectumLeft: "Press, press again; the rectum library gains a clip of the left monitor.",
 	rectumRight: "Press, press again; the rectum library gains a clip of the right monitor.",
 	rectumCrop: "Press after a rectum recording; the crop proposal opens.",

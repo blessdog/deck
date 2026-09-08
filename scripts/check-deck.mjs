@@ -19,7 +19,7 @@
 import { readFileSync, readdirSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { homedir } from "node:os";
-import { ACTIONS, NATIVE, PLUGIN, VERIFY } from "./deck-layout.mjs";
+import { ACTIONS, NATIVE, PLUGIN, RETIRED, VERIFY, XL, SDPLUS, placements } from "./deck-layout.mjs";
 
 const SD = join(homedir(), "Library/Application Support/com.elgato.StreamDeck");
 const PROFILES = join(SD, "ProfilesV3");
@@ -67,6 +67,11 @@ for (const bundle of readdirSync(PROFILES).filter((d) => d.endsWith(".sdProfile"
 const unplaced = [...shipped].filter((u) => !placed.has(u));
 // 3. UNVERIFIABLE KEY — no sentence says how a human proves it works.
 const unverified = [...Object.keys(ACTIONS), ...Object.keys(NATIVE)].filter((s) => !VERIFY[s]);
+// 4. RESURRECTED KEY — a short name Ryan retired is declared or placed again.
+//    He deleted these from the deck himself (2026-09-08): "Don't add them again."
+const resurrected = [...RETIRED].filter(
+	(s) => s in ACTIONS || [...placements(XL), ...placements(SDPLUS)].some((p) => p.short === s),
+);
 
 console.log(`checked ${pagesSeen} pages · plugin ships ${shipped.size} actions`);
 
@@ -85,7 +90,12 @@ if (unverified.length) {
 	for (const s of unverified) console.error(`    ${s}`);
 }
 
-if (orphans.length || unplaced.length || unverified.length) {
+if (resurrected.length) {
+	console.error(`\n✖ ${resurrected.length} RETIRED KEY(S) BACK IN THE LAYOUT — Ryan deleted these; knowledge/deleted-keys-stay-deleted:`);
+	for (const s of resurrected) console.error(`    ${s}`);
+}
+
+if (orphans.length || unplaced.length || unverified.length || resurrected.length) {
 	console.error("\nFix: edit scripts/deck-layout.mjs, then run scripts/build-profile.mjs\n");
 	process.exit(1);
 }

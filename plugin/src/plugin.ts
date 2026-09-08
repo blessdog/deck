@@ -3,10 +3,7 @@ import { obs } from "./obs-connection";
 import { installScreenHeal } from "./screen-heal";
 import { CameraPicker } from "./actions/camera-picker";
 import { Mark } from "./actions/mark";
-import { Normal } from "./actions/normal";
 import { React } from "./actions/react";
-import { Takeaway } from "./actions/takeaway";
-import { Chapter } from "./actions/chapter";
 import { Cutout } from "./actions/cutout";
 import { MeetingMode } from "./actions/meeting-mode";
 import { MuteMic } from "./actions/mute-mic";
@@ -15,7 +12,6 @@ import {
 	SceneCam,
 	SceneBrb,
 	SceneEnding,
-	SceneLavaLounge,
 	SceneMeFloat,
 	SceneScreenCam,
 	SceneScreenLeft,
@@ -31,9 +27,6 @@ import { Volume } from "./actions/volume";
 streamDeck.actions.registerAction(new Record());
 streamDeck.actions.registerAction(new Mark());
 streamDeck.actions.registerAction(new React());
-streamDeck.actions.registerAction(new Normal());
-streamDeck.actions.registerAction(new Takeaway());
-streamDeck.actions.registerAction(new Chapter());
 streamDeck.actions.registerAction(new Cutout());
 streamDeck.actions.registerAction(new MuteMic());
 streamDeck.actions.registerAction(new Pause());
@@ -47,7 +40,6 @@ streamDeck.actions.registerAction(new SceneScreenLeft());
 streamDeck.actions.registerAction(new SceneScreenRight());
 streamDeck.actions.registerAction(new SceneCam());
 streamDeck.actions.registerAction(new SceneScreenCam());
-streamDeck.actions.registerAction(new SceneLavaLounge());
 streamDeck.actions.registerAction(new SceneMeFloat());
 streamDeck.actions.registerAction(new SceneBrb());
 streamDeck.actions.registerAction(new SceneEnding());
