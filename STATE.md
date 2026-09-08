@@ -3,7 +3,7 @@
 
 # deck — STATE
 
-*Generated 2026-09-08 12:07 from git, the knowledge store, and this project's own status script. Nothing here is typed by hand, so nothing here can be stale.*
+*Generated 2026-09-08 12:08 from git, the knowledge store, and this project's own status script. Nothing here is typed by hand, so nothing here can be stale.*
 
 ## What is open
 
@@ -66,6 +66,7 @@ OPEN — plans, NOT specs. proven: false. Do not build against these.
 *From git. The full narrative lives in `docs/journal/`; commit subjects are written as search bait, so `git log --grep` is the index.*
 
 ```
+2026-09-08  0762dc3  STATE.md: regenerated after REACT/NORMAL and the cutout stale-mask verdict
 2026-09-08  c089903  knowledge: screen-capture verdict points at the cutout stale-mask sibling; bookmark check-cutout blind to a dead camera
 2026-09-08  ee78d4b  check-cutout: exercise Cam Cutout on program before measuring — the background-removal mask is stale while inactive (0.000 / 0.727 inactive vs 0.999 live)
 2026-09-08  b1c5cec  cues: a failed switch clears the cue so NORMAL and REACT never light for nothing; NORMAL verify sentence says what the faces actually do
@@ -77,18 +78,9 @@ OPEN — plans, NOT specs. proven: false. Do not build against these.
 2026-09-04  81b65e6  STATE.md: regenerated 2026-09-04
 2026-09-03  6b94ffb  STATE.md: regenerated after day two
 2026-09-03  4dd7204  README journey: day two — stream death not stale grant, Move, camera ISO, dials, and the deleted recording with its gate
-2026-09-03  2601310  verify: npm run check / npm run deck, FINISH-DECK.command runs the whole loop with the OBS proofs
 ```
 
 *Remote: `https://github.com/blessdog/deck.git` — `master` is pushed.*
-
-### Uncommitted
-
-```
- M STATE.md
-```
-
-*Uncommitted is not learned. Commit at the moment of learning.*
 
 ---
 
