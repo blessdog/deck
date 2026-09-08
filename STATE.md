@@ -3,7 +3,7 @@
 
 # deck — STATE
 
-*Generated 2026-09-08 12:08 from git, the knowledge store, and this project's own status script. Nothing here is typed by hand, so nothing here can be stale.*
+*Generated 2026-09-08 14:02 from git, the knowledge store, and this project's own status script. Nothing here is typed by hand, so nothing here can be stale.*
 
 ## What is open
 
@@ -16,9 +16,6 @@ Every `kind: open` claim in the store. These are PLANS, not specs — `proven: f
 ? plugin-build-warns-ts2339-property-on-does-not-e   (2026-09-03)
     Plugin build warns TS2339 'Property on does not exist on OBSConnection' at all 29 obs.on sites
     why: Warnings that always fire train everyone to ignore the build output, which is how a real type error will
-? sp-404-sound-library-on-the-deck-and-ryan-s-own-   (2026-09-08)
-    SP-404 sound library on the deck, and Ryan's own recordings into it — an Ableton build, not OBS
-    why: Ryan is already building the SP-404 library; if the deck grows an audio section ad hoc inside the OBS ke
 ? stream-deck-error-restoring-the-last-session-pro   (2026-09-02)
     Stream Deck 'error restoring the last session' prompt after build-profile's quit/relaunch
     why: If Ryan ever clicks Restore, the layout silently reverts to a stale backup — the exact failure build-pro
@@ -35,6 +32,7 @@ Query before choosing any technique:  python3 ~/.claude/knowledge/bin/find-techn
 LAWS — absolute, no exceptions
   · recording-friction-is-the-product: The deck exists to make starting a snippet recording cost nothing. Every key
   · the-deck-ends-at-the-mp4: The deck stops at the MP4. It never hands a file downstream. The one
+  · the-sp-404-is-its-own-trigger: i have the sp-404 as the trigger. There's no sense in having a redundant key
   · what-this-project-knows: This store holds the deck's laws and measured verdicts. Query it before
   · zoom-is-native-macos-zoom: The ZOOM key drives macOS Accessibility Zoom, not an OBS-side zoom. Ryan
 
@@ -49,7 +47,6 @@ VERDICTS — measured, and SCOPED; check the scope before reusing
 OPEN — plans, NOT specs. proven: false. Do not build against these.
   ? check-cutout-passes-a-camera-that-renders-nothin Why it matters: A dead Camera FX reads 0.997 transparent, the same as an empty room with a
   ? plugin-build-warns-ts2339-property-on-does-not-e Why it matters: Warnings that always fire train everyone to ignore the build output, which
-  ? sp-404-sound-library-on-the-deck-and-ryan-s-own- Why it matters: Ryan is already building the SP-404 library; if the deck grows an audio se
   ? stream-deck-error-restoring-the-last-session-pro Why it matters: If Ryan ever clicks Restore, the layout silently reverts to a stale backup
 ```
 
@@ -66,6 +63,11 @@ OPEN — plans, NOT specs. proven: false. Do not build against these.
 *From git. The full narrative lives in `docs/journal/`; commit subjects are written as search bait, so `git log --grep` is the index.*
 
 ```
+2026-09-08  f97dd8c  LAW: the SP-404 is its own trigger — pad keys off the deck, archived with the reason
+2026-09-08  a7401d5  bookmark: midi.ts probe Output churn, tidy on next rebuild
+2026-09-08  e663a46  STATE.md: regenerated after the SP-404 pad keys
+2026-09-08  906f10f  docs: SP-404 pad keys installed, note map measured, deck-to-unit sound unproven; open item points at the measured map
+2026-09-08  05d7670  plugin: SP-404 Pad keys fire pads over USB MIDI in-process (@julusian/midi, 0.05 ms) with bank/pad as layout settings
 2026-09-08  0762dc3  STATE.md: regenerated after REACT/NORMAL and the cutout stale-mask verdict
 2026-09-08  c089903  knowledge: screen-capture verdict points at the cutout stale-mask sibling; bookmark check-cutout blind to a dead camera
 2026-09-08  ee78d4b  check-cutout: exercise Cam Cutout on program before measuring — the background-removal mask is stale while inactive (0.000 / 0.727 inactive vs 0.999 live)
@@ -73,14 +75,17 @@ OPEN — plans, NOT specs. proven: false. Do not build against these.
 2026-09-08  88d4beb  docs: REACT/NORMAL installed; correct the Elgato OBS plugin row (it IS installed, a Scene Transition key sat at 4,1)
 2026-09-08  c1a3674  plugin: REACT hold-to-close-up and NORMAL cue reset, with the React look and a shared cue store
 2026-09-08  d3032f9  STATE.md: regenerated 2026-09-08
-2026-09-08  0caeb6e  docs: map recording cues and SP-404 MIDI research to a build sequence
-2026-09-08  a4bb434  obs: restore shared audio in Cutout and Float speaking looks
-2026-09-04  81b65e6  STATE.md: regenerated 2026-09-04
-2026-09-03  6b94ffb  STATE.md: regenerated after day two
-2026-09-03  4dd7204  README journey: day two — stream death not stale grant, Move, camera ISO, dials, and the deleted recording with its gate
 ```
 
 *Remote: `https://github.com/blessdog/deck.git` — `master` is pushed.*
+
+### Uncommitted
+
+```
+ M STATE.md
+```
+
+*Uncommitted is not learned. Commit at the moment of learning.*
 
 ---
 
