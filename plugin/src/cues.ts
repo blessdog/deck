@@ -68,7 +68,14 @@ class Cues extends EventEmitter<{ changed: [Cue | undefined] }> {
 			this.cue = { owner, scene, savedScene: currentProgramSceneName, savedTransition: transitionName };
 		}
 		this.emit("changed", this.cue);
-		await obs.call("SetCurrentProgramScene", { sceneName: scene });
+		try {
+			await obs.call("SetCurrentProgramScene", { sceneName: scene });
+		} catch (err) {
+			// The scene never reached program (missing scene, OBS mid-reload):
+			// a cue that holds nothing must not light NORMAL or REACT.
+			this.clear(`switch to ${scene} failed: ${err}`);
+			throw err;
+		}
 		this.log.info(`${owner}: ${this.cue.savedScene} -> ${scene}`);
 		return this.cue;
 	}

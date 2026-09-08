@@ -189,7 +189,7 @@ export const VERIFY = {
 	pause: "Press mid-recording, press again; the finished file plays through both halves.",
 	mark: "Press twice while recording; ffprobe shows two chapters.",
 	react: "Hold; program slides to the React close-up and the key lights. Release; the shot you were on comes back. A fast tap does the same and never strands the close-up.",
-	normal: "Hold REACT, press a scene key, release REACT: program stays on that scene. Hold REACT and press NORMAL: the saved shot comes back and both keys go dim.",
+	normal: "Hold REACT, press a scene key, release REACT: program stays on that scene. Hold REACT and press NORMAL: the saved shot comes back, NORMAL goes dim and REACT stops glowing.",
 	mute: "Press; OBS mixer shows Mic muted and the key turns red.",
 	camera: "Press; the Cam scene switches iPhone ↔ FaceTime.",
 	meeting: "Press; OBS Virtual Camera appears in a Zoom/Meet camera list.",
