@@ -184,7 +184,7 @@ the app never creates `~/Library/Application Support/com.elgato.StreamDeck/NodeJ
 
 `Starting Soon` · `Screen L` · `Screen R` · `Cam` · `Cam Cutout` · `Lava Lounge` · `Screen + Cam` (camera bubble bottom-right) · **`Me + Float`** (full-bleed camera, share as a card lower-right) · **`BRB`** · `Ending` · **`React`** (the shared Camera at 1.4x — the close-up the REACT key holds; `obs/add-look.mjs react`) · **`Takeaway`** and **`Chapter`** (overlay scenes nested hidden in every speaking scene; `obs/setup-cues.mjs`)
 
-Scene transition is **Move** (Exeldro, 350 ms) since 2026-09-03, so the camera slides between looks instead of cutting (`obs/set-transition.mjs`).
+Scene transition is **Move** (Exeldro, 350 ms) since 2026-09-03, so the camera slides between looks instead of cutting (`obs/set-transition.mjs`). Since 2026-09-08 Move's own settings are set too: appearing and disappearing items get position **None** and everything (matched, in, out) transitions with **Fade** — so the display no longer swoops in from the left edge on CAM → SCREEN L and the camera no longer flies off right; each fades in place while a shared source still slides. Zoom was already off in Move 3.2.1. Recipe from Nutty's Move master class; awaiting Ryan's eyes.
 
 One shared `Display` / `Camera` / `Mic` input reused across scenes — edit a device
 once, every scene follows.
