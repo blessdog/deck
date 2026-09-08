@@ -63,6 +63,7 @@ OPEN — plans, NOT specs. proven: false. Do not build against these.
 *From git. The full narrative lives in `docs/journal/`; commit subjects are written as search bait, so `git log --grep` is the index.*
 
 ```
+2026-09-08  fa90e30  STATE.md: regenerated after the SP-404 trigger law
 2026-09-08  f97dd8c  LAW: the SP-404 is its own trigger — pad keys off the deck, archived with the reason
 2026-09-08  a7401d5  bookmark: midi.ts probe Output churn, tidy on next rebuild
 2026-09-08  e663a46  STATE.md: regenerated after the SP-404 pad keys
@@ -74,18 +75,9 @@ OPEN — plans, NOT specs. proven: false. Do not build against these.
 2026-09-08  b1c5cec  cues: a failed switch clears the cue so NORMAL and REACT never light for nothing; NORMAL verify sentence says what the faces actually do
 2026-09-08  88d4beb  docs: REACT/NORMAL installed; correct the Elgato OBS plugin row (it IS installed, a Scene Transition key sat at 4,1)
 2026-09-08  c1a3674  plugin: REACT hold-to-close-up and NORMAL cue reset, with the React look and a shared cue store
-2026-09-08  d3032f9  STATE.md: regenerated 2026-09-08
 ```
 
 *Remote: `https://github.com/blessdog/deck.git` — `master` is pushed.*
-
-### Uncommitted
-
-```
- M STATE.md
-```
-
-*Uncommitted is not learned. Commit at the moment of learning.*
 
 ---
 
