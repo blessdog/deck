@@ -3,17 +3,20 @@
 
 # deck — STATE
 
-*Generated 2026-09-04 08:54 from git, the knowledge store, and this project's own status script. Nothing here is typed by hand, so nothing here can be stale.*
+*Generated 2026-09-08 12:07 from git, the knowledge store, and this project's own status script. Nothing here is typed by hand, so nothing here can be stale.*
 
 ## What is open
 
 Every `kind: open` claim in the store. These are PLANS, not specs — `proven: false`. Do not build against one without a verdict.
 
 ```
+? check-cutout-passes-a-camera-that-renders-nothin   (2026-09-08)
+    check-cutout passes a camera that renders nothing
+    why: A dead Camera FX reads 0.997 transparent, the same as an empty room with a working cutout, so the gate c
 ? plugin-build-warns-ts2339-property-on-does-not-e   (2026-09-03)
     Plugin build warns TS2339 'Property on does not exist on OBSConnection' at all 29 obs.on sites
     why: Warnings that always fire train everyone to ignore the build output, which is how a real type error will
-? sp-404-sound-library-on-the-deck-and-ryan-s-own-   (2026-09-02)
+? sp-404-sound-library-on-the-deck-and-ryan-s-own-   (2026-09-08)
     SP-404 sound library on the deck, and Ryan's own recordings into it — an Ableton build, not OBS
     why: Ryan is already building the SP-404 library; if the deck grows an audio section ad hoc inside the OBS ke
 ? stream-deck-error-restoring-the-last-session-pro   (2026-09-02)
@@ -26,7 +29,7 @@ Every `kind: open` claim in the store. These are PLANS, not specs — `proven: f
 The full index. Query it before choosing any technique — `find-technique.py "<your situation>"` — rather than reading it. Every claim declares the questions that must find it, and `check-retrieval.py` asserts they do.
 
 ```
-KNOWLEDGE — 11 live claims: 11 from this project (/Users/SSDrive/projects/mediaStudio/deck/knowledge), 0 universal (~/.claude/knowledge/store)
+KNOWLEDGE — 14 live claims: 14 from this project (/Users/SSDrive/projects/mediaStudio/deck/knowledge), 0 universal (~/.claude/knowledge/store)
 Query before choosing any technique:  python3 ~/.claude/knowledge/bin/find-technique.py "<your situation>"
 
 LAWS — absolute, no exceptions
@@ -37,11 +40,14 @@ LAWS — absolute, no exceptions
 
 VERDICTS — measured, and SCOPED; check the scope before reusing
   · camera-iso-rides-along-with-every-recording OBS 32.2.2 + Source Record 0.4.8 filter on the shared Camera input, hybrid MP4 main record
+  · cutout-mask-is-stale-while-inactive royshil obs-backgroundremoval 1.1.13 (selfie_segmentation, CoreML) on the Camera FX input,
   · cutout-model-is-selfie-segmentation royshil obs-backgroundremoval 1.1.13 on CoreML, OBS 32.2.2, M-series Mac, 1920x1080 @ 30 f
   · screen-capture-renders-only-while-active OBS 32.2.2 macOS Screen Capture (ScreenCaptureKit) sources; GetSourceScreenshot over obs-w
   · screen-capture-streams-die-overnight OBS 32.2.x macOS Screen Capture (ScreenCaptureKit) on macOS 26, this Mac, OBS left running
+  · speaking-looks-need-shared-audio Control Room on OBS 32.2.2, Cam Cutout and Me + Float audio placement, 2026-09-08
 
 OPEN — plans, NOT specs. proven: false. Do not build against these.
+  ? check-cutout-passes-a-camera-that-renders-nothin Why it matters: A dead Camera FX reads 0.997 transparent, the same as an empty room with a
   ? plugin-build-warns-ts2339-property-on-does-not-e Why it matters: Warnings that always fire train everyone to ignore the build output, which
   ? sp-404-sound-library-on-the-deck-and-ryan-s-own- Why it matters: Ryan is already building the SP-404 library; if the deck grows an audio se
   ? stream-deck-error-restoring-the-last-session-pro Why it matters: If Ryan ever clicks Restore, the layout silently reverts to a stale backup
@@ -60,18 +66,18 @@ OPEN — plans, NOT specs. proven: false. Do not build against these.
 *From git. The full narrative lives in `docs/journal/`; commit subjects are written as search bait, so `git log --grep` is the index.*
 
 ```
+2026-09-08  c089903  knowledge: screen-capture verdict points at the cutout stale-mask sibling; bookmark check-cutout blind to a dead camera
+2026-09-08  ee78d4b  check-cutout: exercise Cam Cutout on program before measuring — the background-removal mask is stale while inactive (0.000 / 0.727 inactive vs 0.999 live)
+2026-09-08  b1c5cec  cues: a failed switch clears the cue so NORMAL and REACT never light for nothing; NORMAL verify sentence says what the faces actually do
+2026-09-08  88d4beb  docs: REACT/NORMAL installed; correct the Elgato OBS plugin row (it IS installed, a Scene Transition key sat at 4,1)
+2026-09-08  c1a3674  plugin: REACT hold-to-close-up and NORMAL cue reset, with the React look and a shared cue store
+2026-09-08  d3032f9  STATE.md: regenerated 2026-09-08
+2026-09-08  0caeb6e  docs: map recording cues and SP-404 MIDI research to a build sequence
+2026-09-08  a4bb434  obs: restore shared audio in Cutout and Float speaking looks
 2026-09-04  81b65e6  STATE.md: regenerated 2026-09-04
 2026-09-03  6b94ffb  STATE.md: regenerated after day two
 2026-09-03  4dd7204  README journey: day two — stream death not stale grant, Move, camera ISO, dials, and the deleted recording with its gate
 2026-09-03  2601310  verify: npm run check / npm run deck, FINISH-DECK.command runs the whole loop with the OBS proofs
-2026-09-03  d2b90bd  STATE.md: regenerated after the SD+ volume dials
-2026-09-03  2e6cf8a  plugin: rebuilt bundle with the Volume dial action (previous commit carried a stale build)
-2026-09-03  03f90d9  deck: SD+ dials are our own Volume action — Mic / SP-404 / App Audio, rotate ±1.5 dB, press mutes, touch resets; placed from ENCODERS in the layout
-2026-09-03  6810b10  STATE.md: regenerated after Move transition and camera ISO
-2026-09-03  b68c48b  obs: camera ISO — Source Record on the shared Camera writes <stamp>-cam.mp4 beside every recording (verified 12 s test)
-2026-09-03  9a04e51  obs: Move transition installed and live (350 ms); set-transition.mjs writes it into the collection when OBS is quit, selects it when running
-2026-09-03  6acf9da  obs: set-transition.mjs makes Move the scene transition; STATE regenerated
-2026-09-03  01ff784  STATE.md: regenerated after the screen-heal fix
 ```
 
 *Remote: `https://github.com/blessdog/deck.git` — `master` is pushed.*
