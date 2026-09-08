@@ -5,7 +5,7 @@ conflict-key: should-we-sp-404-sound-library-on-the-deck-and-ryan-s-own-
 status: live
 supersedes: []
 proven: false
-verified-on: 2026-09-02
+verified-on: 2026-09-08
 asked-as:
   - SP-404 sound library on the deck, and Ryan's own recordings into it — an Ableton build, not OBS
   - sp 404 sound library on the deck and ryan s own 
@@ -21,8 +21,20 @@ asked-as:
 
 **Where it lands:** `obs-control-room/ableton/ (reserved section; ~/projects/mediaStudio/ABLETON/ holds the MCP and the blessdog music lane)`
 
-**First step:** Inventory what the SP-404 exposes (MIDI/USB audio), and whether com.hjf.abletonpluginloader.lite (already installed in the Stream Deck app) covers triggering clips before writing anything
+**Current research:** [Recording performance, 2026-09-08](../docs/DECK-PERFORMANCE-2026-09-08.md).
+Ryan explicitly resumed OBS production-value and SP soundboard work on September 8.
+CoreAudio currently exposes SP-404MKII-IN/OUT. The deck's custom SP volume dial
+and OBS USB input already exist. The older Ableton-loader installation claim
+was not reproduced in the current user plugin directory.
 
-**Blocked on:** the OBS section of the deck being finished and verified by Ryan pressing the keys
+**Next implementation facts:** observe MIDI mode/offsets, confirm a safe occupied
+pad, and audition the recording sound palette. Evaluate the maintained
+Trevligaspel MIDI plugin before writing a MIDI bridge. The sibling library's
+`48 + pad - 1` arithmetic disagrees with Roland's Mode A table after pad 4;
+the report gives the vendor source and row mapping. Do not reuse that arithmetic.
+
+**Verification still needed:** physical pad/MIDI behavior and audible recording
+isolation. The earlier blanket OBS deferral is superseded by Ryan's September 8
+request; this remains an open plan, not a claim that MIDI cues have shipped.
 
 Bookmarked 2026-09-02 at the moment of deferral, because the record of a deferral is what fails, not the decision to defer.

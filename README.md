@@ -220,17 +220,23 @@ that exercise instead of observe: `obs/check-cutout.mjs` (transparent ratio),
 
 ## Next
 
-1. **Ryan's press ladder** for the 2026-09-02 keys: ZOOM +/− (proves the system
-   zoom is in the recording), CUTOUT and ME + FLOAT in frame, REVEAL, SHOT,
-   RECORD → PAUSE → PAUSE → RECORD. Each is a VERIFY sentence in the layout.
-2. **Move transition** — installer is in `~/Downloads`; admin install, then
-   `obs/set-transition.mjs` (to write) makes camera looks slide instead of cut.
-3. **SD+ dials** — Mic / SP-404 / App Audio via the official Elgato OBS plugin's
-   Audio Mixer Volume; place one by hand, harvest its settings into the layout.
-4. **Character scenes** — `obs/add-look.mjs character "<name>" <image>` works;
-   waiting on background images.
-5. **Ableton / SP-404** — bookmarked; `ableton/` is reserved.
-6. Broadcast-tier features stay **parked** — Ryan records, he doesn't stream.
+The current research and build sequence is
+[Recording performance — 2026-09-08](docs/DECK-PERFORMANCE-2026-09-08.md).
+Move, camera ISO and the custom SD+ volume dials already shipped September 3.
+
+1. Exercise audio across the speaking looks. `node obs/setup-audio.mjs --dry-run`
+   audits routing; run without the flag while outputs are stopped to repair it.
+   September 8 found missing SP/App Audio in Me + Float and missing dedicated
+   audio in Cam Cutout; the repair now covers both.
+2. Build and exercise REACT + NORMAL, then the SP sound bank and selected MIDI
+   triggers, then TAKEAWAY + CHAPTER and coordinated cues. Each stage has a
+   concrete recording test in the report; these new keys are not installed yet.
+3. Add SAVE LAST for spontaneous moments after measuring replay-buffer load.
+4. Continue the existing clipper and Ableton lanes. The SP work is resumed;
+   verify mode-specific MIDI notes before using the sibling library's mapping.
+
+Ryan's physical press ladder remains the final check. Broadcast-health features
+stay parked; the recording workflow still ends at the MP4.
 
 ## Stream Deck layout (MK.2, top two rows) — HISTORIC
 
