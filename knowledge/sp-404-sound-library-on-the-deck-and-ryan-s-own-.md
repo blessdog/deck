@@ -27,14 +27,18 @@ CoreAudio currently exposes SP-404MKII-IN/OUT. The deck's custom SP volume dial
 and OBS USB input already exist. The older Ableton-loader installation claim
 was not reproduced in the current user plugin directory.
 
-**Next implementation facts:** observe MIDI mode/offsets, confirm a safe occupied
-pad, and audition the recording sound palette. Evaluate the maintained
-Trevligaspel MIDI plugin before writing a MIDI bridge. The sibling library's
-`48 + pad - 1` arithmetic disagrees with Roland's Mode A table after pad 4;
-the report gives the vendor source and row mapping. Do not reuse that arithmetic.
+**Measured 2026-09-08, so no longer open questions:** the pad-to-note map is
+channel = bank, pad 13 = 36, pad 1 = 48 (Roland MIDI Mode A), filed in the
+SP-404 repo as `knowledge/pad-to-note-map-is-top-row-first`, and the formula
+lives in `plugin/src/midi.ts` only. Three `pad` keys ship on the deck pointed
+at bank A pads 1–3 (provisional labels). Trevligaspel was evaluated and passed
+over: no OBS state, no combined cues; `@julusian/midi` in-process at 0.05 ms.
 
-**Verification still needed:** physical pad/MIDI behavior and audible recording
-isolation. The earlier blanket OBS deferral is superseded by Ryan's September 8
-request; this remains an open plan, not a claim that MIDI cues have shipped.
+**Still open, and what this item now waits on:** whether the unit SOUNDS a note
+the Mac sends (USB audio in recorded silence while four notes went out; one
+physical pad press during a joint capture separates empty pads from receive
+off); which bank hosts the recording bank; the sound palette; headphone
+routing. Then the bank itself is built in the Roland app (drag-and-drop; no
+MIDI path loads samples) and the three keys are re-pointed and re-labelled.
 
 Bookmarked 2026-09-02 at the moment of deferral, because the record of a deferral is what fails, not the decision to defer.

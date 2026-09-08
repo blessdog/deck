@@ -99,6 +99,28 @@ staying active across a reaction. Prior art searched first: the official Elgato
 OBS plugin has no hold-to-switch, OBS hotkeys are toggles only, and Advanced
 Scene Switcher can do it through a keyboard hotkey macro with no key-face state.
 
+### Order 2 machine side built: SP-404 pad keys (evening, 2026-09-08)
+
+Measured at the unit with `receivemidi`: channel = bank, notes run top row
+down (pad 13 = 36, pad 1 = 48), which is Roland's MIDI Mode A; the September 7
+"note 36 did not sound" dead end is retired (note 36 is pad 13). Filed in the
+SP-404 repo as `knowledge/pad-to-note-map-is-top-row-first`. Sending from the
+deck uses `@julusian/midi` in-process (0.05 ms per note pair under the Stream
+Deck app's Node 24.13.1) after `sendmidi` measured ~90 ms per spawn. Three
+provisional keys at 0,0–2,0 point at bank A pads 1–3, settings written by the
+layout. Tripwire green at 26 actions. Prior art: the official Elgato OBS plugin
+has no MIDI; Trevligaspel MIDI would give keys without OBS state or combined
+cues.
+
+NOT proven: that the unit sounds a note the Mac sends. Four notes reached
+CoreMIDI (pads A1, A2, A16, B1) while `SP-404MKII-IN` recorded digital silence
+for 10.7 s; a mic control capture in the same session had signal, so the
+capture path works. Roland's SYSTEM page lists USB OUT only as a gain
+(−24/−12/0 dB), no mute, so the unit does put its master on USB. Two readings
+remain and the machine cannot separate them: the fired pads are empty, or the
+unit is not receiving notes. One physical pad press during a joint audio+MIDI
+capture decides it; that capture is the next step and needs Ryan's hand.
+
 ## What the controls would actually do
 
 | Cue | Moment in a recording | Proposed behavior | Implementation route |

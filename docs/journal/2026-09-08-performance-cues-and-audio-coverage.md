@@ -61,3 +61,24 @@ source renders. The check now exercises the scene on program before measuring,
 the same fix the screen check got on September 2. Verdict filed as
 `knowledge/cutout-mask-is-stale-while-inactive.md`. Not a regression from the
 REACT work; a verifier that had been observing instead of exercising.
+
+## Evening: the sampler's note map, measured, and a silence that is not yet explained
+
+Ryan sat at the SP-404 and pressed five pads by name while `receivemidi`
+listened. Channel is the bank, and the notes run from the top row down: pad 13
+is 36, pad 1 is 48. Roland's own table says only Mode A puts bank B on
+channel 2, which is what arrived. The September 7 dead end fell over: note 36
+was never a broken path, it was pad 13.
+
+The deck side went in as one action with per-key bank and pad settings, using
+`@julusian/midi` in-process after timing the CLI route at ninety milliseconds a
+spawn, which a thumb would feel. The native module loads lazily inside a
+try/catch, because a `.node` file that fails to resolve must dim three keys,
+not kill twenty-six.
+
+Then the honest part. Four notes went out to the unit and its USB audio input
+recorded nothing but digital zero, while the mic captured room noise through
+the same path a minute later. Roland lists USB OUT as a gain with no mute. So
+either the pads we fired hold nothing, or the unit is not listening. The
+machine cannot tell those apart; one physical pad press during a capture can.
+That is where order 2 stands: keys installed, notes leaving, sound unproven.
