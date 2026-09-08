@@ -48,3 +48,16 @@ audit row said it was not. Corrected in the report. Whether that key was in use
 is Ryan's to say; putting it back is one drag in the Stream Deck app.
 
 Everything a machine can check is green. Everything that matters is a press.
+
+## The gate that lied in both directions
+
+Running `npm run check` after the rebuild failed on the cutout: transparent
+ratio 0.000, Ryan and the room fully opaque, with the filter enabled and the
+model right. Minutes later the same inactive screenshot showed a Ryan-shaped
+hole over an EMPTY room — a mask from earlier composited on a frame from now.
+On program the scene measured 0.999 within a second. The camera keeps
+delivering frames when inactive; the segmentation does not run until the
+source renders. The check now exercises the scene on program before measuring,
+the same fix the screen check got on September 2. Verdict filed as
+`knowledge/cutout-mask-is-stale-while-inactive.md`. Not a regression from the
+REACT work; a verifier that had been observing instead of exercising.
