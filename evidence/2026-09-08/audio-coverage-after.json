@@ -1,0 +1,152 @@
+{
+  "writer": "OBS websocket repair verifier",
+  "reader": "DECK-PERFORMANCE-2026-09-08.md",
+  "failure": "audio source omissions mistaken for working sound",
+  "video": {
+    "baseHeight": 1080,
+    "baseWidth": 1920,
+    "fpsDenominator": 1,
+    "fpsNumerator": 30,
+    "outputHeight": 1080,
+    "outputWidth": 1920
+  },
+  "scenes": {
+    "Cam Cutout": [
+      {
+        "sourceName": "Camera FX",
+        "sceneItemId": 2,
+        "sceneItemEnabled": true
+      },
+      {
+        "sourceName": "Mic",
+        "sceneItemId": 3,
+        "sceneItemEnabled": true
+      },
+      {
+        "sourceName": "SP-404",
+        "sceneItemId": 4,
+        "sceneItemEnabled": true
+      },
+      {
+        "sourceName": "App Audio",
+        "sceneItemId": 5,
+        "sceneItemEnabled": true
+      }
+    ],
+    "Me + Float": [
+      {
+        "sourceName": "Camera",
+        "sceneItemId": 1,
+        "sceneItemEnabled": true
+      },
+      {
+        "sourceName": "Float Plate",
+        "sceneItemId": 2,
+        "sceneItemEnabled": true
+      },
+      {
+        "sourceName": "Display",
+        "sceneItemId": 3,
+        "sceneItemEnabled": true
+      },
+      {
+        "sourceName": "Mic",
+        "sceneItemId": 4,
+        "sceneItemEnabled": true
+      },
+      {
+        "sourceName": "SP-404",
+        "sceneItemId": 5,
+        "sceneItemEnabled": true
+      },
+      {
+        "sourceName": "App Audio",
+        "sceneItemId": 6,
+        "sceneItemEnabled": true
+      }
+    ],
+    "Lava Lounge": [
+      {
+        "sourceName": "Lava Lamp",
+        "sceneItemId": 1,
+        "sceneItemEnabled": true
+      },
+      {
+        "sourceName": "Cam Cutout",
+        "sceneItemId": 2,
+        "sceneItemEnabled": true
+      },
+      {
+        "sourceName": "Mic",
+        "sceneItemId": 3,
+        "sceneItemEnabled": true
+      },
+      {
+        "sourceName": "SP-404",
+        "sceneItemId": 4,
+        "sceneItemEnabled": true
+      },
+      {
+        "sourceName": "App Audio",
+        "sceneItemId": 5,
+        "sceneItemEnabled": true
+      }
+    ],
+    "Starting Soon": [
+      {
+        "sourceName": "Lava Lamp",
+        "sceneItemId": 3,
+        "sceneItemEnabled": true
+      },
+      {
+        "sourceName": "Starting Soon Text",
+        "sceneItemId": 2,
+        "sceneItemEnabled": true
+      }
+    ],
+    "Ending": [
+      {
+        "sourceName": "Ending BG",
+        "sceneItemId": 1,
+        "sceneItemEnabled": true
+      },
+      {
+        "sourceName": "Ending Text",
+        "sceneItemId": 2,
+        "sceneItemEnabled": true
+      }
+    ]
+  },
+  "inserted": [
+    {
+      "sceneName": "Cam Cutout",
+      "sourceName": "Mic",
+      "sceneItemId": 3,
+      "sceneItemEnabled": true
+    },
+    {
+      "sceneName": "Cam Cutout",
+      "sourceName": "SP-404",
+      "sceneItemId": 4,
+      "sceneItemEnabled": true
+    },
+    {
+      "sceneName": "Cam Cutout",
+      "sourceName": "App Audio",
+      "sceneItemId": 5,
+      "sceneItemEnabled": true
+    },
+    {
+      "sceneName": "Me + Float",
+      "sourceName": "SP-404",
+      "sceneItemId": 5,
+      "sceneItemEnabled": true
+    },
+    {
+      "sceneName": "Me + Float",
+      "sourceName": "App Audio",
+      "sceneItemId": 6,
+      "sceneItemEnabled": true
+    }
+  ]
+}

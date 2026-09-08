@@ -1,0 +1,127 @@
+{
+  "writer": "OBS recording exercise",
+  "reader": "audio coverage repair review",
+  "failure": "configured sources that do not reach the MP4",
+  "scenes": [
+    {
+      "sceneName": "Cam",
+      "start": 1.033,
+      "end": 4.099,
+      "inputs": {
+        "Mic": {
+          "videoActive": true,
+          "videoShowing": true
+        },
+        "SP-404": {
+          "videoActive": true,
+          "videoShowing": true
+        },
+        "App Audio": {
+          "videoActive": true,
+          "videoShowing": true
+        }
+      },
+      "appAudioPeakDb": -33.6,
+      "passed": true
+    },
+    {
+      "sceneName": "Cam Cutout",
+      "start": 5.399,
+      "end": 8.933,
+      "inputs": {
+        "Mic": {
+          "videoActive": true,
+          "videoShowing": true
+        },
+        "SP-404": {
+          "videoActive": true,
+          "videoShowing": true
+        },
+        "App Audio": {
+          "videoActive": true,
+          "videoShowing": true
+        }
+      },
+      "appAudioPeakDb": -33.5,
+      "passed": true
+    },
+    {
+      "sceneName": "Me + Float",
+      "start": 10.266,
+      "end": 13.799,
+      "inputs": {
+        "Mic": {
+          "videoActive": true,
+          "videoShowing": true
+        },
+        "SP-404": {
+          "videoActive": true,
+          "videoShowing": true
+        },
+        "App Audio": {
+          "videoActive": true,
+          "videoShowing": true
+        }
+      },
+      "appAudioPeakDb": -27.7,
+      "passed": true
+    },
+    {
+      "sceneName": "Lava Lounge",
+      "start": 15.099,
+      "end": 18.133,
+      "inputs": {
+        "Mic": {
+          "videoActive": true,
+          "videoShowing": true
+        },
+        "SP-404": {
+          "videoActive": true,
+          "videoShowing": true
+        },
+        "App Audio": {
+          "videoActive": true,
+          "videoShowing": true
+        }
+      },
+      "appAudioPeakDb": -33.6,
+      "passed": true
+    }
+  ],
+  "outputPath": "/Users/SSDrive/Movies/2026-09-08_10-47-04.mp4",
+  "media": {
+    "programs": [],
+    "stream_groups": [],
+    "streams": [
+      {
+        "index": 0,
+        "codec_name": "h264",
+        "codec_type": "video"
+      },
+      {
+        "index": 1,
+        "codec_name": "aac",
+        "codec_type": "audio"
+      },
+      {
+        "index": 2,
+        "codec_name": "aac",
+        "codec_type": "audio"
+      },
+      {
+        "index": 3,
+        "codec_name": "aac",
+        "codec_type": "audio"
+      },
+      {
+        "index": 4,
+        "codec_name": "aac",
+        "codec_type": "audio"
+      }
+    ],
+    "format": {
+      "duration": "17.400000"
+    }
+  },
+  "passed": true
+}

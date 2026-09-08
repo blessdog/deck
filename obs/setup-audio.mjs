@@ -109,6 +109,20 @@ const act = (s) => console.log(DRY ? `  [dry] ${s}` : `  ${s}`);
 
 const obs = await connect();
 
+try {
+const { currentSceneCollectionName } = await obs.call("GetSceneCollectionList");
+if (currentSceneCollectionName !== "Control Room") {
+	throw new Error(`Audio setup requires Control Room; current collection is ${currentSceneCollectionName}`);
+}
+if (!DRY) {
+	const [recording, streaming] = await Promise.all([
+		obs.call("GetRecordStatus"), obs.call("GetStreamStatus"),
+	]);
+	if (recording.outputActive || streaming.outputActive) {
+		throw new Error("Audio setup requires recording and streaming to be stopped.");
+	}
+}
+
 // ---------------------------------------------------------------- devices
 // Resolve UIDs from the device_id enum on an existing coreaudio input.
 const { propertyItems } = await obs.call("GetInputPropertiesListPropertyItems", {
@@ -147,15 +161,19 @@ say(`  macOS default input  ->  ${defaultInputName}`);
 const { inputs } = await obs.call("GetInputList");
 const has = (name) => inputs.some((i) => i.inputName === name);
 
-// Where does Mic live? The new stems mirror it exactly — Mic is deliberately
-// absent from the idle cards (Starting Soon, Ending) and the stems should be too.
+// Speaking scenes normally already contain Mic. Cam Cutout is also a speaking
+// look, but its original builder placed only Camera FX. Inferring every target
+// from Mic's presence made that omission impossible to repair (2026-09-08).
+// Keep idle cards silent; reuse the SAME inputs in nested scenes, never create
+// additional capture devices. Me + Float also needs SP/App Audio after creation.
 const { scenes } = await obs.call("GetSceneList");
 const micScenes = [];
 for (const s of scenes) {
 	const { sceneItems } = await obs.call("GetSceneItemList", { sceneName: s.sceneName });
-	if (sceneItems.some((i) => i.sourceName === MIC)) micScenes.push(s.sceneName);
+	if (s.sceneName === "Cam Cutout" || sceneItems.some((i) => i.sourceName === MIC)) micScenes.push(s.sceneName);
 }
-say(`\n${MIC} appears in ${micScenes.length} scenes: ${micScenes.join(", ")}`);
+if (!micScenes.length) throw new Error("No speaking scenes found; refusing to create audio inputs.");
+say(`\nAudio targets (${micScenes.length} speaking scenes): ${micScenes.join(", ")}`);
 
 say("\nInputs:");
 
@@ -206,7 +224,7 @@ await ensureInput(APP, "sck_audio_capture", { type: 0 });
 say("\nScene placement:");
 for (const sceneName of micScenes) {
 	const { sceneItems } = await obs.call("GetSceneItemList", { sceneName });
-	for (const src of [SP, APP]) {
+	for (const src of [MIC, SP, APP]) {
 		if (sceneItems.some((i) => i.sourceName === src)) continue;
 		act(`add ${src} -> ${sceneName}`);
 		if (!DRY) await obs.call("CreateSceneItem", { sceneName, sourceName: src, sceneItemEnabled: true });
@@ -282,14 +300,18 @@ const lampAfter = await obs.call("GetInputSettings", { inputName: LAMP });
 say(`  RecTracks  ${recAfter}`);
 say(`  ${LAMP}  ${lampAfter.inputSettings.local_file}`);
 
+const coverageErrors = [];
 for (const sceneName of micScenes) {
 	const { sceneItems } = await obs.call("GetSceneItemList", { sceneName });
-	const names = sceneItems.map((i) => i.sourceName);
+	const names = sceneItems.filter((i) => i.sceneItemEnabled).map((i) => i.sourceName);
 	const missing = [MIC, SP, APP].filter((n) => !names.includes(n));
-	if (missing.length) say(`  ${sceneName}: MISSING ${missing.join(", ")}`);
+	if (missing.length) {
+		const message = `${sceneName}: missing or disabled ${missing.join(", ")}`;
+		say(`  ${message}`);
+		coverageErrors.push(message);
+	}
 }
-
-await obs.disconnect();
+if (!DRY && coverageErrors.length) throw new Error(`Audio coverage verification failed: ${coverageErrors.join("; ")}`);
 
 say(`\n${DRY ? "Dry run — nothing written." : "Done."}`);
 say(`
@@ -302,3 +324,6 @@ Ryan's eyes are the verdict. In OBS, watch the Audio Mixer:
 If step 2 ALSO moves the SP-404 meter, the SP is folding computer audio back
 up its USB return. Fix that in the SP's SYSTEM > USB Audio routing, or app
 audio lands on two tracks and double-counts in the mix.`);
+} finally {
+	await obs.disconnect();
+}

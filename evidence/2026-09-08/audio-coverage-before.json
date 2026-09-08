@@ -1,0 +1,87 @@
+{
+  "writer": "OBS websocket read-only audit",
+  "reader": "DECK-PERFORMANCE-2026-09-08.md and repair verifier",
+  "failure": "lost baseline for additive audio repair",
+  "scenes": {
+    "Cam Cutout": [
+      {
+        "sourceName": "Camera FX",
+        "sceneItemId": 2,
+        "sceneItemEnabled": true
+      }
+    ],
+    "Me + Float": [
+      {
+        "sourceName": "Camera",
+        "sceneItemId": 1,
+        "sceneItemEnabled": true
+      },
+      {
+        "sourceName": "Float Plate",
+        "sceneItemId": 2,
+        "sceneItemEnabled": true
+      },
+      {
+        "sourceName": "Display",
+        "sceneItemId": 3,
+        "sceneItemEnabled": true
+      },
+      {
+        "sourceName": "Mic",
+        "sceneItemId": 4,
+        "sceneItemEnabled": true
+      }
+    ],
+    "Lava Lounge": [
+      {
+        "sourceName": "Lava Lamp",
+        "sceneItemId": 1,
+        "sceneItemEnabled": true
+      },
+      {
+        "sourceName": "Cam Cutout",
+        "sceneItemId": 2,
+        "sceneItemEnabled": true
+      },
+      {
+        "sourceName": "Mic",
+        "sceneItemId": 3,
+        "sceneItemEnabled": true
+      },
+      {
+        "sourceName": "SP-404",
+        "sceneItemId": 4,
+        "sceneItemEnabled": true
+      },
+      {
+        "sourceName": "App Audio",
+        "sceneItemId": 5,
+        "sceneItemEnabled": true
+      }
+    ],
+    "Starting Soon": [
+      {
+        "sourceName": "Lava Lamp",
+        "sceneItemId": 3,
+        "sceneItemEnabled": true
+      },
+      {
+        "sourceName": "Starting Soon Text",
+        "sceneItemId": 2,
+        "sceneItemEnabled": true
+      }
+    ],
+    "Ending": [
+      {
+        "sourceName": "Ending BG",
+        "sceneItemId": 1,
+        "sceneItemEnabled": true
+      },
+      {
+        "sourceName": "Ending Text",
+        "sceneItemId": 2,
+        "sceneItemEnabled": true
+      }
+    ]
+  }
+}
