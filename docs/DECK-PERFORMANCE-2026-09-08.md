@@ -1,6 +1,11 @@
 # Recording performance: OBS, Stream Deck, and SP-404MKII
 
 Research and implementation sequence, 2026-09-08.
+
+> **Superseded the same evening for four of these cues.** TAKEAWAY, CHAPTER,
+> NORMAL and LAVA shipped and Ryan deleted them from the deck: "Don't add them
+> again." Law: `knowledge/deleted-keys-stay-deleted`; code in `archive/cue-keys/`.
+> REACT survives. Read the law before building from this plan.
 Writer: the deck maintainer. Readers: Ryan and the next implementation session.
 If wrong: we build unavailable controls, lose audio when changing shots, or repeat work already done.
 

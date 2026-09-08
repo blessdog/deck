@@ -22,7 +22,7 @@
  *
  *   node obs/set-transition.mjs
  */
-import { connect, obsIsRunning, launchOBS } from './lib/obs.mjs';
+import { connect, obsIsRunning, launchOBS, refuseIfRecording } from './lib/obs.mjs';
 import { readFileSync, writeFileSync, copyFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
@@ -61,6 +61,7 @@ if (!obsIsRunning()) {
 }
 
 const obs = await connect();
+await refuseIfRecording(obs, 'changing the transition changes how the next switch looks in the file');
 const { transitions } = await obs.call('GetSceneTransitionList');
 const move = transitions.find((t) => t.transitionKind === 'move_transition');
 if (!move) {

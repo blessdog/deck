@@ -15,7 +15,7 @@
 // cutout-mask-is-stale-while-inactive). Never switches while recording; the
 // latch is left the way it was found.
 //   node obs/check-cutout.mjs [outPath]
-import { connect } from './lib/obs.mjs';
+import { connect, refuseIfRecording } from './lib/obs.mjs';
 import { SHARED_CAMERA, VISION_FILTER_NAME, latchIsIsolatedFromIso } from './lib/cutout.mjs';
 import { execFileSync } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
@@ -31,8 +31,7 @@ const obs = await connect();
 const shots = {};
 let failed = false;
 try {
-  const { outputActive } = await obs.call('GetRecordStatus');
-  if (outputActive) { console.error('✖ recording is live: the cutout check switches program, refusing'); process.exit(2); }
+  await refuseIfRecording(obs, 'the cutout check switches program');
   const { currentProgramSceneName: before } = await obs.call('GetCurrentProgramScene');
   const { filterEnabled: latchBefore } = await obs.call('GetSourceFilter', { sourceName: SHARED_CAMERA, filterName: VISION_FILTER_NAME });
 

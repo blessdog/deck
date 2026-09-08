@@ -82,3 +82,18 @@ export async function connect({ launch = false, launchArgs = [], timeoutMs = 300
     }
   }
 }
+
+/**
+ * Refuse to touch program while a take is rolling. Any script that switches
+ * scenes or changes what a switch looks like calls this first — a check that
+ * ran during a recording would put its own switches into Ryan's file.
+ * Exit code 2, same as check-cutout.mjs used before this was shared.
+ */
+export async function refuseIfRecording(obs, why) {
+  const { outputActive } = await obs.call('GetRecordStatus');
+  if (outputActive) {
+    console.error(`✖ recording is live: ${why}, refusing`);
+    await obs.disconnect();
+    process.exit(2);
+  }
+}
