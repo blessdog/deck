@@ -26,7 +26,9 @@ L")` → mean 0.36, real windows. Same OBS, same grant, same second.
 Mechanism: ScreenCaptureKit streams are started when the source activates and
 stopped when it deactivates; OBS renders the scene from the last frame, and an
 inactive capture has none. Camera (`av_capture_input_v2`) sources keep
-running, which is why cutout snapshots worked inactive.
+delivering frames when inactive, but the background-removal mask on Camera FX
+does not refresh until the source renders — an inactive cutout snapshot is a
+different lie, see [[cutout-mask-is-stale-while-inactive]].
 
 How to apply: any script that snapshots a screen scene puts it on program
 first, waits ~2 s, shoots, then restores program (`scripts/check-screens.mjs`
