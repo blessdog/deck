@@ -2,7 +2,7 @@
 id: sp-404-sound-library-on-the-deck-and-ryan-s-own-
 kind: open
 conflict-key: should-we-sp-404-sound-library-on-the-deck-and-ryan-s-own-
-status: live
+status: superseded
 supersedes: []
 proven: false
 verified-on: 2026-09-08
@@ -13,7 +13,7 @@ asked-as:
   - what is blocking SP-404 sound library on the deck, and Ry
 ---
 
-**This is a PLAN, not a finding. `proven: false`. Do not build against it.**
+**RETIRED 2026-09-08 by [[the-sp-404-is-its-own-trigger]]: the deck does not fire pads.**
 
 ## SP-404 sound library on the deck, and Ryan's own recordings into it — an Ableton build, not OBS
 

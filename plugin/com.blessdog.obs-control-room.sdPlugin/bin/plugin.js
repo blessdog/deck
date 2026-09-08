@@ -18,7 +18,6 @@ import require$$0$4 from 'os';
 import { EventEmitter as EventEmitter$2 } from 'node:events';
 import { execFileSync, execFile } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { createRequire } from 'node:module';
 import { homedir } from 'node:os';
 
 /**
@@ -14204,7 +14203,6 @@ const TINTS = {
     mic: "#34d399", // green — audio is live
     warm: "#fb7185", // rose — the lounge
     live: "#ff2d55", // red — recording
-    sound: "#f97316", // orange — the sampler
 };
 const chan = (c) => [1, 3, 5].map((i) => parseInt(c.slice(i, i + 2), 16));
 const mix = (a, b, t) => {
@@ -14838,228 +14836,6 @@ let Normal = (() => {
             const uri = face({ state: obs.connected && cues.active ? "idle" : "offline", tint: "camera", glyph: GLYPHS.house });
             for (const a of this.actions)
                 void a.setImage(uri);
-        }
-    });
-    return _classThis;
-})();
-
-/**
- * The one MIDI output to the SP-404MKII, shared by every pad key.
- *
- * PRIOR ART: @julusian/midi (RtMidi with prebuilt CoreMIDI binaries). Measured
- * 2026-09-08 under the Stream Deck app's own Node 24.13.1: a note-on/off pair
- * costs 0.05 ms in-process, against ~90 ms per spawn of the sendmidi CLI. A
- * sound hit on a key has to feel like a pad, so the library wins.
- *
- * The module is a native addon, and it is loaded LAZILY inside a try/catch:
- * if the .node binary ever fails to resolve, the pad keys go dim with the
- * reason in the log, and RECORD, REACT and every scene key keep working.
- *
- * Pad-to-note map, MEASURED off the unit 2026-09-08 (SP-404 repo,
- * knowledge/pad-to-note-map-is-top-row-first): channel = bank (A is 1),
- * notes run from the top row down — pad 13 is 36, pad 1 is 48. The unit is in
- * Roland's MIDI Mode A. This formula is the only place that map lives.
- */
-const noteForPad = (pad) => {
-    const i = pad - 1;
-    return 48 - 4 * Math.floor(i / 4) + (i % 4);
-};
-const BANKS = "ABCDEFGHIJ";
-const bankLetter = (bank) => BANKS[bank - 1] ?? "?";
-const PORT_MATCH = "SP-404MKII";
-const require$1 = createRequire(import.meta.url);
-class SPMidi extends EventEmitter$2 {
-    log = streamDeck.logger.createScope("midi");
-    lib;
-    loadError;
-    out;
-    wasAvailable;
-    load() {
-        if (this.lib || this.loadError)
-            return this.lib;
-        try {
-            this.lib = require$1("@julusian/midi");
-            this.log.info("@julusian/midi loaded");
-        }
-        catch (err) {
-            this.loadError = String(err);
-            this.log.error(`@julusian/midi failed to load — pad keys are dead: ${this.loadError}`);
-        }
-        return this.lib;
-    }
-    portIndex(out) {
-        for (let i = 0; i < out.getPortCount(); i++) {
-            if (out.getPortName(i).includes(PORT_MATCH))
-                return i;
-        }
-        return -1;
-    }
-    /** Is there an SP on the bus right now? Enumerates every call; cheap. */
-    available() {
-        const lib = this.load();
-        if (!lib)
-            return this.note(false);
-        const probe = this.out ?? new lib.Output();
-        const found = this.portIndex(probe) >= 0;
-        if (probe !== this.out)
-            probe.closePort();
-        return this.note(found);
-    }
-    note(available) {
-        if (this.wasAvailable !== available) {
-            this.wasAvailable = available;
-            this.emit("changed");
-        }
-        return available;
-    }
-    open() {
-        const lib = this.load();
-        if (!lib)
-            return undefined;
-        if (this.out?.isPortOpen())
-            return this.out;
-        const out = this.out ?? new lib.Output();
-        const i = this.portIndex(out);
-        if (i < 0) {
-            this.note(false);
-            return undefined;
-        }
-        out.openPort(i);
-        this.out = out;
-        this.log.info(`opened ${out.getPortName(i)}`);
-        this.note(true);
-        return out;
-    }
-    close() {
-        try {
-            this.out?.closePort();
-        }
-        catch {
-            /* already gone */
-        }
-        this.out = undefined;
-    }
-    /**
-     * Send one message. A vanished port (unit power-cycled or unplugged) is
-     * closed, re-enumerated and reopened once; a second failure is reported.
-     */
-    send(message) {
-        for (let attempt = 0; attempt < 2; attempt++) {
-            const out = this.open();
-            if (!out)
-                return false;
-            try {
-                out.sendMessage(message);
-                return true;
-            }
-            catch (err) {
-                this.log.warn(`send failed (${attempt === 0 ? "reopening" : "giving up"}): ${err}`);
-                this.close();
-            }
-        }
-        this.note(false);
-        return false;
-    }
-    noteOn(bank, pad, velocity = 127) {
-        return this.send([0x90 | (bank - 1), noteForPad(pad), velocity]);
-    }
-    noteOff(bank, pad) {
-        return this.send([0x80 | (bank - 1), noteForPad(pad), 0]);
-    }
-}
-const spMidi = new SPMidi();
-
-// Re-check for the SP this often while a pad key is on screen: plugging the
-// unit in or power-cycling it must light the keys without a plugin restart.
-const RECONCILE_MS$2 = 10_000;
-/**
- * PAD — one SP-404MKII pad on a deck key. Key-down sends note-on, key-up
- * sends note-off, so a pad set to GATE follows the thumb exactly like REACT
- * does, and a one-shot pad simply ignores the off. Which bank and pad is
- * per-key settings from the layout, so WIN, OOPS and THINK are three keys of
- * this one action pointed at three pads.
- *
- * The key knows nothing about what the pad holds. Its face is the pad's name
- * (or a label from the layout), lit when an SP is on the MIDI bus and dim when
- * it is not — dim means pressing does nothing, same grammar as every OBS key.
- * Whether the SP SOUNDS the note is the unit's business, and Ryan's ear.
- */
-let Pad = (() => {
-    let _classDecorators = [action({ UUID: "com.blessdog.obs-control-room.pad" })];
-    let _classDescriptor;
-    let _classExtraInitializers = [];
-    let _classThis;
-    let _classSuper = SingletonAction;
-    (class extends _classSuper {
-        static { _classThis = this; }
-        static {
-            const _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create(_classSuper[Symbol.metadata] ?? null) : void 0;
-            __esDecorate(null, _classDescriptor = { value: _classThis }, _classDecorators, { kind: "class", name: _classThis.name, metadata: _metadata }, null, _classExtraInitializers);
-            _classThis = _classDescriptor.value;
-            if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
-            __runInitializers(_classThis, _classExtraInitializers);
-        }
-        log = streamDeck.logger.createScope("pad");
-        held = new Set();
-        visible = 0;
-        reconcileTimer;
-        constructor() {
-            super();
-            spMidi.on("changed", () => void this.renderAll());
-        }
-        onWillAppear(ev) {
-            this.visible++;
-            this.reconcileTimer ??= setInterval(() => spMidi.available(), RECONCILE_MS$2);
-            void this.render(ev.action.id, ev.payload.settings);
-        }
-        onWillDisappear(_ev) {
-            if (--this.visible <= 0) {
-                this.visible = 0;
-                if (this.reconcileTimer) {
-                    clearInterval(this.reconcileTimer);
-                    this.reconcileTimer = undefined;
-                }
-            }
-        }
-        async onKeyDown(ev) {
-            const { bank, pad } = this.target(ev.payload.settings);
-            if (!spMidi.noteOn(bank, pad)) {
-                await ev.action.showAlert();
-                void this.render(ev.action.id, ev.payload.settings);
-                return;
-            }
-            this.held.add(ev.action.id);
-            void this.render(ev.action.id, ev.payload.settings);
-        }
-        async onKeyUp(ev) {
-            const { bank, pad } = this.target(ev.payload.settings);
-            if (this.held.delete(ev.action.id))
-                spMidi.noteOff(bank, pad);
-            void this.render(ev.action.id, ev.payload.settings);
-        }
-        target(s) {
-            const bank = Math.min(10, Math.max(1, Number(s.bank ?? 1)));
-            const pad = Math.min(16, Math.max(1, Number(s.pad ?? 1)));
-            return { bank, pad };
-        }
-        async render(id, s) {
-            const { bank, pad } = this.target(s);
-            const label = s.label?.trim() || `${bankLetter(bank)}${pad}`;
-            const state = !spMidi.available() ? "offline" : this.held.has(id) ? "active" : "idle";
-            const uri = face({ state, tint: "sound", label });
-            const a = [...this.actions].find((x) => x.id === id);
-            if (a)
-                await a.setImage(uri);
-        }
-        async renderAll() {
-            for (const a of this.actions) {
-                try {
-                    await this.render(a.id, await a.getSettings());
-                }
-                catch (err) {
-                    this.log.warn(`render failed: ${err}`);
-                }
-            }
         }
     });
     return _classThis;
@@ -16479,7 +16255,6 @@ streamDeck.actions.registerAction(new Record());
 streamDeck.actions.registerAction(new Mark());
 streamDeck.actions.registerAction(new React());
 streamDeck.actions.registerAction(new Normal());
-streamDeck.actions.registerAction(new Pad());
 streamDeck.actions.registerAction(new MuteMic());
 streamDeck.actions.registerAction(new Pause());
 streamDeck.actions.registerAction(new Shot());

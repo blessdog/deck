@@ -2,7 +2,7 @@
 id: midi-ts-available-builds-a-coremidi-client-per-p
 kind: open
 conflict-key: should-we-midi-ts-available-builds-a-coremidi-client-per-p
-status: live
+status: superseded
 supersedes: []
 proven: false
 verified-on: 2026-09-08
@@ -12,7 +12,7 @@ asked-as:
   - why is midi.ts like this
 ---
 
-**This is a PLAN, not a finding. `proven: false`. Do not build against it.**
+**RETIRED 2026-09-08 by [[the-sp-404-is-its-own-trigger]]: the deck does not fire pads.**
 
 ## midi.ts available() builds a CoreMIDI client per probe
 

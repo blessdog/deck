@@ -82,3 +82,21 @@ the same path a minute later. Roland lists USB OUT as a gain with no mute. So
 either the pads we fired hold nothing, or the unit is not listening. The
 machine cannot tell those apart; one physical pad press during a capture can.
 That is where order 2 stands: keys installed, notes leaving, sound unproven.
+
+## And then the keys came off
+
+Within the hour Ryan said the thing that should have been the first question:
+*"i have the sp-404 as the trigger. There's no sense in having a redundant key
+that plays on the stream deck."* Then, plainer: *"a1 a2 a3 are a clunkier
+version of what the SP does. That's its one job."*
+
+He is right, and the plan had the answer in it all along: the SP's pads are for
+"expressive sound performance," the deck is for "coordinated picture-and-sound
+cues." I read that as deck-fires-pad. It meant the two instruments each do
+their job and meet in OBS. A key that plays a pad is a worse pad.
+
+The three keys are in `archive/sp-pad-keys/` with the reason on top, the law is
+in the store in his words, and the measured pad-to-note map stays in the SP-404
+repo because it is true about the instrument regardless of what the deck does.
+The deck is back to 23 keys and the tripwire is green. What order 2 costs the
+deck now is nothing; what it costs Ryan is loading a bank in the Roland app.

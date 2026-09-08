@@ -99,27 +99,25 @@ staying active across a reaction. Prior art searched first: the official Elgato
 OBS plugin has no hold-to-switch, OBS hotkeys are toggles only, and Advanced
 Scene Switcher can do it through a keyboard hotkey macro with no key-face state.
 
-### Order 2 machine side built: SP-404 pad keys (evening, 2026-09-08)
+### Order 2 reversed the same evening: the deck does not fire pads (2026-09-08)
 
-Measured at the unit with `receivemidi`: channel = bank, notes run top row
-down (pad 13 = 36, pad 1 = 48), which is Roland's MIDI Mode A; the September 7
-"note 36 did not sound" dead end is retired (note 36 is pad 13). Filed in the
-SP-404 repo as `knowledge/pad-to-note-map-is-top-row-first`. Sending from the
-deck uses `@julusian/midi` in-process (0.05 ms per note pair under the Stream
-Deck app's Node 24.13.1) after `sendmidi` measured ~90 ms per spawn. Three
-provisional keys at 0,0–2,0 point at bank A pads 1–3, settings written by the
-layout. Tripwire green at 26 actions. Prior art: the official Elgato OBS plugin
-has no MIDI; Trevligaspel MIDI would give keys without OBS state or combined
-cues.
+Three SP-404 pad keys shipped at 0,0–2,0 (in-process MIDI, bank/pad as layout
+settings, the pad-to-note map measured off the unit) and were pulled within the
+hour. Ryan: *"i have the sp-404 as the trigger. There's no sense in having a
+redundant key that plays on the stream deck."* and *"a1 a2 a3 are a clunkier
+version of what the SP does. That's its one job."* Law:
+`knowledge/the-sp-404-is-its-own-trigger`. Code and reason: `archive/sp-pad-keys/`.
 
-NOT proven: that the unit sounds a note the Mac sends. Four notes reached
-CoreMIDI (pads A1, A2, A16, B1) while `SP-404MKII-IN` recorded digital silence
-for 10.7 s; a mic control capture in the same session had signal, so the
-capture path works. Roland's SYSTEM page lists USB OUT only as a gain
-(−24/−12/0 dB), no mute, so the unit does put its master on USB. Two readings
-remain and the machine cannot separate them: the fired pads are empty, or the
-unit is not receiving notes. One physical pad press during a joint audio+MIDI
-capture decides it; that capture is the next step and needs Ryan's hand.
+What survives from the evening, because it is about the instrument and not the
+deck: the measured map (channel = bank, pad 13 = 36, pad 1 = 48, Roland Mode A)
+in the SP-404 repo, and the retirement of the September 7 "note 36 did not
+sound" dead end. What was never proven and no longer matters here: whether the
+unit sounds a note the Mac sends.
+
+Consequences for the sequence below: order 2 becomes "Ryan builds the bank on
+the SP, in the Roland app"; the deck contributes nothing to it. Order 4 loses
+deck-fired sound and `SFX STOP`; a combined cue on the deck is picture plus a
+recording marker, and any pad-driven visual would run SP → OBS, never deck → SP.
 
 ## What the controls would actually do
 
@@ -301,9 +299,9 @@ SOURCE: [OBS websocket protocol](https://raw.githubusercontent.com/obsproject/ob
 |---|---|---|
 | 0 | Audio coverage repair, `obs/setup-audio.mjs` | Mic/SP/apps present in all speaking looks; known test signal survives each look; inactive title cards stay silent |
 | 1 | REACT + NORMAL, existing plugin and additive OBS scene builder | Repeated press/release works; changing scene during a reaction cancels stale restoration; recording remains active |
-| 2 | Recording sound bank, existing Ableton library owner; deck bindings in `ableton/` | Human chooses samples; pad identity, gate, stop, latency and recorded track verified; no overwritten pads |
+| 2 | Recording sound bank ON THE SP, built by Ryan in the Roland app; no deck bindings (`knowledge/the-sp-404-is-its-own-trigger`) | Ryan hits a pad during a recording; the SP-404 track in the MP4 carries it and the mix carries it |
 | 3 | TAKEAWAY + CHAPTER, motion assets plus OBS configuration | Actual rendered assets tested in OBS; 10 consecutive triggers restart/clear; transition cut concealed; clean camera ISO preserved |
-| 4 | Selected combined cues and SFX STOP | Picture/sound alignment checked in MP4; repeated cues cannot stack; recovery and device-disconnect behavior exercised |
+| 4 | Combined picture cues (shot + marker, banner + marker); no deck-fired sound, no SFX STOP | Repeated cues cannot stack; recovery and disconnect behavior exercised; markers land in the MP4 |
 | 5 | SAVE LAST, then optional pad-driven visuals | Buffer must have been armed; saved path comes from OBS; app restart and multiple saves tested; extra recording load measured |
 
 Chosen acceptance exercise: make one 60-second recording with three shot changes,

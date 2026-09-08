@@ -135,7 +135,6 @@ in the Stream Deck app under category **"OBS Control Room"**:
 | **Mute Mic** | Toggle the shared `Mic` input. Face follows OBS's own mute event (never lies): white open mic = hot, red slashed mic = muted. |
 | **React (hold)** | Hold: the shot slides (Move, 350 ms) to the **React** close-up — the same shared Camera at 1.4x; release: back to the shot you were on. The saved shot lives in `plugin/src/cues.ts`, so a scene key pressed mid-hold ends the reaction instead of dragging you back on release, and a fast tap never strands the close-up. Camera ISO is untouched. Built 2026-09-08; awaiting Ryan's press. |
 | **Normal** | The way out of any cue: restores the shot and transition saved when the cue began and forgets the cue. Lit only while a cue holds the program. Never touches record or mic. |
-| **SP-404 Pad** | One SP-404MKII pad on a key, over USB MIDI in-process (`@julusian/midi`, 0.05 ms per note; the `sendmidi` CLI measured ~90 ms per spawn). Key-down is note-on, key-up is note-off, so a GATE pad follows the thumb. Bank and pad are per-key settings written by the layout; the pad-to-note map was measured off the unit (channel = bank, pad 13 = 36, pad 1 = 48, Roland MIDI Mode A) and lives in `plugin/src/midi.ts` only. Dim when no SP is on the MIDI bus. Three provisional keys point at bank A pads 1–3 until Ryan names the sounds. **Not yet proven that the unit sounds a note the Mac sends.** |
 | **Mark** | While recording: drops an OBS **chapter marker** into the file itself, named with the record timecode. No daemon, no DB — ffprobe reads chapters back at ingest (verified: media-studio `scripts/verify_record_chapters.py`; OBS auto-adds a `Start` chapter at 0, ingest skips it). Dim + alert when not recording. |
 | **Pause** | Pause/resume the running recording (`ToggleRecordPause`). Dim when nothing is recording; face follows OBS's own pause events. |
 | **Shot** | PNG of what is on program into `<record dir>/OBS Shots/`, revealed in Finder. |
@@ -186,10 +185,10 @@ once, every scene follows.
 section is `obs/`, the clipper keys' glue is `rectum/`, `ableton/` is reserved.
 Bitfocus Companion is dead and never comes back.
 
-**The deck, as it sits (26 keys on XL page 1, `check-deck.mjs` green):**
+**The deck, as it sits (23 keys on XL page 1, `check-deck.mjs` green):**
 
 ```
-  A1       A2       A3        ·      SOON     BRB    ENDING   RECORD    row 0 — far; A1–A3 are SP-404 pads, provisional
+   ·        ·        ·        ·      SOON     BRB    ENDING   RECORD    row 0 — far
    ·        ·     ZOOM −      ·     REACT   NORMAL  REVEAL   PAUSE     row 1 — gutter, five exceptions
  LEFT     RIGHT   SCRN+ME     ·      CAM    CUTOUT  ME+FLOAT  LAVA     row 2 — what's on screen
  MARK     MUTE    ZOOM +      ·    CAMERA  MEETING   SHOT    (page)   row 3 — nearest the hand
@@ -232,12 +231,13 @@ Move, camera ISO and the custom SD+ volume dials already shipped September 3.
    September 8 found missing SP/App Audio in Me + Float and missing dedicated
    audio in Cam Cutout; the repair now covers both.
 2. REACT + NORMAL are installed (2026-09-08) and wait for Ryan's press ladder —
-   the VERIFY sentences in `scripts/deck-layout.mjs`. Three SP-404 pad keys are
-   installed the same day; the pad-to-note map is measured, the deck→unit
-   direction is NOT yet proven to sound (USB audio in recorded silence while
-   four notes went out). One physical pad press during a capture separates
-   "empty pads" from "MIDI receive off". Then the sound bank itself, then
-   TAKEAWAY + CHAPTER and coordinated cues, each with its recording test.
+   the VERIFY sentences in `scripts/deck-layout.mjs`. **The deck never fires
+   SP-404 pads** (`knowledge/the-sp-404-is-its-own-trigger.md`, Ryan's words):
+   the sampler is its own soundboard, its sound reaches the recording through
+   the shared `SP-404` input, and the three pad keys that shipped for one
+   evening are in `archive/sp-pad-keys/`. Next: TAKEAWAY + CHAPTER, then the
+   cues that combine picture with a recording marker, each with its recording
+   test in the report.
 3. Add SAVE LAST for spontaneous moments after measuring replay-buffer load.
 4. Continue the existing clipper and Ableton lanes. The SP work is resumed;
    verify mode-specific MIDI notes before using the sibling library's mapping.
