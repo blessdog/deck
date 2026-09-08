@@ -406,6 +406,21 @@
    ],
    "Tooltip": "Cancel any performance cue and restore the saved shot and transition.",
    "UUID": "com.blessdog.obs-control-room.normal"
+  },
+  {
+   "Name": "SP-404 Pad",
+   "UUID": "com.blessdog.obs-control-room.pad",
+   "Icon": "imgs/actions/mark/icon",
+   "Tooltip": "Hold to fire one SP-404MKII pad over USB MIDI (note-on on press, note-off on release). Bank and pad come from the layout.",
+   "Controllers": [
+    "Keypad"
+   ],
+   "States": [
+    {
+     "Image": "imgs/actions/mark/key",
+     "ShowTitle": false
+    }
+   ]
   }
  ]
 }

@@ -15,7 +15,7 @@ import { join } from "node:path";
 import { homedir } from "node:os";
 import { execFileSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { DEVICES, ENCODERS, NATIVE, PLUGIN, isNative, nameOf, placements, uuidOf } from "./deck-layout.mjs";
+import { ACTIONS, DEVICES, ENCODERS, NATIVE, PLUGIN, isNative, nameOf, placements, uuidOf } from "./deck-layout.mjs";
 
 const DRY = process.argv.includes("--dry");
 const SD = join(homedir(), "Library/Application Support/com.elgato.StreamDeck");
@@ -181,7 +181,7 @@ for (const { dev, top, file, layout, pageLabel } of found) {
 			Name: nameOf(short),
 			Plugin: { Name: PLUGIN_NAME, UUID: PLUGIN, Version: PLUGIN_VERSION },
 			Resources: null,
-			Settings: {},
+			Settings: ACTIONS[short][2] ?? {},
 			State: 0,
 			States: [{}],
 			UUID: uuid,

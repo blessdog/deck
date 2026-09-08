@@ -24,12 +24,22 @@
 
 export const PLUGIN = "com.blessdog.obs-control-room";
 
-/** Short name → the action's UUID suffix and the label the app shows. */
+/**
+ * Short name → the action's UUID suffix, the label the app shows, and
+ * (optionally) per-key settings. Several short names may share one action:
+ * the SP-404 pad keys are one action pointed at different pads, and the
+ * settings ARE the config — no property inspector to click through.
+ */
 export const ACTIONS = {
 	record: ["record", "Record"],
 	mark: ["mark", "Mark"],
 	react: ["react", "React (hold)"],
 	normal: ["normal", "Normal"],
+	// SP-404MKII pads over USB MIDI. Bank A pads 1–3 until Ryan names the
+	// sounds; re-point by editing these three lines, then build-profile.
+	padA1: ["pad", "SP-404 Pad", { bank: 1, pad: 1, label: "A1" }],
+	padA2: ["pad", "SP-404 Pad", { bank: 1, pad: 2, label: "A2" }],
+	padA3: ["pad", "SP-404 Pad", { bank: 1, pad: 3, label: "A3" }],
 	mute: ["mute-mic", "Mute Mic"],
 	pause: ["pause", "Pause Recording"],
 	shot: ["shot", "Screenshot"],
@@ -65,7 +75,7 @@ export const ACTIONS = {
  */
 export const XL = [
 	// c0          c1          c2           c3     c4         c5          c6       c7
-	[null, null, null, null, "soon", "brb", "ending", "record"], //       row 0 — far
+	["padA1", "padA2", "padA3", null, "soon", "brb", "ending", "record"], // row 0 — far; pads CHOSEN here, see below
 	[null, null, "zoomOut", null, "react", "normal", "reveal", "pause"], // row 1 — gutter, five exceptions
 	["screenLeft", "screenRight", "screenCam", null, "cam", "cutout", "float", "lava"], // row 2
 	["mark", "mute", "zoomIn", null, "camera", "meeting", "shot", "pageNext"], // row 3 — near; 7,3 is the app's own page key
@@ -75,6 +85,11 @@ export const XL = [
 // REACT and NORMAL (2026-09-08) sit directly above CAM and CUTOUT: the camera
 // block's own row, found by touch from the CAM key. CHOSEN, not measured — if
 // REACT earns its place mid-sentence, a row-3 key should yield to it.
+// The three SP-404 pad keys (2026-09-08) sit at row 0 c0–c2 as one block.
+// CHOSEN, and it CONTRADICTS the reach rule above: sound hits are mid-sentence
+// keys and row 0 is the "pressed rarely" row. Row 3 is full, and until Ryan
+// names the sounds these are provisional placeholders pointed at bank A 1–3.
+// When a hit earns its place, a row-3 key yields, same deal as REACT.
 // The bottom-right key is the Stream Deck app's page-navigation key: it must
 // exist for page 2 (rectum) to be reachable, and 2026-09-02 proved that placing
 // anything else there deletes it — so it is placed from here, like every key.
@@ -191,6 +206,9 @@ export const VERIFY = {
 	react: "Hold; program slides to the React close-up and the key lights. Release; the shot you were on comes back. A fast tap does the same and never strands the close-up.",
 	normal: "Hold REACT, press a scene key, release REACT: program stays on that scene. Hold REACT and press NORMAL: the saved shot comes back, NORMAL goes dim and REACT stops glowing.",
 	mute: "Press; OBS mixer shows Mic muted and the key turns red.",
+	padA1: "Press; the SP plays bank A pad 1 and the SP-404 meter in the OBS mixer moves. Unplug the SP; the key goes dim.",
+	padA2: "Press; the SP plays bank A pad 2 and the SP-404 meter in the OBS mixer moves.",
+	padA3: "Press; the SP plays bank A pad 3 and the SP-404 meter in the OBS mixer moves.",
 	camera: "Press; the Cam scene switches iPhone ↔ FaceTime.",
 	meeting: "Press; OBS Virtual Camera appears in a Zoom/Meet camera list.",
 	shot: "Press; Finder reveals a PNG of what was on program.",

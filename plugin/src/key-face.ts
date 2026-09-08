@@ -42,6 +42,7 @@ export const TINTS = {
 	mic: "#34d399", // green — audio is live
 	warm: "#fb7185", // rose — the lounge
 	live: "#ff2d55", // red — recording
+	sound: "#f97316", // orange — the sampler
 } as const;
 export type Tint = keyof typeof TINTS;
 
