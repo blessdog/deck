@@ -3,7 +3,7 @@
 
 # deck — STATE
 
-*Generated 2026-09-08 14:56 from git, the knowledge store, and this project's own status script. Nothing here is typed by hand, so nothing here can be stale.*
+*Generated 2026-09-08 14:57 from git, the knowledge store, and this project's own status script. Nothing here is typed by hand, so nothing here can be stale.*
 
 ## What is open
 
@@ -66,6 +66,7 @@ OPEN — plans, NOT specs. proven: false. Do not build against these.
 *From git. The full narrative lives in `docs/journal/`; commit subjects are written as search bait, so `git log --grep` is the index.*
 
 ```
+2026-09-08  b40c1ae  STATE.md: regenerated after the Apple Vision cutout verdict
 2026-09-08  ae5d08e  cutout: Apple Vision (obs-mac-backgroundremoval) replaces selfie_segmentation — the 256px mask stretch was the wobble
 2026-09-08  7997183  STATE.md: regenerated after TAKEAWAY and CHAPTER
 2026-09-08  0977276  docs: TAKEAWAY and CHAPTER built as overlays; the sting asset's drawbox/VP9 failure and the ffmpeg command that works
@@ -77,24 +78,15 @@ OPEN — plans, NOT specs. proven: false. Do not build against these.
 2026-09-08  906f10f  docs: SP-404 pad keys installed, note map measured, deck-to-unit sound unproven; open item points at the measured map
 2026-09-08  05d7670  plugin: SP-404 Pad keys fire pads over USB MIDI in-process (@julusian/midi, 0.05 ms) with bank/pad as layout settings
 2026-09-08  0762dc3  STATE.md: regenerated after REACT/NORMAL and the cutout stale-mask verdict
-2026-09-08  c089903  knowledge: screen-capture verdict points at the cutout stale-mask sibling; bookmark check-cutout blind to a dead camera
 ```
 
 ### ⚠ UNPUSHED
 
-**1 commit(s) ahead of `origin/master`.** Committed is not the same as safe — a commit that has not left this machine has the durability of the disk it is on.
+**2 commit(s) ahead of `origin/master`.** Committed is not the same as safe — a commit that has not left this machine has the durability of the disk it is on.
 
 ```
 git push origin master
 ```
-
-### Uncommitted
-
-```
- M STATE.md
-```
-
-*Uncommitted is not learned. Commit at the moment of learning.*
 
 ---
 

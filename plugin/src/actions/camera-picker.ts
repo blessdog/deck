@@ -55,14 +55,14 @@ export class CameraPicker extends SingletonAction {
 				inputName: INPUT,
 				inputSettings: { device: next.id, device_name: next.name },
 			});
-			// Cutout scenes capture through their own "Camera FX" input —
+			// The cutout substrate ("Camera FX") and the ISO recorder's input
+			// ("Camera Raw", hidden in Rig) open the same device —
 			// keep it on the same physical camera or they silently diverge.
-			await obs
-				.call("SetInputSettings", {
-					inputName: "Camera FX",
-					inputSettings: { device: next.id, device_name: next.name },
-				})
-				.catch(() => {});
+			for (const inputName of ["Camera FX", "Camera Raw"]) {
+				await obs
+					.call("SetInputSettings", { inputName, inputSettings: { device: next.id, device_name: next.name } })
+					.catch(() => {});
+			}
 			await ev.action.showOk();
 		} catch (err) {
 			this.log.error(`switch failed: ${err}`);
@@ -112,7 +112,7 @@ export class CameraPicker extends SingletonAction {
 			this.log.warn(
 				`camera device ${inputSettings.device_name ?? inputSettings.device} is gone — switching to ${pick.name}`,
 			);
-			for (const inputName of [INPUT, "Camera FX"]) {
+			for (const inputName of [INPUT, "Camera FX", "Camera Raw"]) {
 				await obs
 					.call("SetInputSettings", {
 						inputName,

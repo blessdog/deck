@@ -13913,6 +13913,7 @@ const FORWARDED = [
     "InputMuteStateChanged",
     "InputVolumeChanged",
     "MediaInputPlaybackEnded",
+    "SourceFilterEnableStateChanged",
 ];
 const RETRY_MS = 3_000;
 const NOT_READY = 207; // obs-websocket: socket is up before OBS finishes init
@@ -14525,14 +14526,14 @@ let CameraPicker = (() => {
                     inputName: INPUT,
                     inputSettings: { device: next.id, device_name: next.name },
                 });
-                // Cutout scenes capture through their own "Camera FX" input —
+                // The cutout substrate ("Camera FX") and the ISO recorder's input
+                // ("Camera Raw", hidden in Rig) open the same device —
                 // keep it on the same physical camera or they silently diverge.
-                await obs
-                    .call("SetInputSettings", {
-                    inputName: "Camera FX",
-                    inputSettings: { device: next.id, device_name: next.name },
-                })
-                    .catch(() => { });
+                for (const inputName of ["Camera FX", "Camera Raw"]) {
+                    await obs
+                        .call("SetInputSettings", { inputName, inputSettings: { device: next.id, device_name: next.name } })
+                        .catch(() => { });
+                }
                 await ev.action.showOk();
             }
             catch (err) {
@@ -14578,7 +14579,7 @@ let CameraPicker = (() => {
                 // only path that keeps Center Stage.
                 const pick = cams.find((c) => /iphone/i.test(c.name) && /camera$/i.test(c.name)) ?? cams[0];
                 this.log.warn(`camera device ${inputSettings.device_name ?? inputSettings.device} is gone — switching to ${pick.name}`);
-                for (const inputName of [INPUT, "Camera FX"]) {
+                for (const inputName of [INPUT, "Camera FX", "Camera Raw"]) {
                     await obs
                         .call("SetInputSettings", {
                         inputName,
@@ -14861,13 +14862,74 @@ class Cues extends EventEmitter$2 {
 const cues = new Cues();
 
 /**
- * NORMAL — the way out of any cue. Takes down any overlay (TAKEAWAY banner,
- * CHAPTER sting), restores the shot and transition that were saved when a
- * cue began, and forgets the cue. It never starts or stops a
- * recording and never touches the mic: only cue-owned state is restored.
+ * The cutout latch: the Apple Vision remover ("Mac Vision", obs/lib/cutout.mjs)
+ * sitting DISABLED on the shared Camera input. On, every scene that shows the
+ * camera — Cam, Screen + Cam, Me + Float, React — becomes a cutout in place;
+ * off, the room is back. It is a look, not a scene, so it survives scene
+ * changes until someone turns it off: the CUTOUT key, or NORMAL.
  *
- * Lit only while a cue holds the program. Dim means pressing does nothing,
- * and that is the honest face — there is no "normal" to go back to.
+ * State follows OBS's own SourceFilterEnableStateChanged event, so the key
+ * can never lie about what the filter is doing. Lava Lounge's cutout is a
+ * different input (Camera FX) and is not this latch.
+ */
+const CUTOUT_SOURCE = "Camera";
+const CUTOUT_FILTER = "Mac Vision";
+class CutoutLatch extends EventEmitter$2 {
+    log = streamDeck.logger.createScope("cutout");
+    on = false;
+    constructor() {
+        super();
+        obs.on("connected", () => void this.refresh());
+        obs.on("disconnected", () => this.set(false));
+        obs.on("SourceFilterEnableStateChanged", ({ sourceName, filterName, filterEnabled }) => {
+            if (sourceName === CUTOUT_SOURCE && filterName === CUTOUT_FILTER)
+                this.set(filterEnabled);
+        });
+    }
+    get active() {
+        return this.on;
+    }
+    async refresh() {
+        if (!obs.connected)
+            return;
+        try {
+            const { filterEnabled } = await obs.call("GetSourceFilter", { sourceName: CUTOUT_SOURCE, filterName: CUTOUT_FILTER });
+            this.set(filterEnabled);
+        }
+        catch (err) {
+            // No such filter: obs/add-look.mjs cutout has not run in this collection.
+            this.log.warn(`no ${CUTOUT_FILTER} on ${CUTOUT_SOURCE}: ${err}`);
+            this.set(false);
+        }
+    }
+    /** Flip the filter. Returns the state OBS confirms. */
+    async toggle() {
+        return this.apply(!this.on);
+    }
+    async apply(enabled) {
+        await obs.call("SetSourceFilterEnabled", { sourceName: CUTOUT_SOURCE, filterName: CUTOUT_FILTER, filterEnabled: enabled });
+        this.set(enabled);
+        return enabled;
+    }
+    set(on) {
+        if (this.on === on)
+            return;
+        this.on = on;
+        this.emit("changed", on);
+    }
+}
+const cutout = new CutoutLatch();
+
+/**
+ * NORMAL — the way out of any cue or look. Takes down any overlay (TAKEAWAY
+ * banner, CHAPTER sting), releases the CUTOUT latch so the room is back,
+ * restores the shot and transition that were saved when a cue began, and
+ * forgets the cue. It never starts or stops a recording and never touches
+ * the mic: only cue-owned and look-owned state is restored.
+ *
+ * Lit only while a cue, an overlay or the cutout holds the program. Dim means
+ * pressing does nothing, and that is the honest face — there is no "normal"
+ * to go back to.
  */
 let Normal = (() => {
     let _classDecorators = [action({ UUID: "com.blessdog.obs-control-room.normal" })];
@@ -14890,17 +14952,20 @@ let Normal = (() => {
             obs.on("connected", () => void this.render());
             obs.on("disconnected", () => void this.render());
             cues.on("changed", () => void this.render());
+            cutout.on("changed", () => void this.render());
         }
         onWillAppear(_ev) {
             void this.render();
         }
         async onKeyDown(ev) {
-            if (!obs.connected || (!cues.active && !cues.anyOverlay)) {
+            if (!obs.connected || (!cues.active && !cues.anyOverlay && !cutout.active)) {
                 await ev.action.showAlert();
                 return;
             }
             try {
                 await cues.hideAllOverlays("normal pressed");
+                if (cutout.active)
+                    await cutout.apply(false);
                 const restored = await cues.restore("normal pressed");
                 if (restored)
                     await ev.action.showOk();
@@ -14912,7 +14977,7 @@ let Normal = (() => {
             void this.render();
         }
         async render() {
-            const lit = obs.connected && (cues.active !== undefined || cues.anyOverlay);
+            const lit = obs.connected && (cues.active !== undefined || cues.anyOverlay || cutout.active);
             const uri = face({ state: lit ? "idle" : "offline", tint: "camera", glyph: GLYPHS.house });
             for (const a of this.actions)
                 void a.setImage(uri);
@@ -15163,6 +15228,70 @@ let Chapter = (() => {
             const state = !obs.connected ? "offline" : cues.overlayActive("chapter") ? "active" : "idle";
             // The recording timecode is the only text: it says a marker WILL land.
             const uri = face({ state, tint: "mark", glyph: GLYPHS.chapter, sub: this.recording ? "marks" : undefined });
+            for (const a of this.actions)
+                void a.setImage(uri);
+        }
+    });
+    return _classThis;
+})();
+
+/**
+ * CUTOUT — a latch, not a scene. Press: the room disappears around Ryan in
+ * whatever shot is up; press again: it is back. Ryan, 2026-09-08: "hit cutout
+ * in whatever scene I'm in, and it cuts out the background. Just has me
+ * free-floating in it." The old scene key is in archive/scene-cam-cutout-key.
+ *
+ * Whole key lit while the latch is on, as with every state face. Pressed on a
+ * screen-only scene it arms with nothing to show until a camera scene goes up
+ * — that is the latch working, not a dead key. With OBS down: dim + alert.
+ */
+let Cutout = (() => {
+    let _classDecorators = [action({ UUID: "com.blessdog.obs-control-room.cutout" })];
+    let _classDescriptor;
+    let _classExtraInitializers = [];
+    let _classThis;
+    let _classSuper = SingletonAction;
+    (class extends _classSuper {
+        static { _classThis = this; }
+        static {
+            const _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create(_classSuper[Symbol.metadata] ?? null) : void 0;
+            __esDecorate(null, _classDescriptor = { value: _classThis }, _classDecorators, { kind: "class", name: _classThis.name, metadata: _metadata }, null, _classExtraInitializers);
+            _classThis = _classDescriptor.value;
+            if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
+            __runInitializers(_classThis, _classExtraInitializers);
+        }
+        log = streamDeck.logger.createScope("cutout-key");
+        constructor() {
+            super();
+            obs.on("connected", () => void this.render());
+            obs.on("disconnected", () => void this.render());
+            cutout.on("changed", () => void this.render());
+        }
+        onWillAppear(_ev) {
+            void cutout.refresh();
+            void this.render();
+        }
+        async onKeyDown(ev) {
+            if (!obs.connected) {
+                await ev.action.showAlert();
+                return;
+            }
+            try {
+                await cutout.toggle();
+            }
+            catch (err) {
+                this.log.error(`cutout toggle failed: ${err}`);
+                await ev.action.showAlert();
+            }
+            void this.render();
+        }
+        async render() {
+            const uri = face({
+                state: !obs.connected ? "offline" : cutout.active ? "active" : "idle",
+                tint: "camera",
+                glyph: GLYPHS.person,
+                label: "CUTOUT",
+            });
             for (const a of this.actions)
                 void a.setImage(uri);
         }
@@ -15723,28 +15852,6 @@ let SceneScreenCam = (() => {
         art(p) {
             return screenCamArt(p);
         }
-    });
-    return _classThis;
-})();
-let SceneCamCutout = (() => {
-    let _classDecorators = [action({ UUID: "com.blessdog.obs-control-room.scene-cam-cutout" })];
-    let _classDescriptor;
-    let _classExtraInitializers = [];
-    let _classThis;
-    let _classSuper = SceneKey;
-    (class extends _classSuper {
-        static { _classThis = this; }
-        static {
-            const _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create(_classSuper[Symbol.metadata] ?? null) : void 0;
-            __esDecorate(null, _classDescriptor = { value: _classThis }, _classDecorators, { kind: "class", name: _classThis.name, metadata: _metadata }, null, _classExtraInitializers);
-            _classThis = _classDescriptor.value;
-            if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
-            __runInitializers(_classThis, _classExtraInitializers);
-        }
-        tint = "camera";
-        scene = SCENES.camCutout;
-        label = "CUTOUT";
-        glyph = GLYPHS.person;
     });
     return _classThis;
 })();
@@ -16492,6 +16599,7 @@ streamDeck.actions.registerAction(new React());
 streamDeck.actions.registerAction(new Normal());
 streamDeck.actions.registerAction(new Takeaway());
 streamDeck.actions.registerAction(new Chapter());
+streamDeck.actions.registerAction(new Cutout());
 streamDeck.actions.registerAction(new MuteMic());
 streamDeck.actions.registerAction(new Pause());
 streamDeck.actions.registerAction(new Shot());
@@ -16503,7 +16611,6 @@ streamDeck.actions.registerAction(new SceneStartingSoon());
 streamDeck.actions.registerAction(new SceneScreenLeft());
 streamDeck.actions.registerAction(new SceneScreenRight());
 streamDeck.actions.registerAction(new SceneCam());
-streamDeck.actions.registerAction(new SceneCamCutout());
 streamDeck.actions.registerAction(new SceneScreenCam());
 streamDeck.actions.registerAction(new SceneLavaLounge());
 streamDeck.actions.registerAction(new SceneMeFloat());

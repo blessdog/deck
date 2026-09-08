@@ -145,10 +145,10 @@
    ]
   },
   {
-   "Name": "Scene: Cam Cutout",
-   "UUID": "com.blessdog.obs-control-room.scene-cam-cutout",
+   "Name": "Cutout",
+   "UUID": "com.blessdog.obs-control-room.cutout",
    "Icon": "imgs/actions/scene/icon",
-   "Tooltip": "Cut to the background-removed camera cutout scene. The on-air scene's key lights up.",
+   "Tooltip": "Toggle the background cutout on the shared camera: whatever scene is up, Ryan floats free of the room. Lit while on; NORMAL also turns it off.",
    "Controllers": [
     "Keypad"
    ],

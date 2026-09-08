@@ -130,7 +130,7 @@ in the Stream Deck app under category **"OBS Control Room"**:
 
 | Action | Behavior |
 |---|---|
-| **Camera Picker** | Cycles the shared Camera source between physical cameras (iPhone Continuity ↔ built-in FaceTime HD). Face shows which is live; switches the cutout's Camera FX in lockstep. |
+| **Camera Picker** | Cycles the shared Camera source between physical cameras (iPhone Continuity ↔ built-in FaceTime HD). Face shows which is live; switches Camera FX (Lava's cutout) and Camera Raw (the ISO) in lockstep. |
 | **Meeting Mode** | *Screen + Cam* + OBS Virtual Camera on/off — then pick "OBS Virtual Camera" in Zoom/Meet. |
 | **Record** | Toggle the OBS recording (cold-starts OBS if dead). Amber ⏺ + elapsed while rolling. Corpus doctrine: recordings pile up in `~/Movies`; processing is a separate, later act. Since 2026-09-03 every recording also writes a **camera ISO** — `~/Movies/iso/<same stamp>-cam.mp4`, camera + mic only, via Source Record on the shared Camera input (`obs/add-look.mjs iso`) — so reframing is an edit decision in Resolve, not a re-shoot. |
 | **Mute Mic** | Toggle the shared `Mic` input. Face follows OBS's own mute event (never lies): white open mic = hot, red slashed mic = muted. |
@@ -287,7 +287,7 @@ actual picture. Check here first.
 | Symptom | Cause | Fix |
 |---|---|---|
 | **Screen share shows the desktop wallpaper — no windows, not even desktop icons** | The ScreenCaptureKit stream inside OBS has died (measured 2026-09-03: after a night of sleep/wake with OBS left running, no permission change). OBS never rebuilds a stream whose settings did not change. **It does not go black**, and every check passes. The 2026-08-01 diagnosis blamed a stale Screen Recording grant; the toggle only worked because it made you relaunch OBS. | The plugin rebuilds every screen stream on OBS connect and on system wake (`plugin/src/screen-heal.ts`); by hand: `node obs/heal-screens.mjs`, then `node obs/check-screens.mjs`. If a rebuild does not recover, the grant fallback is System Settings → Privacy & Security → Screen & System Audio Recording → toggle OBS off then on, relaunch OBS. |
-| **Camera bubble missing; Cam / Cam Cutout black** | The Camera input points at a Continuity Camera device that no longer exists — the IDs are per-phone, so swapping handsets orphans every camera scene. The source resolves to 0x0 and simply doesn't draw. | Self-healing since 2026-08-01: `camera-picker` re-points Camera and Camera FX on every OBS connect and logs a warning. If it ever can't, press the Camera Picker key. |
+| **Camera bubble missing; Cam / Cam Cutout black** | The Camera input points at a Continuity Camera device that no longer exists — the IDs are per-phone, so swapping handsets orphans every camera scene. The source resolves to 0x0 and simply doesn't draw. | Self-healing since 2026-08-01: `camera-picker` re-points Camera, Camera FX and Camera Raw on every OBS connect and logs a warning. If it ever can't, press the Camera Picker key. |
 | **Black bars down the sides of a screen share** | The built-in MacBook panel is 3456x2234 (aspect 1.547) and the canvas is 16:9 — fitting the whole screen inside it letterboxes. Measured 125px of pure black each side. The external monitor is natively 16:9, so only one screen looks wrong. | `node obs/add-look.mjs screens` — crops each capture to canvas aspect before fitting, biased to trim the top (menu bar) so the loss lands on chrome, not content. Nothing is upscaled. |
 | **A screen scene's snapshot is blank / transparent while the deck and OBS look fine** | macOS Screen Capture only delivers frames while its scene is on program. An inactive screen scene renders nothing, which is indistinguishable from the stale grant above. | Put the scene on program before shooting (`obs/check-screens.mjs` does), or press its key first. |
 | **`check-cutout.mjs` fails (0.000) or the cutout snapshot shows the room through a person-shaped hole, while the CUTOUT key looks fine** | The background-removal mask only refreshes while Camera FX is actively rendering; a screenshot of the inactive scene composites a stale or missing mask over a fresh frame (measured 2026-09-08, `knowledge/cutout-mask-is-stale-while-inactive.md`). | The check now puts Cam Cutout on program for 2 s before measuring and restores program after; it never switches while recording. |
@@ -302,7 +302,7 @@ checks alone. What it proves:
 
 1. `scripts/check-deck.mjs` → every key resolves, every action is on a key, every key has a VERIFY sentence.
 2. `obs/check-screens.mjs` → Screen L and Screen R match the OS's own capture (not wallpaper).
-3. `obs/check-cutout.mjs` → the Cam Cutout scene has an alpha hole.
+3. `obs/check-cutout.mjs` → the CUTOUT latch cuts Cam on and releases off, the ISO recorder is off the latched Camera, and Cam Cutout (Lava) has its hole.
 4. `obs/check-float.mjs` → Me + Float is a card over the camera.
 
 What only a press can prove is the VERIFY sentence on each key in

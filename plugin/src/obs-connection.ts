@@ -52,6 +52,7 @@ export type ObsEvents = {
 	InputMuteStateChanged: [{ inputName: string; inputMuted: boolean }];
 	InputVolumeChanged: [{ inputName: string; inputVolumeMul: number; inputVolumeDb: number }];
 	MediaInputPlaybackEnded: [{ inputName: string }];
+	SourceFilterEnableStateChanged: [{ sourceName: string; filterName: string; filterEnabled: boolean }];
 };
 
 const FORWARDED = [
@@ -63,6 +64,7 @@ const FORWARDED = [
 	"InputMuteStateChanged",
 	"InputVolumeChanged",
 	"MediaInputPlaybackEnded",
+	"SourceFilterEnableStateChanged",
 ] as const;
 
 const RETRY_MS = 3_000;

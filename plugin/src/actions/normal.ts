@@ -1,17 +1,20 @@
 import { action, KeyDownEvent, SingletonAction, WillAppearEvent } from "@elgato/streamdeck";
 import streamDeck from "@elgato/streamdeck";
 import { cues } from "../cues";
+import { cutout } from "../cutout";
 import { obs } from "../obs-connection";
 import { face, GLYPHS } from "../key-face";
 
 /**
- * NORMAL — the way out of any cue. Takes down any overlay (TAKEAWAY banner,
- * CHAPTER sting), restores the shot and transition that were saved when a
- * cue began, and forgets the cue. It never starts or stops a
- * recording and never touches the mic: only cue-owned state is restored.
+ * NORMAL — the way out of any cue or look. Takes down any overlay (TAKEAWAY
+ * banner, CHAPTER sting), releases the CUTOUT latch so the room is back,
+ * restores the shot and transition that were saved when a cue began, and
+ * forgets the cue. It never starts or stops a recording and never touches
+ * the mic: only cue-owned and look-owned state is restored.
  *
- * Lit only while a cue holds the program. Dim means pressing does nothing,
- * and that is the honest face — there is no "normal" to go back to.
+ * Lit only while a cue, an overlay or the cutout holds the program. Dim means
+ * pressing does nothing, and that is the honest face — there is no "normal"
+ * to go back to.
  */
 @action({ UUID: "com.blessdog.obs-control-room.normal" })
 export class Normal extends SingletonAction {
@@ -22,6 +25,7 @@ export class Normal extends SingletonAction {
 		obs.on("connected", () => void this.render());
 		obs.on("disconnected", () => void this.render());
 		cues.on("changed", () => void this.render());
+		cutout.on("changed", () => void this.render());
 	}
 
 	override onWillAppear(_ev: WillAppearEvent): void {
@@ -29,12 +33,13 @@ export class Normal extends SingletonAction {
 	}
 
 	override async onKeyDown(ev: KeyDownEvent): Promise<void> {
-		if (!obs.connected || (!cues.active && !cues.anyOverlay)) {
+		if (!obs.connected || (!cues.active && !cues.anyOverlay && !cutout.active)) {
 			await ev.action.showAlert();
 			return;
 		}
 		try {
 			await cues.hideAllOverlays("normal pressed");
+			if (cutout.active) await cutout.apply(false);
 			const restored = await cues.restore("normal pressed");
 			if (restored) await ev.action.showOk();
 		} catch (err) {
@@ -45,7 +50,7 @@ export class Normal extends SingletonAction {
 	}
 
 	private async render(): Promise<void> {
-		const lit = obs.connected && (cues.active !== undefined || cues.anyOverlay);
+		const lit = obs.connected && (cues.active !== undefined || cues.anyOverlay || cutout.active);
 		const uri = face({ state: lit ? "idle" : "offline", tint: "camera", glyph: GLYPHS.house });
 		for (const a of this.actions) void a.setImage(uri);
 	}

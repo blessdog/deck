@@ -4,7 +4,7 @@ kind: verdict
 conflict-key: which-background-removal-model-runs-the-cutout
 status: live
 supersedes: [cutout-model-is-selfie-segmentation]
-scope: obs-mac-backgroundremoval 0.3.6 (andrewleejenkins fork, filter kind mac_vision_filter) on the Camera FX input, OBS 32.2.2, macOS 26.6.1, M-series Mac, 1920x1080 @ 30 fps, iPhone 14 Pro Continuity camera
+scope: obs-mac-backgroundremoval 0.3.6 (andrewleejenkins fork, filter kind mac_vision_filter) on Camera FX (always on, Lava) and on the shared Camera (the CUTOUT latch, after Camera ISO), OBS 32.2.2, macOS 26.6.1, M-series Mac, 1920x1080 @ 30 fps, iPhone 14 Pro Continuity camera
 evidence: evidence/2026-09-08/cutout-vision-bakeoff.png (selfie_segmentation vs Vision balanced vs Vision accurate, same scene, minutes apart)
 verified-on: 2026-09-08
 asked-as:
@@ -15,6 +15,8 @@ asked-as:
   - which filter is on Camera FX
   - background removal too slow
   - mac_vision_filter settings
+  - cutout in any scene
+  - cutout key is a toggle not a scene
 ---
 
 **The cutout runs Apple's Vision person segmentation through the
@@ -43,8 +45,10 @@ wants strand-level hair, that is a matting network (bria was the cleanest and
 unusable live at 0.3 fps — see the archived claim), not a Vision knob.
 
 How to apply: `obs/lib/cutout.mjs` is the one place the filter and its settings
-are named; `obs/add-look.mjs cutout` installs or repairs it, `obs/setup-scenes.mjs`
-builds it fresh. The royshil filter stays on Camera FX, disabled, so the
+are named; `obs/add-look.mjs cutout` installs or repairs it on both inputs,
+`obs/setup-scenes.mjs` builds it fresh. On the shared Camera it is DISABLED
+until the CUTOUT key latches it (`plugin/src/cutout.ts`), and it is pinned
+after the Camera ISO recorder so the ISO file stays the raw room. The royshil filter stays on Camera FX, disabled, so the
 2026-09-02 bake-off can be re-run if a premise changes.
 
 Related: [[macos-background-replacement-is-not-a-per-scene-cutout]].

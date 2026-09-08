@@ -16,7 +16,7 @@
  * shape, so adding the tenth costs exactly what the first did.
  */
 import { connect } from './lib/obs.mjs';
-import { VISION_KIND, VISION_FILTER_NAME, VISION_SETTINGS } from './lib/cutout.mjs';
+import { SHARED_CAMERA, CUTOUT_CAMERA, ISO_CAMERA, ISO_FILTER_KIND, installCutout, ensureIsoCamera, latchIsIsolatedFromIso } from './lib/cutout.mjs';
 import { existsSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -327,35 +327,38 @@ async function react(W, H) {
  *   Vision accurate, scale 1.0  30 fps   5.3 ms          tight but stair-stepped
  *
  * The Protected Region (a box that is never cut) is OFF: nothing sits in
- * front of Ryan. The old royshil filter is left in place, disabled, so the
+ * front of Ryan. The old royshil filter is left on Camera FX, disabled, so the
  * 2026-09-02 bake-off can be re-run if a premise changes.
+ *
+ * Since 2026-09-08 the same filter also sits on the SHARED Camera, disabled:
+ * the CUTOUT key latches it on, so whatever scene Ryan is in — Cam, Screen +
+ * Cam, Me + Float, React — becomes a cutout in place. Ryan: "hit cutout in
+ * whatever scene I'm in, and it cuts out the background. Just has me
+ * free-floating in it." Camera FX (always on) stays as Lava Lounge's substrate.
+ * The Camera ISO recorder lives on its own Camera Raw input, never on the
+ * latched Camera (see cameraIso below), so the ISO file stays the raw room.
  * knowledge/cutout-runs-on-apple-vision.md
  */
 async function cutout() {
-  const sourceName = 'Camera FX';
-  const { filters } = await obs.call('GetSourceFilterList', { sourceName });
+  const { filters } = await obs.call('GetSourceFilterList', { sourceName: CUTOUT_CAMERA });
   for (const f of filters) {
     if (f.filterKind === 'chroma_key_filter_v2') {
-      await obs.call('RemoveSourceFilter', { sourceName, filterName: f.filterName });
+      await obs.call('RemoveSourceFilter', { sourceName: CUTOUT_CAMERA, filterName: f.filterName });
       console.log(`removed ${f.filterName} (no green screen here)`);
     }
     if (f.filterKind === 'background_removal' && f.filterEnabled) {
-      await obs.call('SetSourceFilterEnabled', { sourceName, filterName: f.filterName, filterEnabled: false });
+      await obs.call('SetSourceFilterEnabled', { sourceName: CUTOUT_CAMERA, filterName: f.filterName, filterEnabled: false });
       console.log(`disabled ${f.filterName} (superseded by Apple Vision, 2026-09-08)`);
     }
   }
-  const { sourceFilterKinds } = await obs.call('GetSourceFilterKindList');
-  if (!sourceFilterKinds.includes(VISION_KIND)) {
-    throw new Error('mac_vision_filter is not loaded: install obs-mac-backgroundremoval (README → Cutout) and restart OBS');
+  const fx = await installCutout(obs, CUTOUT_CAMERA, { enabled: true });
+  console.log(`${CUTOUT_CAMERA}: Mac Vision ON (Apple Vision, balanced) — chain ${fx.join(' → ')}`);
+  const cam = await installCutout(obs, SHARED_CAMERA, { enabled: false });
+  console.log(`${SHARED_CAMERA}: Mac Vision installed, OFF until the CUTOUT key — chain ${cam.join(' → ')}`);
+  if (!(await latchIsIsolatedFromIso(obs))) {
+    console.error(`✖ the Camera ISO recorder is on ${SHARED_CAMERA} (or missing from ${ISO_CAMERA}): the ISO would record the cutout. Run: node obs/add-look.mjs iso`);
+    process.exit(1);
   }
-  const existing = filters.find((f) => f.filterKind === VISION_KIND);
-  if (existing) {
-    await obs.call('SetSourceFilterSettings', { sourceName, filterName: existing.filterName, filterSettings: VISION_SETTINGS });
-    await obs.call('SetSourceFilterEnabled', { sourceName, filterName: existing.filterName, filterEnabled: true });
-  } else {
-    await obs.call('CreateSourceFilter', { sourceName, filterName: VISION_FILTER_NAME, filterKind: VISION_KIND, filterSettings: VISION_SETTINGS });
-  }
-  console.log('Camera FX: Mac Vision ON (Apple Vision person segmentation, balanced).');
 }
 
 /**
@@ -363,15 +366,27 @@ async function cutout() {
  *
  * Ryan edits several snippets together in Resolve, and a camera track that is
  * separate from the screen means every reframe (bubble ↔ full-bleed ↔ cutout)
- * is an edit decision, not a re-shoot. Exeldro's Source Record 0.4.8 filter on
- * the shared Camera input records whenever the MAIN recording runs (mode 3),
- * with the same Apple VT h264 + AAC the main file uses, so ingest already
- * understands it. Files land in <record dir>/iso/ with a -cam suffix. Mic is
- * carried on the ISO too, so the file cuts on its own.
+ * is an edit decision, not a re-shoot. Exeldro's Source Record 0.4.8 filter
+ * records whenever the MAIN recording runs (mode 3), with the same Apple VT
+ * h264 + AAC the main file uses, so ingest already understands it.
+ *
+ * It records the Camera RAW input, not the shared Camera. Measured 2026-09-08:
+ * with the CUTOUT latch on, an ISO recorded from the shared Camera was also a
+ * cutout (near-black 0.797 in main and ISO alike). Source Record renders its
+ * parent source with every filter on it, so no filter order protects the ISO;
+ * only a separate input does. Camera Raw is the same device, parked hidden in
+ * the Rig scene, and the Camera Picker re-points it with the other two.
  */
 async function cameraIso() {
-  const sourceName = 'Camera';
+  await ensureIsoCamera(obs);
+  const sourceName = ISO_CAMERA;
   const filterName = 'Camera ISO';
+  // A recorder left on the latched Camera would record the cutout: take it off.
+  const { filters: onShared } = await obs.call('GetSourceFilterList', { sourceName: SHARED_CAMERA });
+  for (const f of onShared.filter((f) => f.filterKind === ISO_FILTER_KIND)) {
+    await obs.call('RemoveSourceFilter', { sourceName: SHARED_CAMERA, filterName: f.filterName });
+    console.log(`removed ${f.filterName} from ${SHARED_CAMERA} (the ISO records ${ISO_CAMERA} now)`);
+  }
   const { recordDirectory } = await obs.call('GetRecordDirectory');
   const settings = {
     record_mode: 3, // OUTPUT_MODE_RECORDING — follows the main recording
@@ -393,7 +408,7 @@ async function cameraIso() {
   } else {
     await obs.call('CreateSourceFilter', { sourceName, filterName, filterKind: 'source_record_filter', filterSettings: settings });
   }
-  console.log(`Camera ISO: records to ${settings.path} whenever the main recording runs.`);
+  console.log(`Camera ISO: records ${sourceName} to ${settings.path} whenever the main recording runs.`);
 }
 
 /**

@@ -52,7 +52,7 @@ export const ACTIONS = {
 	screenRight: ["scene-screen-right", "Scene: Screen R"],
 	screenCam: ["scene-screen-cam", "Scene: Screen + Cam"],
 	cam: ["scene-cam", "Scene: Cam"],
-	cutout: ["scene-cam-cutout", "Scene: Cam Cutout"],
+	cutout: ["cutout", "Cutout"],
 	lava: ["scene-lava-lounge", "Scene: Lava Lounge"],
 	// rectum page — the clipper (~/projects/rectum). These keys shell out to
 	// its CLI; the plugin owns the face, rectum owns capture and the library.
@@ -203,7 +203,7 @@ export const VERIFY = {
 	pause: "Press mid-recording, press again; the finished file plays through both halves.",
 	mark: "Press twice while recording; ffprobe shows two chapters.",
 	react: "Hold; program slides to the React close-up and the key lights. Release; the shot you were on comes back. A fast tap does the same and never strands the close-up.",
-	normal: "Hold REACT, press a scene key, release REACT: program stays on that scene. Hold REACT and press NORMAL: the saved shot comes back, NORMAL goes dim and REACT stops glowing.",
+	normal: "Hold REACT, press a scene key, release REACT: program stays on that scene. Hold REACT and press NORMAL: the saved shot comes back, NORMAL goes dim and REACT stops glowing. With CUTOUT latched, NORMAL also puts the room back and CUTOUT goes dim.",
 	mute: "Press; OBS mixer shows Mic muted and the key turns red.",
 	takeaway: "Press; a dark banner with the line from ~/Movies/takeaway.txt slides onto the bottom of program and is gone about 4 s later. Press twice fast; it stays up once, not twice.",
 	chapter: "Press while recording; a cyan bar wipes across program with a whoosh and ffprobe shows a chapter at that timecode. Press when not recording; the wipe plays, no error.",
@@ -219,8 +219,8 @@ export const VERIFY = {
 	screenRight: "Press; program shows the RIGHT monitor with real windows.",
 	screenCam: "Press; screen with the camera bubble bottom-left.",
 	cam: "Press; full camera.",
-	cutout: "Press; Ryan on a transparent background, no room (obs/check-cutout.mjs).",
-	lava: "Press; lava lamp behind the cutout.",
+	cutout: "Press on Cam, Screen + Cam or Me + Float; the room vanishes around Ryan in THAT shot and the key lights. Press again; the room is back. Pressed on a screen-only scene it arms silently and shows the moment a camera scene goes up. The ISO file stays the raw room (obs/check-cutout.mjs).",
+	lava: "Press; lava lamp behind the cutout (its own always-on Camera FX, not the CUTOUT latch).",
 	rectumLeft: "Press, press again; the rectum library gains a clip of the left monitor.",
 	rectumRight: "Press, press again; the rectum library gains a clip of the right monitor.",
 	rectumCrop: "Press after a rectum recording; the crop proposal opens.",

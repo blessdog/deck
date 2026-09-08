@@ -4,7 +4,7 @@ kind: verdict
 conflict-key: how-the-camera-track-is-kept-separate-from-the-screen
 status: live
 supersedes: []
-scope: OBS 32.2.2 + Source Record 0.4.8 filter on the shared Camera input, hybrid MP4 main recording, Apple VT h264
+scope: OBS 32.2.2 + Source Record 0.4.8 filter on the Camera Raw input (moved off the shared Camera 2026-09-08 — see cutout-is-a-latch-on-the-shared-camera), hybrid MP4 main recording, Apple VT h264
 evidence: 12 s test 2026-09-03 — ~/Movies/2026-09-03_14-41-39.mp4 (11.83 s, h264 1080p, 4 AAC tracks) and ~/Movies/iso/2026-09-03_14-41-39-cam.mp4 (11.50 s, h264 1080p, 1 AAC)
 verified-on: 2026-09-03
 asked-as:
@@ -32,3 +32,9 @@ The ISO starts ~0.3 s after the main file (11.50 vs 11.83 s on the test);
 ingest aligns on the shared timestamp name, not on frame count.
 
 Related: [[the-deck-ends-at-the-mp4]].
+
+**Amended 2026-09-08:** the recorder now sits on `Camera Raw`, a third open of
+the same device parked in the hidden `Rig` scene, because a Source Record on
+the shared Camera records every filter on it — with the CUTOUT latch on, the
+ISO was a cutout too. Mechanism and numbers in
+[[cutout-is-a-latch-on-the-shared-camera]].

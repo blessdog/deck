@@ -17,7 +17,7 @@
  * unless --force is passed (--force wipes and rebuilds its scenes).
  */
 import { connect, displayUUIDs } from './lib/obs.mjs';
-import { VISION_KIND, VISION_FILTER_NAME, VISION_SETTINGS } from './lib/cutout.mjs';
+import { installCutout, ensureIsoCamera } from './lib/cutout.mjs';
 
 const COLLECTION = 'Control Room';
 const FORCE = process.argv.includes('--force');
@@ -169,12 +169,9 @@ try {
     inputKind: 'av_capture_input_v2',
     inputSettings: cam ? { device: cam.itemValue, use_preset: true } : {},
   });
-  await obs.call('CreateSourceFilter', {
-    sourceName: 'Camera FX',
-    filterName: VISION_FILTER_NAME,
-    filterKind: VISION_KIND,
-    filterSettings: VISION_SETTINGS,
-  });
+  await installCutout(obs, 'Camera FX', { enabled: true });
+  await installCutout(obs, 'Camera', { enabled: false }); // the CUTOUT key latches this one
+  await ensureIsoCamera(obs); // Camera Raw, hidden in Rig: what the Camera ISO records (add-look.mjs camera-iso)
   await obs.call('CreateInput', {
     sceneName: 'Lava Lounge',
     inputName: 'Lava Lamp',
