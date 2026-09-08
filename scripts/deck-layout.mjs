@@ -35,6 +35,8 @@ export const ACTIONS = {
 	mark: ["mark", "Mark"],
 	react: ["react", "React (hold)"],
 	normal: ["normal", "Normal"],
+	takeaway: ["takeaway", "Takeaway"],
+	chapter: ["chapter", "Chapter"],
 	mute: ["mute-mic", "Mute Mic"],
 	pause: ["pause", "Pause Recording"],
 	shot: ["shot", "Screenshot"],
@@ -71,7 +73,7 @@ export const ACTIONS = {
 export const XL = [
 	// c0          c1          c2           c3     c4         c5          c6       c7
 	[null, null, null, null, "soon", "brb", "ending", "record"], //       row 0 — far
-	[null, null, "zoomOut", null, "react", "normal", "reveal", "pause"], // row 1 — gutter, five exceptions
+	["takeaway", "chapter", "zoomOut", null, "react", "normal", "reveal", "pause"], // row 1 — was the gutter; now the cue row
 	["screenLeft", "screenRight", "screenCam", null, "cam", "cutout", "float", "lava"], // row 2
 	["mark", "mute", "zoomIn", null, "camera", "meeting", "shot", "pageNext"], // row 3 — near; 7,3 is the app's own page key
 ];
@@ -80,6 +82,10 @@ export const XL = [
 // REACT and NORMAL (2026-09-08) sit directly above CAM and CUTOUT: the camera
 // block's own row, found by touch from the CAM key. CHOSEN, not measured — if
 // REACT earns its place mid-sentence, a row-3 key should yield to it.
+// TAKEAWAY and CHAPTER (2026-09-08) take row 1 c0–c1, beside ZOOM −, so row 1
+// reads as the cue row: things you do TO the shot, above the shots themselves.
+// CHOSEN; the "full gutter row" of the design note above is gone — column 3
+// stays dark as the tactile landmark between the screen and camera blocks.
 // No SP-404 pad keys. Ryan, 2026-09-08: "i have the sp-404 as the trigger.
 // There's no sense in having a redundant key that plays on the stream deck."
 // The three that lived at row 0 c0–c2 for one evening are in archive/sp-pad-keys.
@@ -199,6 +205,8 @@ export const VERIFY = {
 	react: "Hold; program slides to the React close-up and the key lights. Release; the shot you were on comes back. A fast tap does the same and never strands the close-up.",
 	normal: "Hold REACT, press a scene key, release REACT: program stays on that scene. Hold REACT and press NORMAL: the saved shot comes back, NORMAL goes dim and REACT stops glowing.",
 	mute: "Press; OBS mixer shows Mic muted and the key turns red.",
+	takeaway: "Press; a dark banner with the line from ~/Movies/takeaway.txt slides onto the bottom of program and is gone about 4 s later. Press twice fast; it stays up once, not twice.",
+	chapter: "Press while recording; a cyan bar wipes across program with a whoosh and ffprobe shows a chapter at that timecode. Press when not recording; the wipe plays, no error.",
 	camera: "Press; the Cam scene switches iPhone ↔ FaceTime.",
 	meeting: "Press; OBS Virtual Camera appears in a Zoom/Meet camera list.",
 	shot: "Press; Finder reveals a PNG of what was on program.",

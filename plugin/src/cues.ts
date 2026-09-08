@@ -27,13 +27,20 @@ export type Cue = {
 	savedTransition: string;
 };
 
+/** A nested overlay scene currently shown in some program scene. */
+export type Overlay = { owner: string; scene: string; sceneItemId: number; timer?: NodeJS.Timeout };
+
 class Cues extends EventEmitter<{ changed: [Cue | undefined] }> {
 	private readonly log = streamDeck.logger.createScope("cues");
 	private cue: Cue | undefined;
+	private readonly overlays = new Map<string, Overlay>();
 
 	constructor() {
 		super();
-		obs.on("disconnected", () => this.clear("disconnected"));
+		obs.on("disconnected", () => {
+			this.clear("disconnected");
+			this.forgetOverlays("disconnected");
+		});
 		// Any scene change that is not onto the cue's own scene means someone
 		// else took the program. The cue is over; nothing to restore.
 		obs.on("CurrentProgramSceneChanged", ({ sceneName }) => {
@@ -109,6 +116,69 @@ class Cues extends EventEmitter<{ changed: [Cue | undefined] }> {
 		this.log.info(`cue ${this.cue.owner} cleared: ${reason}`);
 		this.cue = undefined;
 		this.emit("changed", undefined);
+	}
+
+	// ------------------------------------------------------------ overlays
+	// TAKEAWAY and CHAPTER do not borrow the program; they put a nested scene
+	// item on top of it for a while. The item lives in the scene that was on
+	// program at press time, and that is where it is hidden again — even if
+	// Ryan has moved to another scene by then, so nothing is left lit behind.
+
+	overlayActive(owner: string): boolean {
+		return this.overlays.has(owner);
+	}
+
+	get anyOverlay(): boolean {
+		return this.overlays.size > 0;
+	}
+
+	/**
+	 * Show `overlayScene` (a nested scene item) in the current program scene.
+	 * Showing again while shown hides first, so media restarts and a timer
+	 * restarts instead of stacking. `holdMs` hides it automatically; omit for
+	 * "until told" (a media source ending, or NORMAL).
+	 */
+	async showOverlay(owner: string, overlayScene: string, holdMs?: number): Promise<void> {
+		await this.hideOverlay(owner, "restart");
+		const { currentProgramSceneName: scene } = await obs.call("GetCurrentProgramScene");
+		let sceneItemId: number;
+		try {
+			({ sceneItemId } = await obs.call("GetSceneItemId", { sceneName: scene, sourceName: overlayScene }));
+		} catch {
+			throw new Error(`${scene} has no ${overlayScene} overlay (run obs/setup-cues.mjs)`);
+		}
+		await obs.call("SetSceneItemEnabled", { sceneName: scene, sceneItemId, sceneItemEnabled: true });
+		const overlay: Overlay = { owner, scene, sceneItemId };
+		if (holdMs) overlay.timer = setTimeout(() => void this.hideOverlay(owner, `${holdMs} ms up`), holdMs);
+		this.overlays.set(owner, overlay);
+		this.log.info(`${owner}: ${overlayScene} up in ${scene}`);
+		this.emit("changed", this.cue);
+	}
+
+	async hideOverlay(owner: string, reason: string): Promise<void> {
+		const o = this.overlays.get(owner);
+		if (!o) return;
+		if (o.timer) clearTimeout(o.timer);
+		this.overlays.delete(owner);
+		this.emit("changed", this.cue);
+		try {
+			await obs.call("SetSceneItemEnabled", { sceneName: o.scene, sceneItemId: o.sceneItemId, sceneItemEnabled: false });
+			this.log.info(`${owner}: down (${reason})`);
+		} catch (err) {
+			this.log.warn(`${owner}: could not hide in ${o.scene}: ${err}`);
+		}
+	}
+
+	async hideAllOverlays(reason: string): Promise<void> {
+		for (const owner of [...this.overlays.keys()]) await this.hideOverlay(owner, reason);
+	}
+
+	/** OBS is gone: nothing to hide, just stop believing anything is up. */
+	private forgetOverlays(reason: string): void {
+		for (const o of this.overlays.values()) if (o.timer) clearTimeout(o.timer);
+		if (this.overlays.size) this.log.info(`overlays forgotten: ${reason}`);
+		this.overlays.clear();
+		this.emit("changed", this.cue);
 	}
 }
 

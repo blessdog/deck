@@ -406,6 +406,36 @@
    ],
    "Tooltip": "Cancel any performance cue and restore the saved shot and transition.",
    "UUID": "com.blessdog.obs-control-room.normal"
+  },
+  {
+   "Name": "Takeaway",
+   "UUID": "com.blessdog.obs-control-room.takeaway",
+   "Icon": "imgs/actions/mark/icon",
+   "Tooltip": "Show the lower banner (text from <record dir>/takeaway.txt) over the current shot for 4 s.",
+   "Controllers": [
+    "Keypad"
+   ],
+   "States": [
+    {
+     "Image": "imgs/actions/mark/key",
+     "ShowTitle": false
+    }
+   ]
+  },
+  {
+   "Name": "Chapter",
+   "UUID": "com.blessdog.obs-control-room.chapter",
+   "Icon": "imgs/actions/mark/icon",
+   "Tooltip": "Play the chapter sting over the current shot and, while recording, drop a chapter marker in the file.",
+   "Controllers": [
+    "Keypad"
+   ],
+   "States": [
+    {
+     "Image": "imgs/actions/mark/key",
+     "ShowTitle": false
+    }
+   ]
   }
  ]
 }

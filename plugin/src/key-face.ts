@@ -192,6 +192,12 @@ export const GLYPHS = {
 	react:
 		"M72 58 m-14 0 a14 14 0 1 0 28 0 a14 14 0 1 0 -28 0 M46 104 a26 24 0 0 1 52 0 Z " +
 		"M22 22 h26 v8 H30 v18 h-8 Z M96 22 h26 v26 h-8 V30 H96 Z M22 84 h8 v18 h18 v8 H22 Z M114 84 h8 v26 H96 v-8 h18 Z",
+	/** A lower banner: the frame with a plate across its bottom third. */
+	takeaway:
+		"M18 30 h108 a8 8 0 0 1 8 8 v64 a8 8 0 0 1 -8 8 H18 a8 8 0 0 1 -8 -8 V38 a8 8 0 0 1 8 -8 Z M26 38 h92 v34 H26 Z",
+	/** A chapter: a page with two lines and a ribbon cut into its foot. */
+	chapter:
+		"M30 24 h84 v92 l-42 -22 l-42 22 Z M46 44 h52 v8 H46 Z M46 60 h52 v8 H46 Z",
 } as const;
 
 export type Face = {

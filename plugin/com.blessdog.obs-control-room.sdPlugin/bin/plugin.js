@@ -13900,6 +13900,9 @@ const SCENES = {
     ending: "Ending",
     /** The REACT punch-in: shared Camera scaled past the canvas (obs/add-look.mjs react). */
     react: "React",
+    /** Overlay scenes nested (hidden) in every speaking scene (obs/setup-cues.mjs). */
+    takeaway: "Takeaway",
+    chapter: "Chapter",
 };
 const FORWARDED = [
     "StreamStateChanged",
@@ -13909,6 +13912,7 @@ const FORWARDED = [
     "InputSettingsChanged",
     "InputMuteStateChanged",
     "InputVolumeChanged",
+    "MediaInputPlaybackEnded",
 ];
 const RETRY_MS = 3_000;
 const NOT_READY = 207; // obs-websocket: socket is up before OBS finishes init
@@ -14325,6 +14329,10 @@ const GLYPHS = {
     /** A face inside viewfinder corners — the REACT punch-in (hold for a closer shot). */
     react: "M72 58 m-14 0 a14 14 0 1 0 28 0 a14 14 0 1 0 -28 0 M46 104 a26 24 0 0 1 52 0 Z " +
         "M22 22 h26 v8 H30 v18 h-8 Z M96 22 h26 v26 h-8 V30 H96 Z M22 84 h8 v18 h18 v8 H22 Z M114 84 h8 v26 H96 v-8 h18 Z",
+    /** A lower banner: the frame with a plate across its bottom third. */
+    takeaway: "M18 30 h108 a8 8 0 0 1 8 8 v64 a8 8 0 0 1 -8 8 H18 a8 8 0 0 1 -8 -8 V38 a8 8 0 0 1 8 -8 Z M26 38 h92 v34 H26 Z",
+    /** A chapter: a page with two lines and a ribbon cut into its foot. */
+    chapter: "M30 24 h84 v92 l-42 -22 l-42 22 Z M46 44 h52 v8 H46 Z M46 60 h52 v8 H46 Z",
 };
 const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 /** Rough width estimate, for shrinking a label until it fits the key. */
@@ -14699,9 +14707,13 @@ let Mark = (() => {
 class Cues extends EventEmitter$2 {
     log = streamDeck.logger.createScope("cues");
     cue;
+    overlays = new Map();
     constructor() {
         super();
-        obs.on("disconnected", () => this.clear("disconnected"));
+        obs.on("disconnected", () => {
+            this.clear("disconnected");
+            this.forgetOverlays("disconnected");
+        });
         // Any scene change that is not onto the cue's own scene means someone
         // else took the program. The cue is over; nothing to restore.
         obs.on("CurrentProgramSceneChanged", ({ sceneName }) => {
@@ -14780,12 +14792,78 @@ class Cues extends EventEmitter$2 {
         this.cue = undefined;
         this.emit("changed", undefined);
     }
+    // ------------------------------------------------------------ overlays
+    // TAKEAWAY and CHAPTER do not borrow the program; they put a nested scene
+    // item on top of it for a while. The item lives in the scene that was on
+    // program at press time, and that is where it is hidden again — even if
+    // Ryan has moved to another scene by then, so nothing is left lit behind.
+    overlayActive(owner) {
+        return this.overlays.has(owner);
+    }
+    get anyOverlay() {
+        return this.overlays.size > 0;
+    }
+    /**
+     * Show `overlayScene` (a nested scene item) in the current program scene.
+     * Showing again while shown hides first, so media restarts and a timer
+     * restarts instead of stacking. `holdMs` hides it automatically; omit for
+     * "until told" (a media source ending, or NORMAL).
+     */
+    async showOverlay(owner, overlayScene, holdMs) {
+        await this.hideOverlay(owner, "restart");
+        const { currentProgramSceneName: scene } = await obs.call("GetCurrentProgramScene");
+        let sceneItemId;
+        try {
+            ({ sceneItemId } = await obs.call("GetSceneItemId", { sceneName: scene, sourceName: overlayScene }));
+        }
+        catch {
+            throw new Error(`${scene} has no ${overlayScene} overlay (run obs/setup-cues.mjs)`);
+        }
+        await obs.call("SetSceneItemEnabled", { sceneName: scene, sceneItemId, sceneItemEnabled: true });
+        const overlay = { owner, scene, sceneItemId };
+        if (holdMs)
+            overlay.timer = setTimeout(() => void this.hideOverlay(owner, `${holdMs} ms up`), holdMs);
+        this.overlays.set(owner, overlay);
+        this.log.info(`${owner}: ${overlayScene} up in ${scene}`);
+        this.emit("changed", this.cue);
+    }
+    async hideOverlay(owner, reason) {
+        const o = this.overlays.get(owner);
+        if (!o)
+            return;
+        if (o.timer)
+            clearTimeout(o.timer);
+        this.overlays.delete(owner);
+        this.emit("changed", this.cue);
+        try {
+            await obs.call("SetSceneItemEnabled", { sceneName: o.scene, sceneItemId: o.sceneItemId, sceneItemEnabled: false });
+            this.log.info(`${owner}: down (${reason})`);
+        }
+        catch (err) {
+            this.log.warn(`${owner}: could not hide in ${o.scene}: ${err}`);
+        }
+    }
+    async hideAllOverlays(reason) {
+        for (const owner of [...this.overlays.keys()])
+            await this.hideOverlay(owner, reason);
+    }
+    /** OBS is gone: nothing to hide, just stop believing anything is up. */
+    forgetOverlays(reason) {
+        for (const o of this.overlays.values())
+            if (o.timer)
+                clearTimeout(o.timer);
+        if (this.overlays.size)
+            this.log.info(`overlays forgotten: ${reason}`);
+        this.overlays.clear();
+        this.emit("changed", this.cue);
+    }
 }
 const cues = new Cues();
 
 /**
- * NORMAL — the way out of any cue. Restores the shot and transition that were
- * saved when the cue began, and forgets the cue. It never starts or stops a
+ * NORMAL — the way out of any cue. Takes down any overlay (TAKEAWAY banner,
+ * CHAPTER sting), restores the shot and transition that were saved when a
+ * cue began, and forgets the cue. It never starts or stops a
  * recording and never touches the mic: only cue-owned state is restored.
  *
  * Lit only while a cue holds the program. Dim means pressing does nothing,
@@ -14817,11 +14895,12 @@ let Normal = (() => {
             void this.render();
         }
         async onKeyDown(ev) {
-            if (!obs.connected || !cues.active) {
+            if (!obs.connected || (!cues.active && !cues.anyOverlay)) {
                 await ev.action.showAlert();
                 return;
             }
             try {
+                await cues.hideAllOverlays("normal pressed");
                 const restored = await cues.restore("normal pressed");
                 if (restored)
                     await ev.action.showOk();
@@ -14833,7 +14912,8 @@ let Normal = (() => {
             void this.render();
         }
         async render() {
-            const uri = face({ state: obs.connected && cues.active ? "idle" : "offline", tint: "camera", glyph: GLYPHS.house });
+            const lit = obs.connected && (cues.active !== undefined || cues.anyOverlay);
+            const uri = face({ state: lit ? "idle" : "offline", tint: "camera", glyph: GLYPHS.house });
             for (const a of this.actions)
                 void a.setImage(uri);
         }
@@ -14928,6 +15008,161 @@ let React = (() => {
         async render() {
             const state = !obs.connected ? "offline" : cues.active?.owner === "react" ? "active" : "idle";
             const uri = face({ state, tint: "camera", glyph: GLYPHS.react });
+            for (const a of this.actions)
+                void a.setImage(uri);
+        }
+    });
+    return _classThis;
+})();
+
+/** How long the banner stays up. CHOSEN starting value from the plan; tune on a finished take. */
+const HOLD_MS = 4_000;
+/**
+ * TAKEAWAY — show the lower banner over the current shot for a few seconds,
+ * then take it down. The words come from <record dir>/takeaway.txt, read live
+ * by the OBS text source, so the line is prepared before the take and the deck
+ * never carries text. A second press while the banner is up restarts the hold
+ * rather than stacking; NORMAL takes it down early.
+ *
+ * The banner is a nested "Takeaway" scene item that obs/setup-cues.mjs places
+ * hidden in every speaking scene; the key enables the item in whatever scene
+ * is on program. A scene with no such item (a title card) alerts.
+ */
+let Takeaway = (() => {
+    let _classDecorators = [action({ UUID: "com.blessdog.obs-control-room.takeaway" })];
+    let _classDescriptor;
+    let _classExtraInitializers = [];
+    let _classThis;
+    let _classSuper = SingletonAction;
+    (class extends _classSuper {
+        static { _classThis = this; }
+        static {
+            const _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create(_classSuper[Symbol.metadata] ?? null) : void 0;
+            __esDecorate(null, _classDescriptor = { value: _classThis }, _classDecorators, { kind: "class", name: _classThis.name, metadata: _metadata }, null, _classExtraInitializers);
+            _classThis = _classDescriptor.value;
+            if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
+            __runInitializers(_classThis, _classExtraInitializers);
+        }
+        log = streamDeck.logger.createScope("takeaway");
+        constructor() {
+            super();
+            obs.on("connected", () => void this.render());
+            obs.on("disconnected", () => void this.render());
+            cues.on("changed", () => void this.render());
+        }
+        onWillAppear(_ev) {
+            void this.render();
+        }
+        async onKeyDown(ev) {
+            if (!obs.connected) {
+                await ev.action.showAlert();
+                return;
+            }
+            try {
+                await cues.showOverlay("takeaway", SCENES.takeaway, HOLD_MS);
+            }
+            catch (err) {
+                this.log.error(`takeaway failed: ${err}`);
+                await ev.action.showAlert();
+            }
+            void this.render();
+        }
+        async render() {
+            const state = !obs.connected ? "offline" : cues.overlayActive("takeaway") ? "active" : "idle";
+            const uri = face({ state, tint: "mark", glyph: GLYPHS.takeaway });
+            for (const a of this.actions)
+                void a.setImage(uri);
+        }
+    });
+    return _classThis;
+})();
+
+/** The media source inside the Chapter overlay scene (obs/setup-cues.mjs). */
+const STING_INPUT = "Chapter Sting";
+/** If the media-ended event never arrives, the overlay comes down anyway. */
+const SAFETY_MS = 3_000;
+/**
+ * CHAPTER — a subject change you can see and find later: the sting wipes over
+ * the current shot with its whoosh, and, while recording, a chapter marker
+ * lands in the MP4 at the same moment. Not recording: the sting still plays,
+ * there is simply no file for the marker to live in.
+ *
+ * The sting is a media source with alpha played OVER the shot, not a scene
+ * transition — a chapter break is usually the same shot before and after, and
+ * OBS cannot transition a scene to itself. It restarts from frame one on each
+ * show and the overlay hides itself when the media reports it has ended, so a
+ * second press mid-sting restarts rather than stacks.
+ */
+let Chapter = (() => {
+    let _classDecorators = [action({ UUID: "com.blessdog.obs-control-room.chapter" })];
+    let _classDescriptor;
+    let _classExtraInitializers = [];
+    let _classThis;
+    let _classSuper = SingletonAction;
+    (class extends _classSuper {
+        static { _classThis = this; }
+        static {
+            const _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create(_classSuper[Symbol.metadata] ?? null) : void 0;
+            __esDecorate(null, _classDescriptor = { value: _classThis }, _classDecorators, { kind: "class", name: _classThis.name, metadata: _metadata }, null, _classExtraInitializers);
+            _classThis = _classDescriptor.value;
+            if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
+            __runInitializers(_classThis, _classExtraInitializers);
+        }
+        log = streamDeck.logger.createScope("chapter");
+        recording = false;
+        constructor() {
+            super();
+            obs.on("connected", () => void this.refresh());
+            obs.on("disconnected", () => {
+                this.recording = false;
+                void this.render();
+            });
+            obs.on("RecordStateChanged", ({ outputActive }) => {
+                this.recording = outputActive;
+                void this.render();
+            });
+            obs.on("MediaInputPlaybackEnded", ({ inputName }) => {
+                if (inputName === STING_INPUT)
+                    void cues.hideOverlay("chapter", "sting ended");
+            });
+            cues.on("changed", () => void this.render());
+        }
+        onWillAppear(_ev) {
+            void this.refresh();
+        }
+        async onKeyDown(ev) {
+            if (!obs.connected) {
+                await ev.action.showAlert();
+                return;
+            }
+            try {
+                if (this.recording) {
+                    const t = fmtDuration((await obs.call("GetRecordStatus")).outputDuration);
+                    await obs.call("CreateRecordChapter", { chapterName: `chapter ${t}` });
+                }
+                await cues.showOverlay("chapter", SCENES.chapter, SAFETY_MS);
+            }
+            catch (err) {
+                this.log.error(`chapter failed: ${err}`);
+                await ev.action.showAlert();
+            }
+            void this.render();
+        }
+        async refresh() {
+            if (obs.connected) {
+                try {
+                    this.recording = (await obs.call("GetRecordStatus")).outputActive;
+                }
+                catch {
+                    /* keep last known */
+                }
+            }
+            void this.render();
+        }
+        async render() {
+            const state = !obs.connected ? "offline" : cues.overlayActive("chapter") ? "active" : "idle";
+            // The recording timecode is the only text: it says a marker WILL land.
+            const uri = face({ state, tint: "mark", glyph: GLYPHS.chapter, sub: this.recording ? "marks" : undefined });
             for (const a of this.actions)
                 void a.setImage(uri);
         }
@@ -16255,6 +16490,8 @@ streamDeck.actions.registerAction(new Record());
 streamDeck.actions.registerAction(new Mark());
 streamDeck.actions.registerAction(new React());
 streamDeck.actions.registerAction(new Normal());
+streamDeck.actions.registerAction(new Takeaway());
+streamDeck.actions.registerAction(new Chapter());
 streamDeck.actions.registerAction(new MuteMic());
 streamDeck.actions.registerAction(new Pause());
 streamDeck.actions.registerAction(new Shot());

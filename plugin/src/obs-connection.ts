@@ -31,6 +31,9 @@ export const SCENES = {
 	ending: "Ending",
 	/** The REACT punch-in: shared Camera scaled past the canvas (obs/add-look.mjs react). */
 	react: "React",
+	/** Overlay scenes nested (hidden) in every speaking scene (obs/setup-cues.mjs). */
+	takeaway: "Takeaway",
+	chapter: "Chapter",
 } as const;
 
 /** `x` is the display's left edge in global desktop space — smallest x is the
@@ -48,6 +51,7 @@ export type ObsEvents = {
 	InputSettingsChanged: [{ inputName: string; inputSettings: Record<string, unknown> }];
 	InputMuteStateChanged: [{ inputName: string; inputMuted: boolean }];
 	InputVolumeChanged: [{ inputName: string; inputVolumeMul: number; inputVolumeDb: number }];
+	MediaInputPlaybackEnded: [{ inputName: string }];
 };
 
 const FORWARDED = [
@@ -58,6 +62,7 @@ const FORWARDED = [
 	"InputSettingsChanged",
 	"InputMuteStateChanged",
 	"InputVolumeChanged",
+	"MediaInputPlaybackEnded",
 ] as const;
 
 const RETRY_MS = 3_000;
