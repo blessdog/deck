@@ -3,7 +3,7 @@
 
 # deck — STATE
 
-*Generated 2026-09-08 14:02 from git, the knowledge store, and this project's own status script. Nothing here is typed by hand, so nothing here can be stale.*
+*Generated 2026-09-08 14:56 from git, the knowledge store, and this project's own status script. Nothing here is typed by hand, so nothing here can be stale.*
 
 ## What is open
 
@@ -26,7 +26,7 @@ Every `kind: open` claim in the store. These are PLANS, not specs — `proven: f
 The full index. Query it before choosing any technique — `find-technique.py "<your situation>"` — rather than reading it. Every claim declares the questions that must find it, and `check-retrieval.py` asserts they do.
 
 ```
-KNOWLEDGE — 14 live claims: 14 from this project (/Users/SSDrive/projects/mediaStudio/deck/knowledge), 0 universal (~/.claude/knowledge/store)
+KNOWLEDGE — 15 live claims: 15 from this project (/Users/SSDrive/projects/mediaStudio/deck/knowledge), 0 universal (~/.claude/knowledge/store)
 Query before choosing any technique:  python3 ~/.claude/knowledge/bin/find-technique.py "<your situation>"
 
 LAWS — absolute, no exceptions
@@ -39,10 +39,13 @@ LAWS — absolute, no exceptions
 VERDICTS — measured, and SCOPED; check the scope before reusing
   · camera-iso-rides-along-with-every-recording OBS 32.2.2 + Source Record 0.4.8 filter on the shared Camera input, hybrid MP4 main record
   · cutout-mask-is-stale-while-inactive royshil obs-backgroundremoval 1.1.13 (selfie_segmentation, CoreML) on the Camera FX input,
-  · cutout-model-is-selfie-segmentation royshil obs-backgroundremoval 1.1.13 on CoreML, OBS 32.2.2, M-series Mac, 1920x1080 @ 30 f
+  · cutout-runs-on-apple-vision obs-mac-backgroundremoval 0.3.6 (andrewleejenkins fork, filter kind mac_vision_filter) on 
   · screen-capture-renders-only-while-active OBS 32.2.2 macOS Screen Capture (ScreenCaptureKit) sources; GetSourceScreenshot over obs-w
   · screen-capture-streams-die-overnight OBS 32.2.x macOS Screen Capture (ScreenCaptureKit) on macOS 26, this Mac, OBS left running
   · speaking-looks-need-shared-audio Control Room on OBS 32.2.2, Cam Cutout and Me + Float audio placement, 2026-09-08
+
+REFUTED — already tried, do NOT retry
+  ✗ macos-background-replacement-is-not-a-per-scene-cutout macOS Video Effects are a property of the camera feed as an app receives it, not of an OBS scene. Ba
 
 OPEN — plans, NOT specs. proven: false. Do not build against these.
   ? check-cutout-passes-a-camera-that-renders-nothin Why it matters: A dead Camera FX reads 0.997 transparent, the same as an empty room with a
@@ -63,6 +66,10 @@ OPEN — plans, NOT specs. proven: false. Do not build against these.
 *From git. The full narrative lives in `docs/journal/`; commit subjects are written as search bait, so `git log --grep` is the index.*
 
 ```
+2026-09-08  ae5d08e  cutout: Apple Vision (obs-mac-backgroundremoval) replaces selfie_segmentation — the 256px mask stretch was the wobble
+2026-09-08  7997183  STATE.md: regenerated after TAKEAWAY and CHAPTER
+2026-09-08  0977276  docs: TAKEAWAY and CHAPTER built as overlays; the sting asset's drawbox/VP9 failure and the ffmpeg command that works
+2026-09-08  4d188c1  plugin: TAKEAWAY banner and CHAPTER sting+marker as overlays nested in every speaking scene
 2026-09-08  fa90e30  STATE.md: regenerated after the SP-404 trigger law
 2026-09-08  f97dd8c  LAW: the SP-404 is its own trigger — pad keys off the deck, archived with the reason
 2026-09-08  a7401d5  bookmark: midi.ts probe Output churn, tidy on next rebuild
@@ -71,13 +78,23 @@ OPEN — plans, NOT specs. proven: false. Do not build against these.
 2026-09-08  05d7670  plugin: SP-404 Pad keys fire pads over USB MIDI in-process (@julusian/midi, 0.05 ms) with bank/pad as layout settings
 2026-09-08  0762dc3  STATE.md: regenerated after REACT/NORMAL and the cutout stale-mask verdict
 2026-09-08  c089903  knowledge: screen-capture verdict points at the cutout stale-mask sibling; bookmark check-cutout blind to a dead camera
-2026-09-08  ee78d4b  check-cutout: exercise Cam Cutout on program before measuring — the background-removal mask is stale while inactive (0.000 / 0.727 inactive vs 0.999 live)
-2026-09-08  b1c5cec  cues: a failed switch clears the cue so NORMAL and REACT never light for nothing; NORMAL verify sentence says what the faces actually do
-2026-09-08  88d4beb  docs: REACT/NORMAL installed; correct the Elgato OBS plugin row (it IS installed, a Scene Transition key sat at 4,1)
-2026-09-08  c1a3674  plugin: REACT hold-to-close-up and NORMAL cue reset, with the React look and a shared cue store
 ```
 
-*Remote: `https://github.com/blessdog/deck.git` — `master` is pushed.*
+### ⚠ UNPUSHED
+
+**1 commit(s) ahead of `origin/master`.** Committed is not the same as safe — a commit that has not left this machine has the durability of the disk it is on.
+
+```
+git push origin master
+```
+
+### Uncommitted
+
+```
+ M STATE.md
+```
+
+*Uncommitted is not learned. Commit at the moment of learning.*
 
 ---
 
