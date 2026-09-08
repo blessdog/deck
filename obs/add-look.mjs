@@ -16,6 +16,7 @@
  * shape, so adding the tenth costs exactly what the first did.
  */
 import { connect } from './lib/obs.mjs';
+import { VISION_KIND, VISION_FILTER_NAME, VISION_SETTINGS } from './lib/cutout.mjs';
 import { existsSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -312,21 +313,23 @@ async function react(W, H) {
 
 /**
  * CUTOUT — make the background-removed camera actually remove the background.
- * Measured 2026-09-02: the Camera FX source had Background Removal disabled
- * and a green-screen Chroma Key enabled. There is no green screen; the key
- * punched holes in a house plant and left Ryan in the room. The remover is
- * royshil obs-backgroundremoval 1.1.13 (kind `background_removal`); on Apple
- * Silicon it runs on CoreML.
  *
- * MODEL, measured 2026-09-02 on the Cam Cutout scene with Ryan in frame
- * (evidence/2026-09-02/cutout-model-bakeoff.png, GetStats over 8 s each):
+ * The remover is Apple's Vision person segmentation, via
+ * obs-mac-backgroundremoval 0.3.6 (andrewleejenkins fork, notarized; filter
+ * kind `mac_vision_filter`). It replaced royshil obs-backgroundremoval on
+ * 2026-09-08: that plugin's only 30 fps model, selfie_segmentation, is a
+ * 256x256 mask stretched over 1920x1080, and the stretch IS the wobbly halo
+ * Ryan saw. Measured on the Cam Cutout scene with Ryan in frame
+ * (evidence/2026-09-08/cutout-vision-bakeoff.png, GetStats over 8 s each):
  *
- *   selfie_segmentation   30.0 fps   0/241 skipped   11.8 ms render   clean edge
- *   rvm_mobilenetv3_fp32  27.1 fps  21/240 skipped   36.6 ms          clean, but holes on some frames
- *   bria_rmbg_1_4_qint8    0.3 fps 267/269 skipped 3640 ms            cleanest, unusable live
- *   mediapipe / SINet / pphumanseg — room showed through or face destroyed
+ *   selfie_segmentation 256px   30 fps  13.0 ms render   soft halo, room fringe on hair and shoulders
+ *   Vision balanced, scale 0.5  30 fps   2.8 ms          tight, smooth edge          <- this
+ *   Vision accurate, scale 1.0  30 fps   5.3 ms          tight but stair-stepped
  *
- * selfie_segmentation is the only one that costs nothing at 30 fps.
+ * The Protected Region (a box that is never cut) is OFF: nothing sits in
+ * front of Ryan. The old royshil filter is left in place, disabled, so the
+ * 2026-09-02 bake-off can be re-run if a premise changes.
+ * knowledge/cutout-runs-on-apple-vision.md
  */
 async function cutout() {
   const sourceName = 'Camera FX';
@@ -336,28 +339,23 @@ async function cutout() {
       await obs.call('RemoveSourceFilter', { sourceName, filterName: f.filterName });
       console.log(`removed ${f.filterName} (no green screen here)`);
     }
+    if (f.filterKind === 'background_removal' && f.filterEnabled) {
+      await obs.call('SetSourceFilterEnabled', { sourceName, filterName: f.filterName, filterEnabled: false });
+      console.log(`disabled ${f.filterName} (superseded by Apple Vision, 2026-09-08)`);
+    }
   }
-  const settings = {
-    useGPU: 'coreml',
-    model_select: 'models/selfie_segmentation.onnx',
-    threshold: 0.5,
-    contour_filter: 0.05,
-    smooth_contour: 0.5,
-    feather: 0.05,
-    temporal_smooth_factor: 0.85,
-    mask_every_x_frames: 1,
-    enable_threshold: true,
-    enable_image_similarity: false,
-    numThreads: 1,
-  };
-  const existing = filters.find((f) => f.filterKind === 'background_removal');
+  const { sourceFilterKinds } = await obs.call('GetSourceFilterKindList');
+  if (!sourceFilterKinds.includes(VISION_KIND)) {
+    throw new Error('mac_vision_filter is not loaded: install obs-mac-backgroundremoval (README → Cutout) and restart OBS');
+  }
+  const existing = filters.find((f) => f.filterKind === VISION_KIND);
   if (existing) {
-    await obs.call('SetSourceFilterSettings', { sourceName, filterName: existing.filterName, filterSettings: settings });
+    await obs.call('SetSourceFilterSettings', { sourceName, filterName: existing.filterName, filterSettings: VISION_SETTINGS });
     await obs.call('SetSourceFilterEnabled', { sourceName, filterName: existing.filterName, filterEnabled: true });
   } else {
-    await obs.call('CreateSourceFilter', { sourceName, filterName: 'Background Removal', filterKind: 'background_removal', filterSettings: settings });
+    await obs.call('CreateSourceFilter', { sourceName, filterName: VISION_FILTER_NAME, filterKind: VISION_KIND, filterSettings: VISION_SETTINGS });
   }
-  console.log('Camera FX: Background Removal ON (coreml, selfie_segmentation).');
+  console.log('Camera FX: Mac Vision ON (Apple Vision person segmentation, balanced).');
 }
 
 /**

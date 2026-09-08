@@ -60,9 +60,10 @@ under."* One session, every dead key measured, and the repo renamed `deck`.
 
 - **Tried:** six background-removal models, live, with Ryan in frame.
   **Happened:** bria was cleanest at 0.3 fps; rvm ate his face on some frames;
-  mediapipe let the room through. **Verdict (measured):** `selfie_segmentation`,
-  the only one at 30 fps with zero skipped frames —
-  `knowledge/cutout-model-is-selfie-segmentation.md`.
+  mediapipe let the room through. **Verdict (measured, retired 2026-09-08):**
+  `selfie_segmentation`, the only one at 30 fps with zero skipped frames —
+  now `knowledge/archive/cutout-model-is-selfie-segmentation.md`; the tighter
+  remover that replaced it is below.
 
   ![model bake-off](evidence/2026-09-02/cutout-model-bakeoff.png)
 
@@ -268,7 +269,12 @@ the actions above + the HOME shell plan. Kept for reference.)*
 2. **YouTube live enablement** (~16 subs is fine — desktop encoder streaming has no
    subscriber minimum): YouTube Studio → Go Live → verify phone → wait ≤24 h.
    Then copy the stream key and run `node obs/set-stream-key.mjs <KEY>`.
-3. **Stream Deck**: the layout is written from the repo — edit
+3. **Cutout plugin**: `obs-mac-backgroundremoval` 0.3.6 (andrewleejenkins
+   fork, notarized) — download the `.pkg` from its GitHub releases, run it
+   with OBS quit, relaunch, then `node obs/add-look.mjs cutout`. The royshil
+   `obs-backgroundremoval` plugin may stay installed; its filter sits on
+   Camera FX disabled.
+4. **Stream Deck**: the layout is written from the repo — edit
    `scripts/deck-layout.mjs`, then `node scripts/build-profile.mjs`. Never drag
    keys in the Stream Deck app; that's how the deck and the code drift apart.
 

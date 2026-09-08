@@ -17,6 +17,7 @@
  * unless --force is passed (--force wipes and rebuilds its scenes).
  */
 import { connect, displayUUIDs } from './lib/obs.mjs';
+import { VISION_KIND, VISION_FILTER_NAME, VISION_SETTINGS } from './lib/cutout.mjs';
 
 const COLLECTION = 'Control Room';
 const FORCE = process.argv.includes('--force');
@@ -158,22 +159,21 @@ try {
   console.log(`Camera bubble: ${bw}x${bh} bottom-right`);
 
   // ---- Lava Lounge: bongpot lamp loop + background-removed camera ----
-  // The cutout needs its OWN camera input: background_removal outputs black
-  // with empty settings, and applied to a scene it renders a black silhouette.
+  // The cutout needs its OWN camera input: a remover filter on the shared
+  // Camera would cut every scene. The remover is Apple Vision person
+  // segmentation (obs-mac-backgroundremoval, kind mac_vision_filter); the
+  // settings live in lib/cutout.mjs so add-look.mjs installs the same thing.
   await obs.call('CreateInput', {
     sceneName: 'Cam Cutout',
     inputName: 'Camera FX',
     inputKind: 'av_capture_input_v2',
     inputSettings: cam ? { device: cam.itemValue, use_preset: true } : {},
   });
-  const { defaultFilterSettings } = await obs.call('GetSourceFilterDefaultSettings', {
-    filterKind: 'background_removal',
-  });
   await obs.call('CreateSourceFilter', {
     sourceName: 'Camera FX',
-    filterName: 'Background Removal',
-    filterKind: 'background_removal',
-    filterSettings: { ...defaultFilterSettings, threshold: 0.4 },
+    filterName: VISION_FILTER_NAME,
+    filterKind: VISION_KIND,
+    filterSettings: VISION_SETTINGS,
   });
   await obs.call('CreateInput', {
     sceneName: 'Lava Lounge',

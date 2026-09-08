@@ -2,7 +2,7 @@
 id: cutout-model-is-selfie-segmentation
 kind: verdict
 conflict-key: which-background-removal-model-runs-the-cutout
-status: live
+status: superseded
 supersedes: []
 scope: royshil obs-backgroundremoval 1.1.13 on CoreML, OBS 32.2.2, M-series Mac, 1920x1080 @ 30 fps, iPhone Continuity camera
 evidence: evidence/2026-09-02/cutout-model-bakeoff.png
