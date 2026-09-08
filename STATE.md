@@ -3,7 +3,7 @@
 
 # deck — STATE
 
-*Generated 2026-09-08 15:16 from git, the knowledge store, and this project's own status script. Nothing here is typed by hand, so nothing here can be stale.*
+*Generated 2026-09-08 16:00 from git, the knowledge store, and this project's own status script. Nothing here is typed by hand, so nothing here can be stale.*
 
 ## What is open
 
@@ -29,10 +29,11 @@ Every `kind: open` claim in the store. These are PLANS, not specs — `proven: f
 The full index. Query it before choosing any technique — `find-technique.py "<your situation>"` — rather than reading it. Every claim declares the questions that must find it, and `check-retrieval.py` asserts they do.
 
 ```
-KNOWLEDGE — 17 live claims: 17 from this project (/Users/SSDrive/projects/mediaStudio/deck/knowledge), 0 universal (~/.claude/knowledge/store)
+KNOWLEDGE — 18 live claims: 18 from this project (/Users/SSDrive/projects/mediaStudio/deck/knowledge), 0 universal (~/.claude/knowledge/store)
 Query before choosing any technique:  python3 ~/.claude/knowledge/bin/find-technique.py "<your situation>"
 
 LAWS — absolute, no exceptions
+  · deleted-keys-stay-deleted: I've deleted some of the Stream Deck keys that were a waste of space that I
   · recording-friction-is-the-product: The deck exists to make starting a snippet recording cost nothing. Every key
   · the-deck-ends-at-the-mp4: The deck stops at the MP4. It never hands a file downstream. The one
   · the-sp-404-is-its-own-trigger: i have the sp-404 as the trigger. There's no sense in having a redundant key
@@ -71,6 +72,10 @@ OPEN — plans, NOT specs. proven: false. Do not build against these.
 *From git. The full narrative lives in `docs/journal/`; commit subjects are written as search bait, so `git log --grep` is the index.*
 
 ```
+2026-09-08  69e090a  obs: refuseIfRecording shared in lib — set-transition and check-cutout refuse while a take rolls
+2026-09-08  d08212e  obs: Move transition settings — position None in/out, Fade for matched/in/out (Nutty's recipe); zoom already off in 3.2.1
+2026-09-08  660a5de  deck: TAKEAWAY, CHAPTER, NORMAL, LAVA retired — Ryan deleted them; RETIRED set + check-deck gate stop build-profile resurrecting them
+2026-09-08  bc83ee8  STATE.md: regenerated
 2026-09-08  629382b  plugin: cutout latch field renamed — a private 'on' shadowed EventEmitter.on() and crashed the plugin on start
 2026-09-08  2eb3136  STATE.md: regenerated after the CUTOUT latch and the Camera Raw ISO split
 2026-09-08  1f5e8aa  CUTOUT is a latch on the shared Camera, not a scene; the camera ISO moves to its own Camera Raw input
@@ -79,19 +84,23 @@ OPEN — plans, NOT specs. proven: false. Do not build against these.
 2026-09-08  7997183  STATE.md: regenerated after TAKEAWAY and CHAPTER
 2026-09-08  0977276  docs: TAKEAWAY and CHAPTER built as overlays; the sting asset's drawbox/VP9 failure and the ffmpeg command that works
 2026-09-08  4d188c1  plugin: TAKEAWAY banner and CHAPTER sting+marker as overlays nested in every speaking scene
-2026-09-08  fa90e30  STATE.md: regenerated after the SP-404 trigger law
-2026-09-08  f97dd8c  LAW: the SP-404 is its own trigger — pad keys off the deck, archived with the reason
-2026-09-08  a7401d5  bookmark: midi.ts probe Output churn, tidy on next rebuild
-2026-09-08  e663a46  STATE.md: regenerated after the SP-404 pad keys
 ```
 
 ### ⚠ UNPUSHED
 
-**5 commit(s) ahead of `origin/master`.** Committed is not the same as safe — a commit that has not left this machine has the durability of the disk it is on.
+**9 commit(s) ahead of `origin/master`.** Committed is not the same as safe — a commit that has not left this machine has the durability of the disk it is on.
 
 ```
 git push origin master
 ```
+
+### Uncommitted
+
+```
+ M STATE.md
+```
+
+*Uncommitted is not learned. Commit at the moment of learning.*
 
 ---
 
