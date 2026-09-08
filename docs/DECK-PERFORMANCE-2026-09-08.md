@@ -39,7 +39,7 @@ Installed/configured is not the same as tested by pressing a key.
 | Audio scene coverage | LOCAL, before repair: Me + Float has Mic but no SP/App Audio; Cam Cutout contains only Camera FX | Sound cues cannot be considered ready across camera looks. Repair and exercise coverage first. |
 | Frame rate | LOCAL: saved profile initially suggested 24 fps; after launch, `GetVideoSettings` reports 30/1 fps | Live OBS resolves the discrepancy: author against 30 fps and recheck at export. Recording cadence was not changed. |
 | Replay | LOCAL: `AdvOut.RecRB=false`, stored duration 20 s | Save-last-moment is a new feature, not an existing working button. |
-| Elgato OBS plugin | LOCAL: OBS-side StreamDeckPlugin exists; no standalone official OBS action package found in the inspected user plugin directory | Earlier documents saying its deck actions are installed need rechecking; the OBS bridge alone does not prove that. |
+| Elgato OBS plugin | LOCAL, corrected later the same day: `com.elgato.obsstudio.sdPlugin` IS in the Stream Deck plugins directory, and a hand-placed "Scene Transition" key from it sat on XL key 4,1 (found when the REACT layout write replaced it) | The stock actions are available for reuse. The earlier "not found" row inspected the wrong directory. |
 | Ableton/MIDI deck plugins | LOCAL: no Trevligaspel MIDI or the previously named Ableton loader found in that directory | Verify current installation before making either a dependency. |
 | SP library | LOCAL: sibling `ABLETON/blessdog/phase8_sp404` has conversion, provenance, staging and transfer code | Reuse that library owner. Do not start a second sample database in OBS. |
 
@@ -72,6 +72,32 @@ Evidence: [before](../evidence/2026-09-08/audio-coverage-before.json),
 [recording check and exact OBS-returned path](../evidence/2026-09-08/audio-recording-check.json).
 The test recording is retained; no recordings were deleted. The previous program
 scene was restored after the exercise.
+
+### Order 1 built: REACT + NORMAL (later on 2026-09-08)
+
+Installed, machine-verified, and waiting for Ryan's press. `plugin/src/cues.ts`
+holds the one saved shot and transition that any cue must give back;
+`actions/react.ts` is a momentary key (key-down captures and switches, key-up
+restores only if the program is still on React, and awaits the key-down
+round-trip so a fast tap cannot strand the close-up); `actions/normal.ts`
+restores whatever the cue holds and is lit only while a cue is live. The React
+scene is `obs/add-look.mjs react`: the shared Camera at 1.4x (CHOSEN, not
+measured — Center Stage upscale costs sharpness, his eyes decide) with
+Mic/SP-404/App Audio placed by the builder. Keys sit at 4,1 and 5,1, directly
+above CAM and CUTOUT.
+
+Machine-verified: plugin builds; `check-deck.mjs` green (25 actions, all
+reachable, all with VERIFY sentences); the scene has Camera, Mic, SP-404, App
+Audio; `setup-audio.mjs --dry-run` lists React among nine speaking scenes and
+proposes nothing; program was Screen L before and after the snapshot pass.
+Evidence: [Cam](../evidence/2026-09-08/react-cam.png) and
+[React](../evidence/2026-09-08/react-react.png), same camera, nobody in frame.
+
+Not yet proven, only a press can: hold/release timing under the 350 ms Move; a
+release before the transition finishes; scene key during a hold; recording
+staying active across a reaction. Prior art searched first: the official Elgato
+OBS plugin has no hold-to-switch, OBS hotkeys are toggles only, and Advanced
+Scene Switcher can do it through a keyboard hotkey macro with no key-face state.
 
 ## What the controls would actually do
 

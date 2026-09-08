@@ -28,3 +28,23 @@ The proposed sequence is REACT/NORMAL, the SP recording bank, TAKEAWAY/CHAPTER,
 combined cues, and SAVE LAST. The report separates vendor capabilities, local
 measurements and proposed behavior so the next session can implement the cues
 without mistaking this research for already-installed actions.
+
+## Later the same day: REACT and NORMAL installed
+
+Searched before building: no hold-to-switch in the official Elgato OBS plugin,
+none in OBS's own hotkeys, and Advanced Scene Switcher only through a keyboard
+hotkey macro. The plugin already sees key-up and owns the key faces, so the cue
+went in there: one shared cue store, a momentary REACT key, a NORMAL key that
+only lights while something needs undoing. The React scene reuses the shared
+Camera at 1.4x so Move slides the shot and the camera ISO keeps rolling.
+
+Two edges were designed in rather than found: a fast tap (key-up before the
+capture round-trip returns) awaits the key-down promise, and a scene key pressed
+mid-hold drops the cue instead of dragging the program back on release.
+
+The profile write replaced a hand-placed Elgato "Scene Transition" key at 4,1,
+which also proved the official OBS action package is installed — the morning's
+audit row said it was not. Corrected in the report. Whether that key was in use
+is Ryan's to say; putting it back is one drag in the Stream Deck app.
+
+Everything a machine can check is green. Everything that matters is a press.

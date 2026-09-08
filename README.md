@@ -133,6 +133,8 @@ in the Stream Deck app under category **"OBS Control Room"**:
 | **Meeting Mode** | *Screen + Cam* + OBS Virtual Camera on/off — then pick "OBS Virtual Camera" in Zoom/Meet. |
 | **Record** | Toggle the OBS recording (cold-starts OBS if dead). Amber ⏺ + elapsed while rolling. Corpus doctrine: recordings pile up in `~/Movies`; processing is a separate, later act. Since 2026-09-03 every recording also writes a **camera ISO** — `~/Movies/iso/<same stamp>-cam.mp4`, camera + mic only, via Source Record on the shared Camera input (`obs/add-look.mjs iso`) — so reframing is an edit decision in Resolve, not a re-shoot. |
 | **Mute Mic** | Toggle the shared `Mic` input. Face follows OBS's own mute event (never lies): white open mic = hot, red slashed mic = muted. |
+| **React (hold)** | Hold: the shot slides (Move, 350 ms) to the **React** close-up — the same shared Camera at 1.4x; release: back to the shot you were on. The saved shot lives in `plugin/src/cues.ts`, so a scene key pressed mid-hold ends the reaction instead of dragging you back on release, and a fast tap never strands the close-up. Camera ISO is untouched. Built 2026-09-08; awaiting Ryan's press. |
+| **Normal** | The way out of any cue: restores the shot and transition saved when the cue began and forgets the cue. Lit only while a cue holds the program. Never touches record or mic. |
 | **Mark** | While recording: drops an OBS **chapter marker** into the file itself, named with the record timecode. No daemon, no DB — ffprobe reads chapters back at ingest (verified: media-studio `scripts/verify_record_chapters.py`; OBS auto-adds a `Start` chapter at 0, ingest skips it). Dim + alert when not recording. |
 | **Pause** | Pause/resume the running recording (`ToggleRecordPause`). Dim when nothing is recording; face follows OBS's own pause events. |
 | **Shot** | PNG of what is on program into `<record dir>/OBS Shots/`, revealed in Finder. |
@@ -170,7 +172,7 @@ the app never creates `~/Library/Application Support/com.elgato.StreamDeck/NodeJ
 
 ## Scenes
 
-`Starting Soon` · `Screen L` · `Screen R` · `Cam` · `Cam Cutout` · `Lava Lounge` · `Screen + Cam` (camera bubble bottom-right) · **`Me + Float`** (full-bleed camera, share as a card lower-right) · **`BRB`** · `Ending`
+`Starting Soon` · `Screen L` · `Screen R` · `Cam` · `Cam Cutout` · `Lava Lounge` · `Screen + Cam` (camera bubble bottom-right) · **`Me + Float`** (full-bleed camera, share as a card lower-right) · **`BRB`** · `Ending` · **`React`** (the shared Camera at 1.4x — the close-up the REACT key holds; `obs/add-look.mjs react`)
 
 Scene transition is **Move** (Exeldro, 350 ms) since 2026-09-03, so the camera slides between looks instead of cutting (`obs/set-transition.mjs`).
 
@@ -183,11 +185,11 @@ once, every scene follows.
 section is `obs/`, the clipper keys' glue is `rectum/`, `ableton/` is reserved.
 Bitfocus Companion is dead and never comes back.
 
-**The deck, as it sits (21 keys on XL page 1, `check-deck.mjs` green):**
+**The deck, as it sits (23 keys on XL page 1, `check-deck.mjs` green):**
 
 ```
    ·        ·        ·        ·      SOON     BRB    ENDING   RECORD    row 0 — far
-   ·        ·     ZOOM −      ·        ·        ·    REVEAL   PAUSE     row 1 — gutter, three exceptions
+   ·        ·     ZOOM −      ·     REACT   NORMAL  REVEAL   PAUSE     row 1 — gutter, five exceptions
  LEFT     RIGHT   SCRN+ME     ·      CAM    CUTOUT  ME+FLOAT  LAVA     row 2 — what's on screen
  MARK     MUTE    ZOOM +      ·    CAMERA  MEETING   SHOT    (page)   row 3 — nearest the hand
 ```
@@ -228,9 +230,10 @@ Move, camera ISO and the custom SD+ volume dials already shipped September 3.
    audits routing; run without the flag while outputs are stopped to repair it.
    September 8 found missing SP/App Audio in Me + Float and missing dedicated
    audio in Cam Cutout; the repair now covers both.
-2. Build and exercise REACT + NORMAL, then the SP sound bank and selected MIDI
-   triggers, then TAKEAWAY + CHAPTER and coordinated cues. Each stage has a
-   concrete recording test in the report; these new keys are not installed yet.
+2. REACT + NORMAL are installed (2026-09-08) and wait for Ryan's press ladder —
+   the VERIFY sentences in `scripts/deck-layout.mjs`. Then the SP sound bank and
+   selected MIDI triggers, then TAKEAWAY + CHAPTER and coordinated cues, each
+   with its recording test in the report.
 3. Add SAVE LAST for spontaneous moments after measuring replay-buffer load.
 4. Continue the existing clipper and Ableton lanes. The SP work is resumed;
    verify mode-specific MIDI notes before using the sibling library's mapping.
