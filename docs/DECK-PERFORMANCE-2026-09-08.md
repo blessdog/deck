@@ -119,6 +119,33 @@ the SP, in the Roland app"; the deck contributes nothing to it. Order 4 loses
 deck-fired sound and `SFX STOP`; a combined cue on the deck is picture plus a
 recording marker, and any pad-driven visual would run SP → OBS, never deck → SP.
 
+### Order 3 built: TAKEAWAY + CHAPTER (evening, 2026-09-08)
+
+Both are overlay scenes nested hidden in every speaking scene
+(`obs/setup-cues.mjs`), shown by enabling the item in whatever scene is on
+program and hidden again in that same scene. TAKEAWAY holds ~4 s (CHOSEN) and
+reads its line from `<record dir>/takeaway.txt` live. CHAPTER drops a recording
+chapter marker when recording, then plays `obs/assets/chapter-sting.mov` (0.7 s
+ProRes 4444 with alpha, a cyan bar wiping left to right, a filtered-noise whoosh
+at −14 dB on tracks 1+4) over the shot and hides on `MediaInputPlaybackEnded`.
+Not a stinger TRANSITION: a chapter break is usually the same shot before and
+after, and OBS cannot transition a scene to itself.
+
+Machine-exercised on Screen + Cam: the banner up with its line
+([takeaway-up](../evidence/2026-09-08/takeaway-up.png)); the wipe measured by
+its cyan area per frame — 0.000 at +105 ms, 0.184 at +382 ms, 0.202 through
++663 ms, 0.045 at +826 ms, gone by +972 ms
+([mid-wipe](../evidence/2026-09-08/chapter-mid-wipe.png)); OBS's own events
+put the sting start at +50 ms and end at +760 ms after enable; both overlays
+hidden and program restored afterwards
+([down](../evidence/2026-09-08/overlays-down.png)). The wipe takes roughly
+150 ms to reach the screen after the key (decoder opens on activate). The gate
+is green at 27 actions.
+
+Not yet proven, only a press can: the marker landing at the right timecode
+(ffprobe on a real take), a double-tap not stacking, the whoosh level against
+speech, the banner size and hold against a finished take.
+
 ## What the controls would actually do
 
 | Cue | Moment in a recording | Proposed behavior | Implementation route |
@@ -300,7 +327,7 @@ SOURCE: [OBS websocket protocol](https://raw.githubusercontent.com/obsproject/ob
 | 0 | Audio coverage repair, `obs/setup-audio.mjs` | Mic/SP/apps present in all speaking looks; known test signal survives each look; inactive title cards stay silent |
 | 1 | REACT + NORMAL, existing plugin and additive OBS scene builder | Repeated press/release works; changing scene during a reaction cancels stale restoration; recording remains active |
 | 2 | Recording sound bank ON THE SP, built by Ryan in the Roland app; no deck bindings (`knowledge/the-sp-404-is-its-own-trigger`) | Ryan hits a pad during a recording; the SP-404 track in the MP4 carries it and the mix carries it |
-| 3 | TAKEAWAY + CHAPTER, motion assets plus OBS configuration | Actual rendered assets tested in OBS; 10 consecutive triggers restart/clear; transition cut concealed; clean camera ISO preserved |
+| 3 | TAKEAWAY + CHAPTER — BUILT 2026-09-08 as overlays (`obs/setup-cues.mjs`, `plugin/src/actions/takeaway.ts`, `chapter.ts`) | Asset renders in OBS (measured by cyan area per frame); 10 consecutive triggers restart/clear and the marker timecode are Ryan's press ladder; camera ISO untouched by design (overlays never touch the Camera input) |
 | 4 | Combined picture cues (shot + marker, banner + marker); no deck-fired sound, no SFX STOP | Repeated cues cannot stack; recovery and disconnect behavior exercised; markers land in the MP4 |
 | 5 | SAVE LAST, then optional pad-driven visuals | Buffer must have been armed; saved path comes from OBS; app restart and multiple saves tested; extra recording load measured |
 

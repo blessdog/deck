@@ -100,3 +100,39 @@ in the store in his words, and the measured pad-to-note map stays in the SP-404
 repo because it is true about the instrument regardless of what the deck does.
 The deck is back to 23 keys and the tripwire is green. What order 2 costs the
 deck now is nothing; what it costs Ryan is loading a bank in the Roland app.
+
+## Night: TAKEAWAY and CHAPTER, and the asset that lied to its own checker
+
+Ryan asked what the blocker was. There was none, so order 3 went in without a
+question: a lower banner that reads its line from a text file in the Movies
+folder, and a chapter key that drops a marker in the recording and wipes a cyan
+bar across the shot with a whoosh. Both are overlay scenes nested hidden in the
+nine speaking scenes; the key lights the item in whatever scene is on program
+and puts it out again in that same scene. Not a stinger transition, because a
+chapter break is usually the same shot before and after and OBS cannot
+transition a scene to itself.
+
+The first sting asset failed its own check. The mid frame was black and the
+alpha fully opaque: ffmpeg's `drawbox` did not re-evaluate its `t` expression
+per frame, and VP9's alpha did not survive a probe either way. Rebuilt with
+`overlay` (which evaluates per frame) into ProRes 4444, the alpha at frame 10
+measured 0.21 opaque, the bar. The command, for the next asset:
+
+```
+ffmpeg -f lavfi -i "color=c=black@0.0:s=1920x1080:r=30:d=0.7,format=rgba" \
+  -f lavfi -i "color=c=0x22d3ee@0.85:s=420x1080:r=30:d=0.7,format=rgba" \
+  -f lavfi -i "color=c=white@0.95:s=48x1080:r=30:d=0.7,format=rgba" \
+  -f lavfi -i "anoisesrc=d=0.7:c=white:a=0.6:r=48000" \
+  -filter_complex "[0:v][1:v]overlay=x='-480+(1920+960)*t/0.7':y=0:eval=frame:format=rgb[b];\
+    [b][2:v]overlay=x='-480+(1920+960)*t/0.7-60':y=0:eval=frame:format=rgb,format=yuva444p10le[v];\
+    [3:a]highpass=f=400,lowpass=f=6000,afade=t=in:st=0:d=0.08,afade=t=out:st=0.25:d=0.45,volume=-14dB[a]" \
+  -map "[v]" -map "[a]" -c:v prores_ks -profile:v 4444 -pix_fmt yuva444p10le -c:a pcm_s16le chapter-sting.mov
+```
+
+Then the second lie, smaller: one screenshot at +330 ms showed no bar, and a
+burst of nine showed why — the decoder opens on activate and the first painted
+frame arrives around +150 ms. Measured by cyan area per frame, the bar is on
+screen from roughly +250 to +830 ms and gone after. One frame is an anecdote;
+nine are a measurement.
+
+Four cue keys on the deck now, all waiting for the same thing: his thumb.

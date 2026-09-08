@@ -135,6 +135,8 @@ in the Stream Deck app under category **"OBS Control Room"**:
 | **Mute Mic** | Toggle the shared `Mic` input. Face follows OBS's own mute event (never lies): white open mic = hot, red slashed mic = muted. |
 | **React (hold)** | Hold: the shot slides (Move, 350 ms) to the **React** close-up — the same shared Camera at 1.4x; release: back to the shot you were on. The saved shot lives in `plugin/src/cues.ts`, so a scene key pressed mid-hold ends the reaction instead of dragging you back on release, and a fast tap never strands the close-up. Camera ISO is untouched. Built 2026-09-08; awaiting Ryan's press. |
 | **Normal** | The way out of any cue: restores the shot and transition saved when the cue began and forgets the cue. Lit only while a cue holds the program. Never touches record or mic. |
+| **Takeaway** | Shows a lower banner over the current shot for ~4 s (CHOSEN), then takes it down. The line comes from `~/Movies/takeaway.txt`, read live by the OBS text source, so it is prepared before the take (`node obs/takeaway.mjs "the line"`); the deck never carries text. A second press restarts the hold instead of stacking; NORMAL takes it down early. Built 2026-09-08, machine-exercised, awaiting Ryan's press. |
+| **Chapter** | A subject change you can see and find later: while recording, drops a chapter marker in the MP4, then plays a 0.7 s cyan wipe with a whoosh **over** the current shot (a media source with alpha, not a scene transition — OBS cannot transition a scene to itself) and hides itself when OBS reports the media ended. Not recording: the wipe still plays. Built 2026-09-08. |
 | **Mark** | While recording: drops an OBS **chapter marker** into the file itself, named with the record timecode. No daemon, no DB — ffprobe reads chapters back at ingest (verified: media-studio `scripts/verify_record_chapters.py`; OBS auto-adds a `Start` chapter at 0, ingest skips it). Dim + alert when not recording. |
 | **Pause** | Pause/resume the running recording (`ToggleRecordPause`). Dim when nothing is recording; face follows OBS's own pause events. |
 | **Shot** | PNG of what is on program into `<record dir>/OBS Shots/`, revealed in Finder. |
@@ -158,6 +160,8 @@ the app never creates `~/Library/Application Support/com.elgato.StreamDeck/NodeJ
 | `scripts/deck-layout.mjs` | **THE LAYOUT, as data.** Which action sits on which key, for XL and SD+. Edit here, never in the Stream Deck app. |
 | `scripts/build-profile.mjs` | Writes `deck-layout.mjs` onto the physical decks. Quits the Stream Deck app first (it rewrites its config on exit) and preserves foreign keys. |
 | `scripts/check-deck.mjs` | **The tripwire.** Fails if any key points at a missing action, or any shipped action sits on no key. Run after every build. |
+| `obs/setup-cues.mjs` | Builds the **Takeaway** banner and **Chapter** sting overlay scenes and nests them hidden, on top, in every speaking scene. Additive, idempotent, verifies. `obs/takeaway.mjs "line"` sets the banner text. |
+| `obs/assets/chapter-sting.mov` | The chapter wipe: 0.7 s ProRes 4444 with alpha plus a whoosh, generated with ffmpeg (the command is in the 2026-09-08 journal). |
 | `obs/add-look.mjs` | Additive scene builder: `brb` · `float` · `screens` · `character "<name>" <image>`. Does NOT wipe the collection. |
 | `scripts/install-zoom.mjs` / `verify-zoom.mjs` | Register the zoom Lua with OBS (needs OBS quit) and ground-truth that it actually loaded. |
 | `obs/set-record-quality.mjs` | Recording bitrate (needs OBS quit). Currently 45 Mbps. |
@@ -172,7 +176,7 @@ the app never creates `~/Library/Application Support/com.elgato.StreamDeck/NodeJ
 
 ## Scenes
 
-`Starting Soon` · `Screen L` · `Screen R` · `Cam` · `Cam Cutout` · `Lava Lounge` · `Screen + Cam` (camera bubble bottom-right) · **`Me + Float`** (full-bleed camera, share as a card lower-right) · **`BRB`** · `Ending` · **`React`** (the shared Camera at 1.4x — the close-up the REACT key holds; `obs/add-look.mjs react`)
+`Starting Soon` · `Screen L` · `Screen R` · `Cam` · `Cam Cutout` · `Lava Lounge` · `Screen + Cam` (camera bubble bottom-right) · **`Me + Float`** (full-bleed camera, share as a card lower-right) · **`BRB`** · `Ending` · **`React`** (the shared Camera at 1.4x — the close-up the REACT key holds; `obs/add-look.mjs react`) · **`Takeaway`** and **`Chapter`** (overlay scenes nested hidden in every speaking scene; `obs/setup-cues.mjs`)
 
 Scene transition is **Move** (Exeldro, 350 ms) since 2026-09-03, so the camera slides between looks instead of cutting (`obs/set-transition.mjs`).
 
@@ -185,11 +189,11 @@ once, every scene follows.
 section is `obs/`, the clipper keys' glue is `rectum/`, `ableton/` is reserved.
 Bitfocus Companion is dead and never comes back.
 
-**The deck, as it sits (23 keys on XL page 1, `check-deck.mjs` green):**
+**The deck, as it sits (25 keys on XL page 1, `check-deck.mjs` green):**
 
 ```
    ·        ·        ·        ·      SOON     BRB    ENDING   RECORD    row 0 — far
-   ·        ·     ZOOM −      ·     REACT   NORMAL  REVEAL   PAUSE     row 1 — gutter, five exceptions
+TAKEAWAY  CHAPTER  ZOOM −      ·     REACT   NORMAL  REVEAL   PAUSE     row 1 — the cue row: things you do TO the shot
  LEFT     RIGHT   SCRN+ME     ·      CAM    CUTOUT  ME+FLOAT  LAVA     row 2 — what's on screen
  MARK     MUTE    ZOOM +      ·    CAMERA  MEETING   SHOT    (page)   row 3 — nearest the hand
 ```
@@ -230,14 +234,11 @@ Move, camera ISO and the custom SD+ volume dials already shipped September 3.
    audits routing; run without the flag while outputs are stopped to repair it.
    September 8 found missing SP/App Audio in Me + Float and missing dedicated
    audio in Cam Cutout; the repair now covers both.
-2. REACT + NORMAL are installed (2026-09-08) and wait for Ryan's press ladder —
-   the VERIFY sentences in `scripts/deck-layout.mjs`. **The deck never fires
-   SP-404 pads** (`knowledge/the-sp-404-is-its-own-trigger.md`, Ryan's words):
-   the sampler is its own soundboard, its sound reaches the recording through
-   the shared `SP-404` input, and the three pad keys that shipped for one
-   evening are in `archive/sp-pad-keys/`. Next: TAKEAWAY + CHAPTER, then the
-   cues that combine picture with a recording marker, each with its recording
-   test in the report.
+2. REACT, NORMAL, TAKEAWAY and CHAPTER are installed (2026-09-08) and wait for
+   Ryan's press ladder — the VERIFY sentences in `scripts/deck-layout.mjs`. The
+   deck never fires SP-404 pads (`knowledge/the-sp-404-is-its-own-trigger.md`).
+   Then the acceptance take in the report: 60 s, three shot changes, a banner, a
+   chapter, a reset; play the mix and the isolated tracks.
 3. Add SAVE LAST for spontaneous moments after measuring replay-buffer load.
 4. Continue the existing clipper and Ableton lanes. The SP work is resumed;
    verify mode-specific MIDI notes before using the sibling library's mapping.
