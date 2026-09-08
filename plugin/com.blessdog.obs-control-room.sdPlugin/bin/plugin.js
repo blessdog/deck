@@ -14876,7 +14876,7 @@ const CUTOUT_SOURCE = "Camera";
 const CUTOUT_FILTER = "Mac Vision";
 class CutoutLatch extends EventEmitter$2 {
     log = streamDeck.logger.createScope("cutout");
-    on = false;
+    latched = false; // not `on`: that name is EventEmitter.on()
     constructor() {
         super();
         obs.on("connected", () => void this.refresh());
@@ -14887,7 +14887,7 @@ class CutoutLatch extends EventEmitter$2 {
         });
     }
     get active() {
-        return this.on;
+        return this.latched;
     }
     async refresh() {
         if (!obs.connected)
@@ -14904,7 +14904,7 @@ class CutoutLatch extends EventEmitter$2 {
     }
     /** Flip the filter. Returns the state OBS confirms. */
     async toggle() {
-        return this.apply(!this.on);
+        return this.apply(!this.latched);
     }
     async apply(enabled) {
         await obs.call("SetSourceFilterEnabled", { sourceName: CUTOUT_SOURCE, filterName: CUTOUT_FILTER, filterEnabled: enabled });
@@ -14912,9 +14912,9 @@ class CutoutLatch extends EventEmitter$2 {
         return enabled;
     }
     set(on) {
-        if (this.on === on)
+        if (this.latched === on)
             return;
-        this.on = on;
+        this.latched = on;
         this.emit("changed", on);
     }
 }

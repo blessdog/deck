@@ -18,7 +18,7 @@ export const CUTOUT_FILTER = "Mac Vision";
 
 class CutoutLatch extends EventEmitter<{ changed: [boolean] }> {
 	private readonly log = streamDeck.logger.createScope("cutout");
-	private on = false;
+	private latched = false; // not `on`: that name is EventEmitter.on()
 
 	constructor() {
 		super();
@@ -30,7 +30,7 @@ class CutoutLatch extends EventEmitter<{ changed: [boolean] }> {
 	}
 
 	get active(): boolean {
-		return this.on;
+		return this.latched;
 	}
 
 	async refresh(): Promise<void> {
@@ -47,7 +47,7 @@ class CutoutLatch extends EventEmitter<{ changed: [boolean] }> {
 
 	/** Flip the filter. Returns the state OBS confirms. */
 	async toggle(): Promise<boolean> {
-		return this.apply(!this.on);
+		return this.apply(!this.latched);
 	}
 
 	async apply(enabled: boolean): Promise<boolean> {
@@ -57,8 +57,8 @@ class CutoutLatch extends EventEmitter<{ changed: [boolean] }> {
 	}
 
 	private set(on: boolean): void {
-		if (this.on === on) return;
-		this.on = on;
+		if (this.latched === on) return;
+		this.latched = on;
 		this.emit("changed", on);
 	}
 }
