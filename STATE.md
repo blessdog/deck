@@ -3,7 +3,7 @@
 
 # deck — STATE
 
-*Generated 2026-09-08 16:00 from git, the knowledge store, and this project's own status script. Nothing here is typed by hand, so nothing here can be stale.*
+*Generated 2026-09-08 16:35 from git, the knowledge store, and this project's own status script. Nothing here is typed by hand, so nothing here can be stale.*
 
 ## What is open
 
@@ -72,6 +72,8 @@ OPEN — plans, NOT specs. proven: false. Do not build against these.
 *From git. The full narrative lives in `docs/journal/`; commit subjects are written as search bait, so `git log --grep` is the index.*
 
 ```
+2026-09-08  0939791  obs: set-transition configures EVERY Move — Ryan's hand-added Move (2) was current and sat at defaults while 'Move' carried the recipe
+2026-09-08  0a4d650  STATE.md: regenerated after the four-key retirement and the Move settings
 2026-09-08  69e090a  obs: refuseIfRecording shared in lib — set-transition and check-cutout refuse while a take rolls
 2026-09-08  d08212e  obs: Move transition settings — position None in/out, Fade for matched/in/out (Nutty's recipe); zoom already off in 3.2.1
 2026-09-08  660a5de  deck: TAKEAWAY, CHAPTER, NORMAL, LAVA retired — Ryan deleted them; RETIRED set + check-deck gate stop build-profile resurrecting them
@@ -82,13 +84,11 @@ OPEN — plans, NOT specs. proven: false. Do not build against these.
 2026-09-08  b40c1ae  STATE.md: regenerated after the Apple Vision cutout verdict
 2026-09-08  ae5d08e  cutout: Apple Vision (obs-mac-backgroundremoval) replaces selfie_segmentation — the 256px mask stretch was the wobble
 2026-09-08  7997183  STATE.md: regenerated after TAKEAWAY and CHAPTER
-2026-09-08  0977276  docs: TAKEAWAY and CHAPTER built as overlays; the sting asset's drawbox/VP9 failure and the ffmpeg command that works
-2026-09-08  4d188c1  plugin: TAKEAWAY banner and CHAPTER sting+marker as overlays nested in every speaking scene
 ```
 
 ### ⚠ UNPUSHED
 
-**9 commit(s) ahead of `origin/master`.** Committed is not the same as safe — a commit that has not left this machine has the durability of the disk it is on.
+**11 commit(s) ahead of `origin/master`.** Committed is not the same as safe — a commit that has not left this machine has the durability of the disk it is on.
 
 ```
 git push origin master
