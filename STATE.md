@@ -3,13 +3,16 @@
 
 # deck — STATE
 
-*Generated 2026-09-08 15:13 from git, the knowledge store, and this project's own status script. Nothing here is typed by hand, so nothing here can be stale.*
+*Generated 2026-09-08 15:16 from git, the knowledge store, and this project's own status script. Nothing here is typed by hand, so nothing here can be stale.*
 
 ## What is open
 
 Every `kind: open` claim in the store. These are PLANS, not specs — `proven: false`. Do not build against one without a verdict.
 
 ```
+? apple-matte-macos-background-green-chroma-key-vs   (2026-09-08)
+    Apple matte (macOS Background = green + chroma key) vs Vision latch for the cutout: Apple wins on hair and fas
+    why: measured 2026-09-08, evidence/2026-09-08/cutout-apple-matte-vs-vision.png; a real either/or on the same 
 ? check-cutout-passes-a-camera-that-renders-nothin   (2026-09-08)
     check-cutout passes a camera that renders nothing
     why: A dead Camera FX reads 0.997 transparent, the same as an empty room with a working cutout, so the gate c
@@ -26,7 +29,7 @@ Every `kind: open` claim in the store. These are PLANS, not specs — `proven: f
 The full index. Query it before choosing any technique — `find-technique.py "<your situation>"` — rather than reading it. Every claim declares the questions that must find it, and `check-retrieval.py` asserts they do.
 
 ```
-KNOWLEDGE — 16 live claims: 16 from this project (/Users/SSDrive/projects/mediaStudio/deck/knowledge), 0 universal (~/.claude/knowledge/store)
+KNOWLEDGE — 17 live claims: 17 from this project (/Users/SSDrive/projects/mediaStudio/deck/knowledge), 0 universal (~/.claude/knowledge/store)
 Query before choosing any technique:  python3 ~/.claude/knowledge/bin/find-technique.py "<your situation>"
 
 LAWS — absolute, no exceptions
@@ -49,6 +52,7 @@ REFUTED — already tried, do NOT retry
   ✗ macos-background-replacement-is-not-a-per-scene-cutout macOS Video Effects are a property of the camera feed as an app receives it, not of an OBS scene. Th
 
 OPEN — plans, NOT specs. proven: false. Do not build against these.
+  ? apple-matte-macos-background-green-chroma-key-vs Why it matters: measured 2026-09-08, evidence/2026-09-08/cutout-apple-matte-vs-vision.png;
   ? check-cutout-passes-a-camera-that-renders-nothin Why it matters: A dead Camera FX reads 0.997 transparent, the same as an empty room with a
   ? plugin-build-warns-ts2339-property-on-does-not-e Why it matters: Warnings that always fire train everyone to ignore the build output, which
   ? stream-deck-error-restoring-the-last-session-pro Why it matters: If Ryan ever clicks Restore, the layout silently reverts to a stale backup
@@ -67,6 +71,8 @@ OPEN — plans, NOT specs. proven: false. Do not build against these.
 *From git. The full narrative lives in `docs/journal/`; commit subjects are written as search bait, so `git log --grep` is the index.*
 
 ```
+2026-09-08  629382b  plugin: cutout latch field renamed — a private 'on' shadowed EventEmitter.on() and crashed the plugin on start
+2026-09-08  2eb3136  STATE.md: regenerated after the CUTOUT latch and the Camera Raw ISO split
 2026-09-08  1f5e8aa  CUTOUT is a latch on the shared Camera, not a scene; the camera ISO moves to its own Camera Raw input
 2026-09-08  b40c1ae  STATE.md: regenerated after the Apple Vision cutout verdict
 2026-09-08  ae5d08e  cutout: Apple Vision (obs-mac-backgroundremoval) replaces selfie_segmentation — the 256px mask stretch was the wobble
@@ -77,13 +83,11 @@ OPEN — plans, NOT specs. proven: false. Do not build against these.
 2026-09-08  f97dd8c  LAW: the SP-404 is its own trigger — pad keys off the deck, archived with the reason
 2026-09-08  a7401d5  bookmark: midi.ts probe Output churn, tidy on next rebuild
 2026-09-08  e663a46  STATE.md: regenerated after the SP-404 pad keys
-2026-09-08  906f10f  docs: SP-404 pad keys installed, note map measured, deck-to-unit sound unproven; open item points at the measured map
-2026-09-08  05d7670  plugin: SP-404 Pad keys fire pads over USB MIDI in-process (@julusian/midi, 0.05 ms) with bank/pad as layout settings
 ```
 
 ### ⚠ UNPUSHED
 
-**3 commit(s) ahead of `origin/master`.** Committed is not the same as safe — a commit that has not left this machine has the durability of the disk it is on.
+**5 commit(s) ahead of `origin/master`.** Committed is not the same as safe — a commit that has not left this machine has the durability of the disk it is on.
 
 ```
 git push origin master
