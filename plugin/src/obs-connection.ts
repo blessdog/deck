@@ -29,6 +29,8 @@ export const SCENES = {
 	meFloat: "Me + Float",
 	brb: "BRB",
 	ending: "Ending",
+	/** The REACT punch-in: shared Camera scaled past the canvas (obs/add-look.mjs react). */
+	react: "React",
 } as const;
 
 /** `x` is the display's left edge in global desktop space — smallest x is the

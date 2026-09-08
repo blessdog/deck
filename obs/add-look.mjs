@@ -24,7 +24,7 @@ const REPLACE = rest.includes('--replace');
 const args = rest.filter((a) => a !== '--replace');
 
 if (!kind) {
-  console.error('usage: add-look.mjs <brb|float|character|screens|cutout|iso> [name] [image]');
+  console.error('usage: add-look.mjs <brb|float|react|character|screens|cutout|iso> [name] [image]');
   process.exit(1);
 }
 
@@ -36,6 +36,7 @@ try {
   if (kind === 'screens') await fitScreens(W, H);
   else if (kind === 'brb') await brb(W, H);
   else if (kind === 'float') await meFloat(W, H);
+  else if (kind === 'react') await react(W, H);
   else if (kind === 'cutout') await cutout();
   else if (kind === 'iso') await cameraIso();
   else if (kind === 'character') {
@@ -266,6 +267,47 @@ async function meFloat(W, H) {
   await fit(sceneName, screenId, fx, fy, fw, fh);
   await addShared(sceneName, 'Mic');
   console.log(`Scene "${sceneName}" — full bleed, he sits at x~${camCentre} (${scale}x), card ${fw}x${fh} at ${fx},${fy}.`);
+}
+
+/**
+ * REACT — the close-up the deck's REACT key holds on program.
+ *
+ * The SAME shared Camera input as Cam, scaled past the canvas and centred, so
+ * the frame is a punch-in on his face. Same source in both scenes is what the
+ * Move transition matches on: press REACT and the shot slides in rather than
+ * cutting, and the camera ISO on that input keeps recording untouched.
+ *
+ * The scale is a CHOSEN starting value, not a measurement. Center Stage runs
+ * off the ultra-wide lens and already crops digitally, so every upscale here
+ * costs sharpness (Known-good numbers). 1.4 is the smallest factor that reads
+ * as a deliberate close-up on a 1080p canvas; his eyes on a finished take are
+ * the verdict.
+ *
+ * All three shared audio inputs are placed by the builder so setup-audio.mjs
+ * has nothing to repair (knowledge/speaking-looks-need-shared-audio).
+ */
+async function react(W, H) {
+  const sceneName = 'React';
+  if (!(await freshScene(sceneName))) return;
+  const scale = 1.4;
+  const cw = Math.round(W * scale);
+  const ch = Math.round(H * scale);
+  const camId = await addShared(sceneName, 'Camera');
+  await obs.call('SetSceneItemTransform', {
+    sceneName,
+    sceneItemId: camId,
+    sceneItemTransform: {
+      positionX: Math.round((W - cw) / 2),
+      positionY: Math.round((H - ch) / 2),
+      alignment: 5,
+      boundsType: 'OBS_BOUNDS_SCALE_INNER',
+      boundsAlignment: 0,
+      boundsWidth: cw,
+      boundsHeight: ch,
+    },
+  });
+  for (const audio of ['Mic', 'SP-404', 'App Audio']) await addShared(sceneName, audio);
+  console.log(`Scene "${sceneName}" — Camera at ${scale}x, centred (${cw}x${ch}), Mic/SP-404/App Audio placed.`);
 }
 
 /**

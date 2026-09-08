@@ -13898,6 +13898,8 @@ const SCENES = {
     meFloat: "Me + Float",
     brb: "BRB",
     ending: "Ending",
+    /** The REACT punch-in: shared Camera scaled past the canvas (obs/add-look.mjs react). */
+    react: "React",
 };
 const FORWARDED = [
     "StreamStateChanged",
@@ -14320,6 +14322,9 @@ const GLYPHS = {
     /** Magnifier — zoom to cursor. */
     folder: "M24 40 h34 l10 10 h60 v54 H24 Z M24 58 h104",
     zoom: "M64 22 a34 34 0 1 0 0 68 a34 34 0 1 0 0 -68 Z M64 34 a22 22 0 1 1 0 44 a22 22 0 1 1 0 -44 Z M88 82 l10 -10 l28 28 l-10 10 Z",
+    /** A face inside viewfinder corners — the REACT punch-in (hold for a closer shot). */
+    react: "M72 58 m-14 0 a14 14 0 1 0 28 0 a14 14 0 1 0 -28 0 M46 104 a26 24 0 0 1 52 0 Z " +
+        "M22 22 h26 v8 H30 v18 h-8 Z M96 22 h26 v26 h-8 V30 H96 Z M22 84 h8 v18 h18 v8 H22 Z M114 84 h8 v26 H96 v-8 h18 Z",
 };
 const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 /** Rough width estimate, for shrinking a label until it fits the key. */
@@ -14684,6 +14689,237 @@ let Mark = (() => {
             // A mark outside a recording has nowhere to live, so the key reads
             // unavailable rather than merely idle.
             const uri = face({ state: this.recording ? "idle" : "offline", tint: "mark", glyph: GLYPHS.mark });
+            for (const a of this.actions)
+                void a.setImage(uri);
+        }
+    });
+    return _classThis;
+})();
+
+class Cues extends EventEmitter$2 {
+    log = streamDeck.logger.createScope("cues");
+    cue;
+    constructor() {
+        super();
+        obs.on("disconnected", () => this.clear("disconnected"));
+        // Any scene change that is not onto the cue's own scene means someone
+        // else took the program. The cue is over; nothing to restore.
+        obs.on("CurrentProgramSceneChanged", ({ sceneName }) => {
+            if (this.cue && sceneName !== this.cue.scene)
+                this.clear(`program moved to ${sceneName}`);
+        });
+    }
+    get active() {
+        return this.cue;
+    }
+    /**
+     * Capture the shot and transition, then put the cue's scene on program.
+     * Returns the cue that now holds the program.
+     */
+    async begin(owner, scene) {
+        if (this.cue) {
+            if (this.cue.scene === scene)
+                return this.cue; // already up (key repeat)
+            // Nested cue: keep the original saved shot, change what is on program.
+            this.cue = { ...this.cue, owner, scene };
+        }
+        else {
+            const [{ currentProgramSceneName }, { transitionName }] = await Promise.all([
+                obs.call("GetCurrentProgramScene"),
+                obs.call("GetCurrentSceneTransition"),
+            ]);
+            if (currentProgramSceneName === scene) {
+                // Program is already the cue scene (a previous session died
+                // mid-hold); there is no "normal" to save, so refuse to
+                // remember this as one.
+                throw new Error(`${scene} is already on program; nothing to return to`);
+            }
+            this.cue = { owner, scene, savedScene: currentProgramSceneName, savedTransition: transitionName };
+        }
+        this.emit("changed", this.cue);
+        await obs.call("SetCurrentProgramScene", { sceneName: scene });
+        this.log.info(`${owner}: ${this.cue.savedScene} -> ${scene}`);
+        return this.cue;
+    }
+    /**
+     * Give the program back. True if a restore actually happened; false if
+     * there was no cue, or the program had already moved on.
+     */
+    async restore(reason) {
+        const cue = this.cue;
+        if (!cue)
+            return false;
+        // Clear BEFORE switching so our own CurrentProgramSceneChanged does
+        // not read as "someone else took the program".
+        this.clear(reason);
+        const { currentProgramSceneName } = await obs.call("GetCurrentProgramScene");
+        if (currentProgramSceneName !== cue.scene) {
+            this.log.info(`${reason}: program is on ${currentProgramSceneName}, not ${cue.scene}; nothing to restore`);
+            return false;
+        }
+        const { transitionName } = await obs.call("GetCurrentSceneTransition");
+        if (transitionName !== cue.savedTransition) {
+            await obs.call("SetCurrentSceneTransition", { transitionName: cue.savedTransition });
+        }
+        await obs.call("SetCurrentProgramScene", { sceneName: cue.savedScene });
+        this.log.info(`${reason}: ${cue.scene} -> ${cue.savedScene}`);
+        return true;
+    }
+    clear(reason) {
+        if (!this.cue)
+            return;
+        this.log.info(`cue ${this.cue.owner} cleared: ${reason}`);
+        this.cue = undefined;
+        this.emit("changed", undefined);
+    }
+}
+const cues = new Cues();
+
+/**
+ * NORMAL — the way out of any cue. Restores the shot and transition that were
+ * saved when the cue began, and forgets the cue. It never starts or stops a
+ * recording and never touches the mic: only cue-owned state is restored.
+ *
+ * Lit only while a cue holds the program. Dim means pressing does nothing,
+ * and that is the honest face — there is no "normal" to go back to.
+ */
+let Normal = (() => {
+    let _classDecorators = [action({ UUID: "com.blessdog.obs-control-room.normal" })];
+    let _classDescriptor;
+    let _classExtraInitializers = [];
+    let _classThis;
+    let _classSuper = SingletonAction;
+    (class extends _classSuper {
+        static { _classThis = this; }
+        static {
+            const _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create(_classSuper[Symbol.metadata] ?? null) : void 0;
+            __esDecorate(null, _classDescriptor = { value: _classThis }, _classDecorators, { kind: "class", name: _classThis.name, metadata: _metadata }, null, _classExtraInitializers);
+            _classThis = _classDescriptor.value;
+            if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
+            __runInitializers(_classThis, _classExtraInitializers);
+        }
+        log = streamDeck.logger.createScope("normal");
+        constructor() {
+            super();
+            obs.on("connected", () => void this.render());
+            obs.on("disconnected", () => void this.render());
+            cues.on("changed", () => void this.render());
+        }
+        onWillAppear(_ev) {
+            void this.render();
+        }
+        async onKeyDown(ev) {
+            if (!obs.connected || !cues.active) {
+                await ev.action.showAlert();
+                return;
+            }
+            try {
+                const restored = await cues.restore("normal pressed");
+                if (restored)
+                    await ev.action.showOk();
+            }
+            catch (err) {
+                this.log.error(`normal failed: ${err}`);
+                await ev.action.showAlert();
+            }
+            void this.render();
+        }
+        async render() {
+            const uri = face({ state: obs.connected && cues.active ? "idle" : "offline", tint: "camera", glyph: GLYPHS.house });
+            for (const a of this.actions)
+                void a.setImage(uri);
+        }
+    });
+    return _classThis;
+})();
+
+/**
+ * REACT — hold for the closer camera shot, release to return to the shot you
+ * were on. A momentary key, like push-to-talk: the reaction lasts exactly as
+ * long as the thumb does, so there is nothing to remember to undo.
+ *
+ * The closer shot is the "React" scene (obs/add-look.mjs react): the SAME
+ * shared Camera input scaled past the canvas. Same source in both scenes is
+ * what the Move transition matches on, so the punch-in slides rather than
+ * cuts, and the camera ISO keeps recording untouched.
+ *
+ * The saved shot lives in cues.ts, not here, so NORMAL can cancel it and so a
+ * scene key pressed mid-hold ends the reaction instead of being dragged back
+ * on release. Two edges this key must survive:
+ *
+ *   - a FAST TAP: key-up can arrive before key-down's capture round-trip has
+ *     returned. Key-up awaits the key-down promise before restoring, so a tap
+ *     never strands the program on the close-up.
+ *   - key-up with nothing held (plugin restarted mid-hold, OBS down): a no-op.
+ */
+let React = (() => {
+    let _classDecorators = [action({ UUID: "com.blessdog.obs-control-room.react" })];
+    let _classDescriptor;
+    let _classExtraInitializers = [];
+    let _classThis;
+    let _classSuper = SingletonAction;
+    (class extends _classSuper {
+        static { _classThis = this; }
+        static {
+            const _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create(_classSuper[Symbol.metadata] ?? null) : void 0;
+            __esDecorate(null, _classDescriptor = { value: _classThis }, _classDecorators, { kind: "class", name: _classThis.name, metadata: _metadata }, null, _classExtraInitializers);
+            _classThis = _classDescriptor.value;
+            if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
+            __runInitializers(_classThis, _classExtraInitializers);
+        }
+        log = streamDeck.logger.createScope("react");
+        pending;
+        constructor() {
+            super();
+            obs.on("connected", () => void this.render());
+            obs.on("disconnected", () => void this.render());
+            cues.on("changed", () => void this.render());
+        }
+        onWillAppear(_ev) {
+            void this.render();
+        }
+        async onKeyDown(ev) {
+            if (!obs.connected) {
+                // A reaction needs a program to react on; launching OBS during a
+                // hold makes no sense, unlike the scene keys.
+                await ev.action.showAlert();
+                return;
+            }
+            this.pending = (async () => {
+                await cues.begin("react", SCENES.react);
+            })();
+            try {
+                await this.pending;
+            }
+            catch (err) {
+                this.log.error(`react failed: ${err}`);
+                this.pending = undefined;
+                await ev.action.showAlert();
+                void this.render();
+            }
+        }
+        async onKeyUp(_ev) {
+            const pending = this.pending;
+            this.pending = undefined;
+            if (!pending)
+                return;
+            try {
+                await pending;
+            }
+            catch {
+                return; // key-down already reported it
+            }
+            try {
+                await cues.restore("react released");
+            }
+            catch (err) {
+                this.log.error(`restore failed: ${err}`);
+            }
+            void this.render();
+        }
+        async render() {
+            const state = !obs.connected ? "offline" : cues.active?.owner === "react" ? "active" : "idle";
+            const uri = face({ state, tint: "camera", glyph: GLYPHS.react });
             for (const a of this.actions)
                 void a.setImage(uri);
         }
@@ -16009,6 +16245,8 @@ let Volume = (() => {
 
 streamDeck.actions.registerAction(new Record());
 streamDeck.actions.registerAction(new Mark());
+streamDeck.actions.registerAction(new React());
+streamDeck.actions.registerAction(new Normal());
 streamDeck.actions.registerAction(new MuteMic());
 streamDeck.actions.registerAction(new Pause());
 streamDeck.actions.registerAction(new Shot());

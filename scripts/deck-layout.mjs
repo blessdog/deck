@@ -28,6 +28,8 @@ export const PLUGIN = "com.blessdog.obs-control-room";
 export const ACTIONS = {
 	record: ["record", "Record"],
 	mark: ["mark", "Mark"],
+	react: ["react", "React (hold)"],
+	normal: ["normal", "Normal"],
 	mute: ["mute-mic", "Mute Mic"],
 	pause: ["pause", "Pause Recording"],
 	shot: ["shot", "Screenshot"],
@@ -64,12 +66,15 @@ export const ACTIONS = {
 export const XL = [
 	// c0          c1          c2           c3     c4         c5          c6       c7
 	[null, null, null, null, "soon", "brb", "ending", "record"], //       row 0 — far
-	[null, null, "zoomOut", null, null, null, "reveal", "pause"], //      row 1 — gutter, three exceptions
+	[null, null, "zoomOut", null, "react", "normal", "reveal", "pause"], // row 1 — gutter, five exceptions
 	["screenLeft", "screenRight", "screenCam", null, "cam", "cutout", "float", "lava"], // row 2
 	["mark", "mute", "zoomIn", null, "camera", "meeting", "shot", "pageNext"], // row 3 — near; 7,3 is the app's own page key
 ];
 // ZOOM OUT sits directly above ZOOM IN and PAUSE directly below RECORD, so each
 // pair is found by touch; REVEAL sits beside PAUSE (the file you just made).
+// REACT and NORMAL (2026-09-08) sit directly above CAM and CUTOUT: the camera
+// block's own row, found by touch from the CAM key. CHOSEN, not measured — if
+// REACT earns its place mid-sentence, a row-3 key should yield to it.
 // The bottom-right key is the Stream Deck app's page-navigation key: it must
 // exist for page 2 (rectum) to be reachable, and 2026-09-02 proved that placing
 // anything else there deletes it — so it is placed from here, like every key.
@@ -183,6 +188,8 @@ export const VERIFY = {
 	volume: "Turn SD+ dial 1; the OBS mixer's Mic fader moves and the strip shows the dB. Press it; Mic mutes.",
 	pause: "Press mid-recording, press again; the finished file plays through both halves.",
 	mark: "Press twice while recording; ffprobe shows two chapters.",
+	react: "Hold; program slides to the React close-up and the key lights. Release; the shot you were on comes back. A fast tap does the same and never strands the close-up.",
+	normal: "Hold REACT, press a scene key, release REACT: program stays on that scene. Hold REACT and press NORMAL: the saved shot comes back and both keys go dim.",
 	mute: "Press; OBS mixer shows Mic muted and the key turns red.",
 	camera: "Press; the Cam scene switches iPhone ↔ FaceTime.",
 	meeting: "Press; OBS Virtual Camera appears in a Zoom/Meet camera list.",

@@ -188,6 +188,10 @@ export const GLYPHS = {
 	/** Magnifier — zoom to cursor. */
 	folder: "M24 40 h34 l10 10 h60 v54 H24 Z M24 58 h104",
 	zoom: "M64 22 a34 34 0 1 0 0 68 a34 34 0 1 0 0 -68 Z M64 34 a22 22 0 1 1 0 44 a22 22 0 1 1 0 -44 Z M88 82 l10 -10 l28 28 l-10 10 Z",
+	/** A face inside viewfinder corners — the REACT punch-in (hold for a closer shot). */
+	react:
+		"M72 58 m-14 0 a14 14 0 1 0 28 0 a14 14 0 1 0 -28 0 M46 104 a26 24 0 0 1 52 0 Z " +
+		"M22 22 h26 v8 H30 v18 h-8 Z M96 22 h26 v26 h-8 V30 H96 Z M22 84 h8 v18 h18 v8 H22 Z M114 84 h8 v26 H96 v-8 h18 Z",
 } as const;
 
 export type Face = {

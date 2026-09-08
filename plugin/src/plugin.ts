@@ -3,6 +3,8 @@ import { obs } from "./obs-connection";
 import { installScreenHeal } from "./screen-heal";
 import { CameraPicker } from "./actions/camera-picker";
 import { Mark } from "./actions/mark";
+import { Normal } from "./actions/normal";
+import { React } from "./actions/react";
 import { MeetingMode } from "./actions/meeting-mode";
 import { MuteMic } from "./actions/mute-mic";
 import { Record } from "./actions/record";
@@ -26,6 +28,8 @@ import { Volume } from "./actions/volume";
 
 streamDeck.actions.registerAction(new Record());
 streamDeck.actions.registerAction(new Mark());
+streamDeck.actions.registerAction(new React());
+streamDeck.actions.registerAction(new Normal());
 streamDeck.actions.registerAction(new MuteMic());
 streamDeck.actions.registerAction(new Pause());
 streamDeck.actions.registerAction(new Shot());

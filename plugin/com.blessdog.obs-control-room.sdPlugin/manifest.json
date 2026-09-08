@@ -378,6 +378,34 @@
      "ShowTitle": false
     }
    ]
+  },
+  {
+   "Controllers": [
+    "Keypad"
+   ],
+   "Icon": "imgs/actions/scene/icon",
+   "Name": "React (hold)",
+   "States": [
+    {
+     "Image": "imgs/actions/scene/key"
+    }
+   ],
+   "Tooltip": "Hold for the closer camera shot; release returns to the shot you were on.",
+   "UUID": "com.blessdog.obs-control-room.react"
+  },
+  {
+   "Controllers": [
+    "Keypad"
+   ],
+   "Icon": "imgs/actions/scene/icon",
+   "Name": "Normal",
+   "States": [
+    {
+     "Image": "imgs/actions/scene/key"
+    }
+   ],
+   "Tooltip": "Cancel any performance cue and restore the saved shot and transition.",
+   "UUID": "com.blessdog.obs-control-room.normal"
   }
  ]
 }
