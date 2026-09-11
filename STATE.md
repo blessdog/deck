@@ -3,7 +3,7 @@
 
 # deck — STATE
 
-*Generated 2026-09-08 16:35 from git, the knowledge store, and this project's own status script. Nothing here is typed by hand, so nothing here can be stale.*
+*Generated 2026-09-11 12:42 from git, the knowledge store, and this project's own status script. Nothing here is typed by hand, so nothing here can be stale.*
 
 ## What is open
 
@@ -72,6 +72,7 @@ OPEN — plans, NOT specs. proven: false. Do not build against these.
 *From git. The full narrative lives in `docs/journal/`; commit subjects are written as search bait, so `git log --grep` is the index.*
 
 ```
+2026-09-08  b3bff38  STATE.md: regenerated after set-transition configures every Move
 2026-09-08  0939791  obs: set-transition configures EVERY Move — Ryan's hand-added Move (2) was current and sat at defaults while 'Move' carried the recipe
 2026-09-08  0a4d650  STATE.md: regenerated after the four-key retirement and the Move settings
 2026-09-08  69e090a  obs: refuseIfRecording shared in lib — set-transition and check-cutout refuse while a take rolls
@@ -83,12 +84,11 @@ OPEN — plans, NOT specs. proven: false. Do not build against these.
 2026-09-08  1f5e8aa  CUTOUT is a latch on the shared Camera, not a scene; the camera ISO moves to its own Camera Raw input
 2026-09-08  b40c1ae  STATE.md: regenerated after the Apple Vision cutout verdict
 2026-09-08  ae5d08e  cutout: Apple Vision (obs-mac-backgroundremoval) replaces selfie_segmentation — the 256px mask stretch was the wobble
-2026-09-08  7997183  STATE.md: regenerated after TAKEAWAY and CHAPTER
 ```
 
 ### ⚠ UNPUSHED
 
-**11 commit(s) ahead of `origin/master`.** Committed is not the same as safe — a commit that has not left this machine has the durability of the disk it is on.
+**12 commit(s) ahead of `origin/master`.** Committed is not the same as safe — a commit that has not left this machine has the durability of the disk it is on.
 
 ```
 git push origin master
