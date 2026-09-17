@@ -13,3 +13,13 @@ dead-in-the-live-tree code the archive law forbids.
 **Re-run when:** Ryan wants the GRAB key to take image URLs too. Then this is
 the design: the deck is the composition layer that may call both rectum and
 media-tools, because neither may depend on the other.
+
+**2026-09-17 — the "re-run when" arrived and was answered another way.** Ryan
+pressed GRAB on an Instagram carousel of five videos and three photos and said
+"some are images. it should grab either / both", filed in "a rectum image
+folder". So rectum files photos itself (`rectum/images.py`, gallery-dl, into
+`images/` inside the clip library — rectum `cad3966`) and no router is needed.
+This draft's classifier could not have done it anyway: it sorts a URL into
+image OR video and sends every instagram.com URL to video, and one post is
+several items of either kind. Still here because its clipboard-vs-front-tab
+pre-fill rules and the media-tools hand-off are worked out and measured.

@@ -176,7 +176,9 @@ export class RectumRight extends MonitorKey {
 }
 
 /**
- * GRAB — paste a URL, get the video.
+ * GRAB — paste a URL, get what is there: the video, the photos, or both.
+ * (An Instagram carousel is up to ten slides of either kind; rectum files every
+ * one — clips to the clip library, photos to its `images/` folder.)
  *
  * The preferred way into the clip library (rectum README, 2026-08-03). If a
  * video has a URL, downloading beats filming a monitor on every axis: the
