@@ -3,7 +3,7 @@
 
 # deck — STATE
 
-*Generated 2026-09-17 15:41 from git, the knowledge store, and this project's own status script. Nothing here is typed by hand, so nothing here can be stale.*
+*Generated 2026-09-17 16:10 from git, the knowledge store, and this project's own status script. Nothing here is typed by hand, so nothing here can be stale.*
 
 ## What is open
 
@@ -45,7 +45,7 @@ VERDICTS — measured, and SCOPED; check the scope before reusing
   · cutout-is-a-latch-on-the-shared-camera Control Room on OBS 32.2.2, mac_vision_filter on the shared Camera input, Source Record 0.
   · cutout-mask-is-stale-while-inactive royshil obs-backgroundremoval 1.1.13 (selfie_segmentation, CoreML) on the Camera FX input,
   · cutout-runs-on-apple-vision obs-mac-backgroundremoval 0.3.6 (andrewleejenkins fork, filter kind mac_vision_filter) on 
-  · grab-files-every-slide-of-a-carousel GRAB deck key -> `python3 -m rectum grab` (rectum d7ee0bf), yt-dlp 2026.08.19, Instagram /
+  · grab-files-every-slide-of-a-carousel GRAB deck key -> `python3 -m rectum grab` (rectum cad3966), yt-dlp 2026.08.19 + gallery-dl
   · screen-capture-renders-only-while-active OBS 32.2.2 macOS Screen Capture (ScreenCaptureKit) sources; GetSourceScreenshot over obs-w
   · screen-capture-streams-die-overnight OBS 32.2.x macOS Screen Capture (ScreenCaptureKit) on macOS 26, this Mac, OBS left running
   · speaking-looks-need-shared-audio Control Room on OBS 32.2.2, Cam Cutout and Me + Float audio placement, 2026-09-08
@@ -73,6 +73,9 @@ OPEN — plans, NOT specs. proven: false. Do not build against these.
 *From git. The full narrative lives in `docs/journal/`; commit subjects are written as search bait, so `git log --grep` is the index.*
 
 ```
+2026-09-17  7f104ca  grab takes video, photos, or both — rectum files photos itself (cad3966); grab-router stays archived with the reason; claim amended with the slide-ID trap
+2026-09-17  ecb0bd9  STATE.md: regenerated after the grab carousel claim 2026-09-17
+2026-09-17  54794ef  gitignore: .DS_Store — Finder metadata in evidence/ and docs/ kept tripping the uncommitted-evidence check
 2026-09-17  ef541bc  knowledge: a grab that downloads but never opens Finder — carousel slides orphaned, silent first slide deleted (fixed in rectum d7ee0bf)
 2026-09-11  98baf32  STATE.md: regenerated at session start 2026-09-11
 2026-09-08  b3bff38  STATE.md: regenerated after set-transition configures every Move
@@ -82,14 +85,11 @@ OPEN — plans, NOT specs. proven: false. Do not build against these.
 2026-09-08  d08212e  obs: Move transition settings — position None in/out, Fade for matched/in/out (Nutty's recipe); zoom already off in 3.2.1
 2026-09-08  660a5de  deck: TAKEAWAY, CHAPTER, NORMAL, LAVA retired — Ryan deleted them; RETIRED set + check-deck gate stop build-profile resurrecting them
 2026-09-08  bc83ee8  STATE.md: regenerated
-2026-09-08  629382b  plugin: cutout latch field renamed — a private 'on' shadowed EventEmitter.on() and crashed the plugin on start
-2026-09-08  2eb3136  STATE.md: regenerated after the CUTOUT latch and the Camera Raw ISO split
-2026-09-08  1f5e8aa  CUTOUT is a latch on the shared Camera, not a scene; the camera ISO moves to its own Camera Raw input
 ```
 
 ### ⚠ UNPUSHED
 
-**14 commit(s) ahead of `origin/master`.** Committed is not the same as safe — a commit that has not left this machine has the durability of the disk it is on.
+**17 commit(s) ahead of `origin/master`.** Committed is not the same as safe — a commit that has not left this machine has the durability of the disk it is on.
 
 ```
 git push origin master
@@ -114,9 +114,6 @@ git push origin master
  D evidence/2026-09-08/react-cam.png
  D evidence/2026-09-08/react-react.png
  D evidence/2026-09-08/takeaway-up.png
-?? docs/.DS_Store
-?? evidence/2026-09-02/.DS_Store
-?? evidence/2026-09-08/.DS_Store
 ```
 
 *Uncommitted is not learned. Commit at the moment of learning.*
