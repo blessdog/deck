@@ -2,3 +2,6 @@ node_modules/
 logs/
 evidence/screens-check/
 evidence/cutout-check.png
+
+# Finder metadata — never evidence
+.DS_Store
