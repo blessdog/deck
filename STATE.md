@@ -3,7 +3,7 @@
 
 # deck — STATE
 
-*Generated 2026-09-11 12:42 from git, the knowledge store, and this project's own status script. Nothing here is typed by hand, so nothing here can be stale.*
+*Generated 2026-09-17 15:41 from git, the knowledge store, and this project's own status script. Nothing here is typed by hand, so nothing here can be stale.*
 
 ## What is open
 
@@ -29,7 +29,7 @@ Every `kind: open` claim in the store. These are PLANS, not specs — `proven: f
 The full index. Query it before choosing any technique — `find-technique.py "<your situation>"` — rather than reading it. Every claim declares the questions that must find it, and `check-retrieval.py` asserts they do.
 
 ```
-KNOWLEDGE — 18 live claims: 18 from this project (/Users/SSDrive/projects/mediaStudio/deck/knowledge), 0 universal (~/.claude/knowledge/store)
+KNOWLEDGE — 19 live claims: 19 from this project (/Users/SSDrive/projects/mediaStudio/deck/knowledge), 0 universal (~/.claude/knowledge/store)
 Query before choosing any technique:  python3 ~/.claude/knowledge/bin/find-technique.py "<your situation>"
 
 LAWS — absolute, no exceptions
@@ -45,6 +45,7 @@ VERDICTS — measured, and SCOPED; check the scope before reusing
   · cutout-is-a-latch-on-the-shared-camera Control Room on OBS 32.2.2, mac_vision_filter on the shared Camera input, Source Record 0.
   · cutout-mask-is-stale-while-inactive royshil obs-backgroundremoval 1.1.13 (selfie_segmentation, CoreML) on the Camera FX input,
   · cutout-runs-on-apple-vision obs-mac-backgroundremoval 0.3.6 (andrewleejenkins fork, filter kind mac_vision_filter) on 
+  · grab-files-every-slide-of-a-carousel GRAB deck key -> `python3 -m rectum grab` (rectum d7ee0bf), yt-dlp 2026.08.19, Instagram /
   · screen-capture-renders-only-while-active OBS 32.2.2 macOS Screen Capture (ScreenCaptureKit) sources; GetSourceScreenshot over obs-w
   · screen-capture-streams-die-overnight OBS 32.2.x macOS Screen Capture (ScreenCaptureKit) on macOS 26, this Mac, OBS left running
   · speaking-looks-need-shared-audio Control Room on OBS 32.2.2, Cam Cutout and Me + Float audio placement, 2026-09-08
@@ -72,6 +73,8 @@ OPEN — plans, NOT specs. proven: false. Do not build against these.
 *From git. The full narrative lives in `docs/journal/`; commit subjects are written as search bait, so `git log --grep` is the index.*
 
 ```
+2026-09-17  ef541bc  knowledge: a grab that downloads but never opens Finder — carousel slides orphaned, silent first slide deleted (fixed in rectum d7ee0bf)
+2026-09-11  98baf32  STATE.md: regenerated at session start 2026-09-11
 2026-09-08  b3bff38  STATE.md: regenerated after set-transition configures every Move
 2026-09-08  0939791  obs: set-transition configures EVERY Move — Ryan's hand-added Move (2) was current and sat at defaults while 'Move' carried the recipe
 2026-09-08  0a4d650  STATE.md: regenerated after the four-key retirement and the Move settings
@@ -82,13 +85,11 @@ OPEN — plans, NOT specs. proven: false. Do not build against these.
 2026-09-08  629382b  plugin: cutout latch field renamed — a private 'on' shadowed EventEmitter.on() and crashed the plugin on start
 2026-09-08  2eb3136  STATE.md: regenerated after the CUTOUT latch and the Camera Raw ISO split
 2026-09-08  1f5e8aa  CUTOUT is a latch on the shared Camera, not a scene; the camera ISO moves to its own Camera Raw input
-2026-09-08  b40c1ae  STATE.md: regenerated after the Apple Vision cutout verdict
-2026-09-08  ae5d08e  cutout: Apple Vision (obs-mac-backgroundremoval) replaces selfie_segmentation — the 256px mask stretch was the wobble
 ```
 
 ### ⚠ UNPUSHED
 
-**12 commit(s) ahead of `origin/master`.** Committed is not the same as safe — a commit that has not left this machine has the durability of the disk it is on.
+**14 commit(s) ahead of `origin/master`.** Committed is not the same as safe — a commit that has not left this machine has the durability of the disk it is on.
 
 ```
 git push origin master
@@ -98,6 +99,24 @@ git push origin master
 
 ```
  M STATE.md
+ D docs/DECK-RESEARCH-2026-09-02.md
+ D evidence/2026-09-02/cutout-model-bakeoff.png
+ D evidence/2026-09-02/dead-keys-contact-sheet.png
+ D evidence/2026-09-02/mefloat-after.png
+ D evidence/2026-09-02/screen-l-after-toggle.png
+ D evidence/2026-09-02/screen-l-obs-vs-os.png
+ D evidence/2026-09-08/chapter-mid-wipe.png
+ D evidence/2026-09-08/cutout-apple-matte-vs-vision.png
+ D evidence/2026-09-08/cutout-inactive.png
+ D evidence/2026-09-08/cutout-latch-in-every-scene.png
+ D evidence/2026-09-08/cutout-latch-iso-stays-raw.png
+ D evidence/2026-09-08/cutout-vision-bakeoff.png
+ D evidence/2026-09-08/react-cam.png
+ D evidence/2026-09-08/react-react.png
+ D evidence/2026-09-08/takeaway-up.png
+?? docs/.DS_Store
+?? evidence/2026-09-02/.DS_Store
+?? evidence/2026-09-08/.DS_Store
 ```
 
 *Uncommitted is not learned. Commit at the moment of learning.*
