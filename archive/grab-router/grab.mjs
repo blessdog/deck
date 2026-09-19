@@ -3,7 +3,7 @@
 // and hand it to whichever tool owns that kind of media.
 //
 //   video  →  rectum fetch          (~/projects/mediaStudio/rectum)   clip library
-//   image  →  fetch-image           (~/projects/media-tools)          image library
+//   image  →  fetch-image           (~/projects/mediaStudio/media-tools)          image library
 //
 // WHY THE DISPATCH LIVES HERE and not in either tool: rectum owns capture and
 // the clip library, media-tools owns renderers and the image library, and
